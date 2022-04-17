@@ -1,6 +1,7 @@
 package main
 
 import (
+	"Cubernetes/pkg/objconfig"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -66,28 +67,28 @@ func parseArgs() bool {
 	return false
 }
 
-func newObj(config Config) int {
+func newObj(config objconfig.Config) int {
 	var ret = -1
-	switch config.getKind() {
+	switch config.GetKind() {
 	case "Pod":
-		var podConfig = config.(PodConfig)
+		var podConfig = config.(objconfig.PodConfig)
 		fmt.Println(podConfig)
 		ret = 0
 	}
 	return ret
 }
 
-func delObj(config Config) int {
+func delObj(config objconfig.Config) int {
 	var ret = -1
 	return ret
 }
 
-func getObj(config Config) int {
+func getObj(config objconfig.Config) int {
 	var ret = -1
 	return ret
 }
 
-func apply(config Config) int {
+func apply(config objconfig.Config) int {
 	var ret = -1
 	return ret
 }
@@ -105,7 +106,7 @@ func main() {
 		fileError(inFile)
 	}
 
-	var config = parseConfig(configFile)
+	var config = objconfig.ParseConfig(configFile)
 	if config == nil {
 		parseError(inFile)
 		return

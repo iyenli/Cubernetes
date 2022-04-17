@@ -1,9 +1,9 @@
-package main
+package objconfig
 
 import "gopkg.in/yaml.v3"
 
 type Config interface {
-	getKind() string
+	GetKind() string
 }
 
 type PodConfig struct {
@@ -37,11 +37,11 @@ type PodConfig struct {
 	} `yaml:"spec"`
 }
 
-func (pc PodConfig) getKind() string {
+func (pc PodConfig) GetKind() string {
 	return pc.Kind
 }
 
-func parseConfig(file []byte) Config {
+func ParseConfig(file []byte) Config {
 	configMap := make(map[interface{}]interface{})
 	err := yaml.Unmarshal(file, &configMap)
 	if err != nil {
