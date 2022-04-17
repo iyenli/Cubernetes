@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 )
 
@@ -17,6 +18,18 @@ func help() {
 	fmt.Println("cubectl [command] [type] [name] [flags]")
 	fmt.Println("or")
 	fmt.Println("cubectl [command] -f [filename] -o [output filename]")
+}
+
+func fileError(filename string) {
+	fmt.Printf("FATAL: CANNOT open %s\n", filename)
+}
+
+func parseError(filename string) {
+	fmt.Printf("FATAL: CANNOT parse %s\n", filename)
+}
+
+func executeError(ret int) {
+	fmt.Printf("FATAL: execution error: %v\n", ret)
 }
 
 func parseArgs() bool {
@@ -53,21 +66,30 @@ func parseArgs() bool {
 	return false
 }
 
-func newObj(t string, name string, inFile string) {
-	if inFile == "" {
+func newObj(config Config) int {
+	var ret = -1
+	switch config.getKind() {
+	case "Pod":
+		var podConfig = config.(PodConfig)
+		fmt.Println(podConfig)
+		ret = 0
 	}
+	return ret
 }
 
-func delObj(t string, name string, inFile string) {
-
+func delObj(config Config) int {
+	var ret = -1
+	return ret
 }
 
-func getObj(t string, name string, inFile string) {
-
+func getObj(config Config) int {
+	var ret = -1
+	return ret
 }
 
-func apply(inFile string) {
-
+func apply(config Config) int {
+	var ret = -1
+	return ret
 }
 
 func main() {
@@ -76,14 +98,33 @@ func main() {
 		return
 	}
 
+	if inFile == "" {
+	}
+	configFile, err := ioutil.ReadFile(inFile)
+	if err != nil {
+		fileError(inFile)
+	}
+
+	var config = parseConfig(configFile)
+	if config == nil {
+		parseError(inFile)
+		return
+	}
+
+	var ret = -1
 	switch argCmd {
 	case "create":
-		newObj(argType, argName, inFile)
+		ret = newObj(config)
 	case "delete":
-		delObj(argType, argName, inFile)
+		ret = delObj(config)
 	case "get":
-		getObj(argType, argName, inFile)
+		ret = getObj(config)
 	case "apply":
-		apply(inFile)
+		ret = apply(config)
+	}
+
+	if ret < 0 {
+		executeError(ret)
+		return
 	}
 }
