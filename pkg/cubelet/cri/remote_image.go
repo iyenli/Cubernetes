@@ -2,7 +2,6 @@ package cri
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -63,7 +62,7 @@ func (r *remoteImageService) ListImages(filter *runtimeapi.ImageFilter) ([]*runt
 	return resp.Images, nil
 }
 
-func (r *remoteImageService) ImageStatus(image *runtimeapi.ImageSpec, verbose bool) (*runtimeapi.ImageStatusResponse, error) {
+func (r *remoteImageService) ImageStatus(image *runtimeapi.ImageSpec) (*runtimeapi.Image, error) {
 	ctx, cancel := getContextWithTimeout(r.timeout)
 	defer cancel()
 
@@ -72,13 +71,11 @@ func (r *remoteImageService) ImageStatus(image *runtimeapi.ImageSpec, verbose bo
 	})
 
 	if err != nil {
-		if verbose {
-			log.Printf("ImageStatus from image service failed, image = %s\n", image.Image)
-		}
+		log.Printf("ImageStatus from image service failed, image = %s\n", image.Image)
 		return nil, err
 	}
 
-	return resp, nil
+	return resp.Image, nil
 }
 
 func (r *remoteImageService) PullImage(image *runtimeapi.ImageSpec, auth *runtimeapi.AuthConfig, podSandboxConfig *runtimeapi.PodSandboxConfig) (string, error) {
@@ -97,9 +94,7 @@ func (r *remoteImageService) PullImage(image *runtimeapi.ImageSpec, auth *runtim
 	}
 
 	if resp.ImageRef == "" {
-		return "", errors.New(
-			fmt.Sprintf("PullImage failed: imageRef of image %q is not set", image.Image),
-		)
+		return "", fmt.Errorf("PullImage failed: imageRef of image %q is not set", image.Image)
 	}
 
 	return resp.ImageRef, nil

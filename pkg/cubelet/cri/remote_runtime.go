@@ -143,7 +143,7 @@ func (r *remoteRuntimeService) ListContainers(filter *runtimeapi.ContainerFilter
 	return resp.Containers, nil
 }
 
-func (r *remoteRuntimeService) ContainerStatus(containerID string, verbose bool) (*runtimeapi.ContainerStatusResponse, error) {
+func (r *remoteRuntimeService) ContainerStatus(containerID string) (*runtimeapi.ContainerStatus, error) {
 	ctx, cancel := getContextWithTimeout(r.timeout)
 	defer cancel()
 
@@ -156,7 +156,7 @@ func (r *remoteRuntimeService) ContainerStatus(containerID string, verbose bool)
 		return nil, err
 	}
 
-	return resp, nil
+	return resp.Status, nil
 }
 
 func (r *remoteRuntimeService) UpdateContainerResources(containerID string, resources *runtimeapi.LinuxContainerResources) error {
@@ -217,7 +217,7 @@ func (r *remoteRuntimeService) Exec(req *runtimeapi.ExecRequest) (*runtimeapi.Ex
 	}
 
 	if resp.Url == "" {
-		err = errors.New("Url not set, Exec failed.")
+		err = errors.New("url not set, Exec failed")
 		return nil, err
 	}
 
@@ -235,7 +235,7 @@ func (r *remoteRuntimeService) Attach(req *runtimeapi.AttachRequest) (*runtimeap
 	}
 
 	if resp.Url == "" {
-		err = errors.New("Url not set, Attach failed.")
+		err = errors.New("url not set, Attach failed")
 		return nil, err
 	}
 
@@ -309,7 +309,7 @@ func (r *remoteRuntimeService) RemovePodSandbox(podSandBoxID string) error {
 	return nil
 }
 
-func (r *remoteRuntimeService) PodSandboxStatus(podSandBoxID string, verbose bool) (*runtimeapi.PodSandboxStatusResponse, error) {
+func (r *remoteRuntimeService) PodSandboxStatus(podSandBoxID string) (*runtimeapi.PodSandboxStatus, error) {
 	ctx, cancel := getContextWithTimeout(r.timeout)
 	defer cancel()
 
@@ -318,13 +318,11 @@ func (r *remoteRuntimeService) PodSandboxStatus(podSandBoxID string, verbose boo
 	})
 
 	if err != nil {
-		if verbose {
-			log.Printf("PodSandboxStatus from runtime service failed, podSandBoxID = %s\n", podSandBoxID)
-		}
+		log.Printf("PodSandboxStatus from runtime service failed, podSandBoxID = %s\n", podSandBoxID)
 		return nil, err
 	}
 
-	return resp, nil
+	return resp.Status, nil
 }
 
 func (r *remoteRuntimeService) ListPodSandbox(filter *runtimeapi.PodSandboxFilter) ([]*runtimeapi.PodSandbox, error) {
@@ -354,7 +352,7 @@ func (r *remoteRuntimeService) PortForward(req *runtimeapi.PortForwardRequest) (
 	}
 
 	if resp.Url == "" {
-		err = errors.New("Url not set, Exec failed.")
+		err = errors.New("url not set, Exec failed")
 		return nil, err
 	}
 
@@ -445,19 +443,17 @@ func (r *remoteRuntimeService) UpdateRuntimeConfig(runtimeConfig *runtimeapi.Run
 	return err
 }
 
-func (r *remoteRuntimeService) Status(verbose bool) (*runtimeapi.StatusResponse, error) {
+func (r *remoteRuntimeService) Status() (*runtimeapi.RuntimeStatus, error) {
 	ctx, cancel := getContextWithTimeout(r.timeout)
 	defer cancel()
 
 	resp, err := r.runtimeClient.Status(ctx, &runtimeapi.StatusRequest{})
 	if err != nil {
-		if verbose {
-			log.Println("Status from runtime service failed")
-		}
+		log.Println("Status from runtime service failed")
 		return nil, err
 	}
 
-	return resp, nil
+	return resp.Status, nil
 }
 
 // establishConnection tries to connect to the remote runtime.

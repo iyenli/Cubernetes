@@ -83,5 +83,3 @@ require (
 replace github.com/coreos/bbolt v1.3.4 => go.etcd.io/bbolt v1.3.4
 
 replace google.golang.org/grpc v1.40.0 => google.golang.org/grpc v1.26.0
-
-replace k8s.io/cri-api => ./third_party/k8s.io/cri-api

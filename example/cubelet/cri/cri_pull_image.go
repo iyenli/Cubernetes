@@ -1,4 +1,4 @@
-package cri
+package main
 
 // build: `go build -o build/pull_image Cubernetes/example/cubelet/cri`
 
