@@ -9,6 +9,7 @@ var testCase = []string{"test1", "pod-context"}
 
 func TestStorePod(t *testing.T) {
 	ctx := ETCDContext{client: newETCDClient()}
+	defer closeETCDClient(ctx.client)
 
 	res1, err1 := storePod(ctx, testCase[0], testCase[1])
 	assert.Equal(t, nil, err1)
@@ -18,6 +19,14 @@ func TestStorePod(t *testing.T) {
 	assert.Equal(t, nil, err2)
 	assert.Equal(t, 1, len(res2))
 	assert.Equal(t, res2[0], []byte(testCase[1]))
+}
+
+func TestHealthCheck(t *testing.T) {
+	ctx := ETCDContext{client: newETCDClient()}
+	defer closeETCDClient(ctx.client)
+
+	res := ETCDHealthCheck(ctx)
+	assert.Equal(t, true, res)
 }
 
 /*

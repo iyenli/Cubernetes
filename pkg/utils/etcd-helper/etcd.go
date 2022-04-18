@@ -5,6 +5,7 @@
 package etcd_helper
 
 import (
+	"context"
 	"fmt"
 	"go.etcd.io/etcd/clientv3"
 	"log"
@@ -44,15 +45,27 @@ func closeETCDClient(toClose *clientv3.Client) {
 	}(toClose)
 }
 
-//func newETCDHealthCheck() (func() error, error) {
-//	go wait.PollUntil(time.Second, func() (bool, error) {
-//		client, err := newETCD3Client(c.Transport)
-//		if err != nil {
-//			clientErrMsg.Store(err.Error())
-//			return false, nil
-//		}
-//		clientValue.Store(client)
-//		clientErrMsg.Store("")
-//		return true, nil
-//	}, wait.NeverStop)
-//}
+func ETCDHealthCheck(ctx ETCDContext) bool {
+	ticker := time.NewTicker(etcdTimeout)
+	health := make(chan bool)
+
+	go func() {
+		_, err := newETCDClient().KV.Get(context.TODO(), "HealthCheck")
+		if err != nil {
+			health <- false
+			return
+		}
+		health <- true
+		return
+	}()
+
+	for {
+		select {
+		case res := <-health:
+			return res
+		case <-ticker.C:
+			log.Println("ETCD Health check time out")
+			return false
+		}
+	}
+}
