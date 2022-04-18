@@ -15,11 +15,11 @@ func TestStorePod(t *testing.T) {
 	defer closeETCDClient(ctx.client)
 
 	for _, testCase := range testCases {
-		res1, err1 := storePod(ctx, testCase[0], testCase[1])
+		res1, err1 := storePod(&ctx, testCase[0], testCase[1])
 		assert.Equal(t, nil, err1)
 		assert.Equal(t, true, res1)
 
-		res2, err2 := getPods(ctx, testCase[0])
+		res2, err2 := getPods(&ctx, testCase[0])
 		assert.Equal(t, nil, err2)
 		assert.Equal(t, 1, len(res2))
 		assert.Equal(t, res2[0], []byte(testCase[1]))
@@ -30,7 +30,7 @@ func TestHealthCheck(t *testing.T) {
 	ctx := ETCDContext{client: newETCDClient()}
 	defer closeETCDClient(ctx.client)
 
-	res := ETCDHealthCheck(ctx)
+	res := ETCDHealthCheck(&ctx)
 	assert.Equal(t, true, res)
 }
 
@@ -39,29 +39,29 @@ func TestDeletePodAndAllPods(t *testing.T) {
 	defer closeETCDClient(ctx.client)
 
 	for _, testCase := range testCases {
-		res1, _ := storePod(ctx, testCase[0], testCase[1])
+		res1, _ := storePod(&ctx, testCase[0], testCase[1])
 		assert.Equal(t, true, res1)
 
-		res2, _ := getPods(ctx, testCase[0])
+		res2, _ := getPods(&ctx, testCase[0])
 		assert.Equal(t, res2[0], []byte(testCase[1]))
 	}
 
-	res3, _ := getAllPods(ctx)
+	res3, _ := getAllPods(&ctx)
 	assert.Equal(t, len(testCases), len(res3))
 
-	res3, _ = getPodsRange(ctx, "test1", "test3")
+	res3, _ = getPodsRange(&ctx, "test1", "test3")
 	assert.Equal(t, len(testCases)-1, len(res3))
 
-	res4, _ := deletePod(ctx, testCases[0][0])
+	res4, _ := deletePod(&ctx, testCases[0][0])
 	assert.Equal(t, true, res4)
 
-	res3, _ = getAllPods(ctx)
+	res3, _ = getAllPods(&ctx)
 	assert.Equal(t, len(testCases)-1, len(res3))
 
-	res5, _ := deletePod(ctx, "not-exist")
+	res5, _ := deletePod(&ctx, "not-exist")
 	assert.Equal(t, false, res5)
 
-	res3, _ = getAllPods(ctx)
+	res3, _ = getAllPods(&ctx)
 	assert.Equal(t, len(testCases)-1, len(res3))
 }
 
@@ -69,13 +69,13 @@ func TestWatcher(t *testing.T) {
 	ctx := ETCDContext{client: newETCDClient()}
 	defer closeETCDClient(ctx.client)
 
-	watcher := getPodWatcher(ctx, "test", false)
+	watcher := getPodWatcher(&ctx, "test", false)
 
 	go func() {
 		for _, testCase := range testCases {
-			_, _ = storePod(ctx, testCase[0], testCase[1])
+			_, _ = storePod(&ctx, testCase[0], testCase[1])
 		}
-		res, _ := getAllPods(ctx)
+		res, _ := getAllPods(&ctx)
 		assert.Equal(t, len(testCases), len(res))
 	}()
 

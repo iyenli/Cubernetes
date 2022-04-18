@@ -45,7 +45,7 @@ func closeETCDClient(toClose *clientv3.Client) {
 	}(toClose)
 }
 
-func ETCDHealthCheck(ctx ETCDContext) bool {
+func ETCDHealthCheck(ctx *ETCDContext) bool {
 	ticker := time.NewTicker(etcdTimeout)
 	health := make(chan bool)
 
