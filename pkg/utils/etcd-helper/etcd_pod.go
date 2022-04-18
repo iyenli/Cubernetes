@@ -2,6 +2,7 @@ package etcd_helper
 
 import (
 	"context"
+	"go.etcd.io/etcd/clientv3"
 	"log"
 )
 
@@ -27,7 +28,7 @@ func storePod(ctx ETCDContext, podName string, pod string) (bool, error) {
 func getPods(ctx ETCDContext, podName string) ([][]byte, error) {
 	key := podPrefix + podName
 
-	getResponse, err := ctx.client.KV.Get(context.TODO(), key)
+	getResponse, err := ctx.client.Get(context.TODO(), key, clientv3.WithPrefix())
 	if err != nil {
 		log.Printf("Get api object of pod failed, Key: %s \n", key)
 		return nil, err
@@ -44,13 +45,37 @@ func getAllPods(ctx ETCDContext) ([][]byte, error) {
 	return getPods(ctx, "")
 }
 
-func deletePod(ctx ETCDContext, podName string) bool {
-	key := podPrefix + podName
-	_, err := ctx.client.KV.Delete(context.TODO(), key)
+func getPodsRange(ctx ETCDContext, podNameStart string, podNameEnd string) ([][]byte, error) {
+	getResponse, err := ctx.client.Get(context.TODO(), podPrefix+podNameStart, clientv3.WithRange(podPrefix+podNameEnd))
 	if err != nil {
-		log.Printf("Delete api object of pod failed, Key: %s \n", key)
-		return false
+		log.Printf("Get api object of pod in range failed, Key: %s - %s \n", podNameStart, podNameEnd)
+		return nil, err
 	}
 
-	return true
+	var res [][]byte
+	for _, resp := range getResponse.Kvs {
+		res = append(res, resp.Value)
+	}
+	return res, nil
+}
+
+func deletePod(ctx ETCDContext, podName string) (bool, error) {
+	key := podPrefix + podName
+	deleteResp, err := ctx.client.KV.Delete(context.TODO(), key)
+	if err != nil {
+		log.Printf("Delete api object of pod failed, Key: %s \n", key)
+		return false, err
+	}
+
+	return deleteResp.Deleted > 0, nil
+}
+
+func getPodWatcher(ctx ETCDContext, podName string, accurate bool) (res clientv3.WatchChan) {
+	key := podPrefix + podName
+	if accurate {
+		res = ctx.client.Watcher.Watch(context.TODO(), key)
+	} else {
+		res = ctx.client.Watcher.Watch(context.TODO(), key, clientv3.WithPrefix())
+	}
+	return
 }
