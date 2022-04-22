@@ -20,6 +20,7 @@ type Container struct {
 	Name         string               `json:"name"`
 	Image        string               `json:"image"`
 	Command      []string             `json:"command,omitempty"`
+	Args         []string             `json:"args,omitempty"`
 	Resources    ResourceRequirements `json:"resources,omitempty"`
 	VolumeMounts []VolumeMount        `json:"volumeMounts,omitempty"`
 	Ports        []ContainerPort      `json:"ports,omitempty"`
