@@ -3,8 +3,9 @@ package object
 type Pod struct {
 	TypeMeta   `json:",inline"`
 	ObjectMeta `json:"metadata"`
-	Spec       PodSpec   `json:"spec"`
-	Status     PodStatus `json:"status,omitempty"`
+	Spec       PodSpec `json:"spec"`
+	// use pointer or else omitempty is disabled
+	Status *PodStatus `json:"status,omitempty"`
 }
 
 type PodSpec struct {
@@ -17,12 +18,13 @@ type PodStatus struct {
 }
 
 type Container struct {
-	Name         string               `json:"name"`
-	Image        string               `json:"image"`
-	Command      []string             `json:"command,omitempty"`
-	Resources    ResourceRequirements `json:"resources,omitempty"`
-	VolumeMounts []VolumeMount        `json:"volumeMounts,omitempty"`
-	Ports        []ContainerPort      `json:"ports,omitempty"`
+	Name    string   `json:"name"`
+	Image   string   `json:"image"`
+	Command []string `json:"command,omitempty"`
+	// use pointer or else omitempty is disabled
+	Resources    *ResourceRequirements `json:"resources,omitempty"`
+	VolumeMounts []VolumeMount         `json:"volumeMounts,omitempty"`
+	Ports        []ContainerPort       `json:"ports,omitempty"`
 }
 
 type ResourceRequirements struct {
