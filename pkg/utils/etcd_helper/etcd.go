@@ -5,6 +5,7 @@
 package etcd_helper
 
 import (
+	cubeconfig "Cubernetes/config"
 	"context"
 	"fmt"
 	"go.etcd.io/etcd/clientv3"
@@ -16,14 +17,11 @@ type ETCDContext struct {
 	Client *clientv3.Client
 }
 
-const etcdTimeout = 3 * time.Second
-const etcdAddr = "127.0.0.1:2379"
-
 func NewETCDClient() *clientv3.Client {
 	log.Println("New etcd Client")
 	client, err := clientv3.New(clientv3.Config{
-		Endpoints:   []string{etcdAddr},
-		DialTimeout: etcdTimeout,
+		Endpoints:   []string{cubeconfig.ETCDAddr},
+		DialTimeout: cubeconfig.ETCDTimeout,
 	})
 
 	if err != nil {
@@ -46,7 +44,7 @@ func CloseETCDClient(toClose *clientv3.Client) {
 }
 
 func ETCDHealthCheck(ctx *ETCDContext) bool {
-	ticker := time.NewTicker(etcdTimeout)
+	ticker := time.NewTicker(cubeconfig.ETCDTimeout)
 	health := make(chan bool)
 
 	go func() {

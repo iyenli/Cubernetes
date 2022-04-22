@@ -1,6 +1,7 @@
 package httpserver
 
 import (
+	cubeconfig "Cubernetes/config"
 	"Cubernetes/pkg/utils/etcd_helper"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -8,7 +9,6 @@ import (
 	"strconv"
 )
 
-var port = 8080
 var etcd etcd_helper.ETCDContext
 
 func Run() {
@@ -31,7 +31,7 @@ func Run() {
 		}
 	}
 
-	err := router.Run(":" + strconv.Itoa(port))
+	err := router.Run(":" + strconv.Itoa(cubeconfig.APIServerPort))
 	if err != nil {
 		log.Fatal(err, "failure when running api http server")
 	}
