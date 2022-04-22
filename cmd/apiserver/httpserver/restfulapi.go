@@ -14,8 +14,8 @@ type Handler struct {
 }
 
 var handlerList = [...]Handler{
-	{http.MethodGet, "/api/pod/:name", getPod},
-	{http.MethodPost, "/api/pod", postPod},
+	{http.MethodGet, "/apis/pod/:name", getPod},
+	{http.MethodPost, "/apis/pod", postPod},
 }
 
 func getPod(ctx *gin.Context) {
