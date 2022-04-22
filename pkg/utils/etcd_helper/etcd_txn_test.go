@@ -5,7 +5,7 @@ package etcd_helper
 //	ctx := ETCDContext{client: newETCDClient()}
 //	defer closeETCDClient(ctx.client)
 //
-//	txnResponse, err := createTxn().If(
+//	txnResponse, err := CreateTxn().If(
 //		clientv3.Compare(clientv3.Value("test1"), "<", "test2")).
 //		Then(clientv3.OpPut("test1", "test1")).
 //		Else(clientv3.OpPut("test2", "test2")).
