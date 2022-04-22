@@ -1,25 +1,32 @@
 package httpserver
 
 import (
+	"Cubernetes/pkg/utils/etcd_helper"
 	"github.com/gin-gonic/gin"
 	"log"
+	"net/http"
 	"strconv"
 )
 
 var port = 8080
+var etcd etcd_helper.ETCDContext
 
 func Run() {
+	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
+	etcd = etcd_helper.ETCDContext{Client: etcd_helper.NewETCDClient()}
+	defer etcd_helper.CloseETCDClient(etcd.Client)
+
 	for _, handler := range handlerList {
-		switch handler.RequestType {
-		case HTTP_GET:
+		switch handler.Method {
+		case http.MethodGet:
 			router.GET(handler.Path, handler.HandleFunc)
-		case HTTP_POST:
+		case http.MethodPost:
 			router.POST(handler.Path, handler.HandleFunc)
-		case HTTP_PUT:
+		case http.MethodPut:
 			router.PUT(handler.Path, handler.HandleFunc)
-		case HTTP_DELETE:
+		case http.MethodDelete:
 			router.DELETE(handler.Path, handler.HandleFunc)
 		}
 	}
