@@ -10,7 +10,7 @@ const podPrefix = "/Cubernetes/apis/pods/"
 
 func dummy(...any) string { return "" }
 
-func storePod(ctx *ETCDContext, podName string, pod string) (bool, error) {
+func StorePod(ctx *ETCDContext, podName string, pod string) (bool, error) {
 	key := podPrefix + podName
 
 	putResponse, err := ctx.client.KV.Put(context.TODO(), key, pod)
@@ -24,8 +24,8 @@ func storePod(ctx *ETCDContext, podName string, pod string) (bool, error) {
 	return true, nil
 }
 
-/* podName can be accurate or prefix */
-func getPods(ctx *ETCDContext, podName string) ([][]byte, error) {
+// GetPods /* podName can be accurate or prefix */
+func GetPods(ctx *ETCDContext, podName string) ([][]byte, error) {
 	key := podPrefix + podName
 
 	getResponse, err := ctx.client.Get(context.TODO(), key, clientv3.WithPrefix())
@@ -41,11 +41,11 @@ func getPods(ctx *ETCDContext, podName string) ([][]byte, error) {
 	return res, nil
 }
 
-func getAllPods(ctx *ETCDContext) ([][]byte, error) {
-	return getPods(ctx, "")
+func GetAllPods(ctx *ETCDContext) ([][]byte, error) {
+	return GetPods(ctx, "")
 }
 
-func getPodsRange(ctx *ETCDContext, podNameStart string, podNameEnd string) ([][]byte, error) {
+func GetPodsRange(ctx *ETCDContext, podNameStart string, podNameEnd string) ([][]byte, error) {
 	getResponse, err := ctx.client.Get(context.TODO(), podPrefix+podNameStart, clientv3.WithRange(podPrefix+podNameEnd))
 	if err != nil {
 		log.Printf("Get api object of pod in range failed, Key: %s - %s \n", podNameStart, podNameEnd)
@@ -59,7 +59,7 @@ func getPodsRange(ctx *ETCDContext, podNameStart string, podNameEnd string) ([][
 	return res, nil
 }
 
-func deletePod(ctx *ETCDContext, podName string) (bool, error) {
+func DeletePod(ctx *ETCDContext, podName string) (bool, error) {
 	key := podPrefix + podName
 	deleteResp, err := ctx.client.KV.Delete(context.TODO(), key)
 	if err != nil {
@@ -70,7 +70,7 @@ func deletePod(ctx *ETCDContext, podName string) (bool, error) {
 	return deleteResp.Deleted > 0, nil
 }
 
-func getPodWatcher(ctx *ETCDContext, podName string, accurate bool) (res clientv3.WatchChan) {
+func GetPodWatcher(ctx *ETCDContext, podName string, accurate bool) (res clientv3.WatchChan) {
 	key := podPrefix + podName
 	if accurate {
 		res = ctx.client.Watcher.Watch(context.TODO(), key)
