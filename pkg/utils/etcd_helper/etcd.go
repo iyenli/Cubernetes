@@ -1,5 +1,5 @@
 /*
-	create etcd client and destroy
+	create etcd Client and destroy
 */
 
 package etcd_helper
@@ -13,14 +13,14 @@ import (
 )
 
 type ETCDContext struct {
-	client *clientv3.Client
+	Client *clientv3.Client
 }
 
 const etcdTimeout = 3 * time.Second
 const etcdAddr = "127.0.0.1:2379"
 
-func newETCDClient() *clientv3.Client {
-	log.Println("New etcd client")
+func NewETCDClient() *clientv3.Client {
+	log.Println("New etcd Client")
 	client, err := clientv3.New(clientv3.Config{
 		Endpoints:   []string{etcdAddr},
 		DialTimeout: etcdTimeout,
@@ -34,13 +34,13 @@ func newETCDClient() *clientv3.Client {
 	return client
 }
 
-func closeETCDClient(toClose *clientv3.Client) {
-	log.Println("Close etcd client")
+func CloseETCDClient(toClose *clientv3.Client) {
+	log.Println("Close etcd Client")
 
 	defer func(toClose *clientv3.Client) {
 		err := toClose.Close()
 		if err != nil {
-			log.Panicln("Error: close etcd client failed")
+			log.Panicln("Error: close etcd Client failed")
 		}
 	}(toClose)
 }
@@ -50,7 +50,7 @@ func ETCDHealthCheck(ctx *ETCDContext) bool {
 	health := make(chan bool)
 
 	go func() {
-		_, err := newETCDClient().KV.Get(context.TODO(), "HealthCheck")
+		_, err := NewETCDClient().KV.Get(context.TODO(), "HealthCheck")
 		if err != nil {
 			health <- false
 			return

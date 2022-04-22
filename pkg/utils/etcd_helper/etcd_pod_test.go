@@ -11,8 +11,8 @@ var testCases = [][]string{{"test1", "pod-context"},
 	{"test3", "pod-context"}}
 
 func TestStorePod(t *testing.T) {
-	ctx := ETCDContext{client: newETCDClient()}
-	defer closeETCDClient(ctx.client)
+	ctx := ETCDContext{Client: NewETCDClient()}
+	defer CloseETCDClient(ctx.Client)
 
 	for _, testCase := range testCases {
 		res1, err1 := StorePod(&ctx, testCase[0], testCase[1])
@@ -27,16 +27,16 @@ func TestStorePod(t *testing.T) {
 }
 
 func TestHealthCheck(t *testing.T) {
-	ctx := ETCDContext{client: newETCDClient()}
-	defer closeETCDClient(ctx.client)
+	ctx := ETCDContext{Client: NewETCDClient()}
+	defer CloseETCDClient(ctx.Client)
 
 	res := ETCDHealthCheck(&ctx)
 	assert.Equal(t, true, res)
 }
 
 func TestDeletePodAndAllPods(t *testing.T) {
-	ctx := ETCDContext{client: newETCDClient()}
-	defer closeETCDClient(ctx.client)
+	ctx := ETCDContext{Client: NewETCDClient()}
+	defer CloseETCDClient(ctx.Client)
 
 	for _, testCase := range testCases {
 		res1, _ := StorePod(&ctx, testCase[0], testCase[1])
@@ -66,8 +66,8 @@ func TestDeletePodAndAllPods(t *testing.T) {
 }
 
 func TestWatcher(t *testing.T) {
-	ctx := ETCDContext{client: newETCDClient()}
-	defer closeETCDClient(ctx.client)
+	ctx := ETCDContext{Client: NewETCDClient()}
+	defer CloseETCDClient(ctx.Client)
 
 	watcher := GetPodWatcher(&ctx, "test", false)
 
@@ -116,14 +116,14 @@ func TestWatcher(t *testing.T) {
 //		}
 //	}()
 //
-//	client, err := clientv3.New(clientv3.Config{
+//	Client, err := clientv3.New(clientv3.Config{
 //		Endpoints:   e.Server.Cluster().ClientURLs(),
 //		DialTimeout: 10 * time.Second,
 //	})
 //	if err != nil {
 //		t.Fatal(err)
 //	}
-//	return client
+//	return Client
 //}
 //
 //func getAvailablePorts(count int) ([]int, error) {

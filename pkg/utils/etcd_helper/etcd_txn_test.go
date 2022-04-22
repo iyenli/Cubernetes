@@ -2,8 +2,8 @@ package etcd_helper
 
 // FIX
 //func TestCreateTxn(t *testing.T) {
-//	ctx := ETCDContext{client: newETCDClient()}
-//	defer closeETCDClient(ctx.client)
+//	ctx := ETCDContext{Client: NewETCDClient()}
+//	defer CloseETCDClient(ctx.Client)
 //
 //	txnResponse, err := CreateTxn().If(
 //		clientv3.Compare(clientv3.Value("test1"), "<", "test2")).
@@ -16,7 +16,7 @@ package etcd_helper
 //		return
 //	}
 //	assert.Equal(t, true, txnResponse.Succeeded)
-//	allPods, err := ctx.client.KV.Get(context.TODO(), "test1")
+//	allPods, err := ctx.Client.KV.Get(context.TODO(), "test1")
 //	if err != nil {
 //		log.Panicln("Error: get all pod error")
 //		return
