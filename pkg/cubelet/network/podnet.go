@@ -33,11 +33,8 @@ func ConstructPodPortMapping(pod *object.Pod, podIP net.IP) *PodPortMapping {
 }
 
 func GetPodIP(nsenterPath, netnsPath, interfaceName string) (net.IP, error) {
+	// Only support IPv4 for simplicity
 	ip, err := getOnePodIP(nsenterPath, netnsPath, interfaceName, "-4")
-	if err != nil {
-		// Fall back to IPv6 address if no IPv4 address is present
-		ip, err = getOnePodIP(nsenterPath, netnsPath, interfaceName, "-6")
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -59,10 +56,12 @@ func getOnePodIP(nsenterPath, netnsPath, interfaceName, addrType string) (net.IP
 	if len(lines) < 1 {
 		return nil, fmt.Errorf("Unexpected command output %s", output)
 	}
+
 	fields := strings.Fields(lines[0])
 	if len(fields) < 4 {
 		return nil, fmt.Errorf("Unexpected address output %s ", lines[0])
 	}
+
 	ip, _, err := net.ParseCIDR(fields[3])
 	if err != nil {
 		return nil, fmt.Errorf("CNI failed to parse ip from output %s due to %v", output, err)

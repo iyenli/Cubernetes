@@ -42,12 +42,12 @@ type NamespaceGetter interface {
 	// GetNetNS returns network namespace information for the given containerID.
 	// Runtimes should *never* return an empty namespace and nil error for
 	// a container; if error is nil then the namespace string must be valid.
-	GetNetNS(containerID container.ContainerID) (string, error)
+	GetNetNS(containerID string) (string, error)
 }
 
 type PortMappingGetter interface {
 	// GetPodPortMappings returns sandbox port mappings information.
-	GetPodPortMappings(containerID container.ContainerID) ([]*PortMapping, error)
+	GetPodPortMappings(containerID string) ([]*PortMapping, error)
 }
 
 // CniNetworkPlugin support 2 network, one of them is lo
@@ -108,7 +108,7 @@ type CniNetworkPluginInterface interface {
 	// SetUpPod is the method called after the infra container of
 	// the pod has been created but before the other containers of the
 	// pod are launched.
-	SetUpPod(namespace string, name string, podSandboxID container.ContainerID, annotations map[string]string) error
+	SetUpPod(namespace string, name string, podSandboxID container.ContainerID) error
 
 	// TearDownPod is the method called before a pod's infra container will be deleted
 	TearDownPod(namespace string, name string, podSandboxID container.ContainerID) error

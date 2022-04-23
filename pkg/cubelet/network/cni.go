@@ -1,3 +1,15 @@
+/*
+	CNI Interface:
+	type CNI interface {
+		AddNetworkList(net *NetworkConfigList, rt *RuntimeConf) (types.Result, error)
+		DelNetworkList(net *NetworkConfigList, rt *RuntimeConf) error
+
+		AddNetwork(net *NetworkConfig, rt *RuntimeConf) (types.Result, error)
+		DelNetwork(net *NetworkConfig, rt *RuntimeConf) error
+	}
+
+	This file wrap up cni interfaces.
+*/
 package network
 
 import (
@@ -14,11 +26,10 @@ import (
 	"strings"
 )
 
-// ProbeNetworkPlugins use "", "" as paras right now.
+// ProbeNetworkPlugins use ["", ""] as paras would be replaced by default value
 // They will be replaced with "/etc/cni/net.d" and "/opt/cni/bin"
 func ProbeNetworkPlugins(pluginDir, binDir string) CniNetworkPluginInterface {
 	if binDir == "" {
-		// user should set their plugins here
 		binDir = network.DefaultCNIDir
 	}
 
@@ -154,6 +165,7 @@ func (plugin *CniNetworkPlugin) Status() error {
 	return plugin.checkInitialized()
 }
 
+// podSandboxID: Pod's pause container ID
 func (plugin *CniNetworkPlugin) addToNetwork(network *cniNetwork, podName string, podNamespace string,
 	podSandboxID container.ContainerID, podNetnsPath string) (types.Result, error) {
 	rt, err := plugin.buildCNIRuntimeConf(podName, podNamespace, podSandboxID, podNetnsPath)
@@ -208,7 +220,7 @@ func (plugin *CniNetworkPlugin) buildCNIRuntimeConf(podName string, podNs string
 
 	// port mappings are a cni capability-based args, rather than parameters
 	// to a specific plugin
-	portMappings, err := plugin.host.GetPodPortMappings(podSandboxID)
+	portMappings, err := plugin.host.GetPodPortMappings(podSandboxID.ID)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve port mappings: %v", err)
 	}
@@ -220,7 +232,7 @@ func (plugin *CniNetworkPlugin) buildCNIRuntimeConf(podName string, podNs string
 		portMappingsParam = append(portMappingsParam, CniPortMapping{
 			HostPort:      p.HostPort,
 			ContainerPort: p.ContainerPort,
-			Protocol:      strings.ToLower(string(p.Protocol)),
+			Protocol:      strings.ToLower(p.Protocol),
 			HostIP:        p.HostIP,
 		})
 	}
@@ -245,16 +257,15 @@ func (plugin *CniNetworkPlugin) Init(host Host, nonMasqueradeCIDR string, mtu in
 	return nil
 }
 
-func (plugin *CniNetworkPlugin) SetUpPod(namespace string, name string, id container.ContainerID, annotations map[string]string) error {
+func (plugin *CniNetworkPlugin) SetUpPod(namespace string, name string, id container.ContainerID) error {
 	if err := plugin.checkInitialized(); err != nil {
 		return err
 	}
-	netnsPath, err := plugin.host.GetNetNS(id)
+	netnsPath, err := plugin.host.GetNetNS(id.ID)
 	if err != nil {
 		return fmt.Errorf("CNI failed to retrieve network namespace path: %v", err)
 	}
 
-	// Windows doesn't have loNetwork. It comes only with Linux
 	if plugin.loNetwork != nil {
 		if _, err = plugin.addToNetwork(plugin.loNetwork, name, namespace, id, netnsPath); err != nil {
 			log.Fatalf("Error while adding to cni lo network: %s", err)
@@ -277,7 +288,7 @@ func (plugin *CniNetworkPlugin) TearDownPod(namespace string, name string, id co
 	}
 
 	// Lack of namespace should not be fatal on teardown
-	netnsPath, err := plugin.host.GetNetNS(id)
+	netnsPath, err := plugin.host.GetNetNS(id.ID)
 	if err != nil {
 		log.Printf("CNI failed to retrieve network namespace path: %v", err)
 	}
@@ -290,6 +301,5 @@ func (plugin *CniNetworkPlugin) Capabilities() int32 {
 }
 
 func (plugin *CniNetworkPlugin) Event(name string, details map[string]interface{}) {
-	//TODO implement me
 	panic("unsupported by now:)")
 }

@@ -33,7 +33,7 @@ func getLoNetwork(binDir string) *cniNetwork {
 }
 
 func (plugin *CniNetworkPlugin) GetPodNetworkStatus(namespace string, name string, id container.ContainerID) (*PodNetworkStatus, error) {
-	netnsPath, err := plugin.host.GetNetNS(id)
+	netnsPath, err := plugin.host.GetNetNS(id.ID)
 	if err != nil {
 		return nil, fmt.Errorf("CNI failed to retrieve network namespace path: %v", err)
 	}
