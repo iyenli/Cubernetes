@@ -1,7 +1,9 @@
 package network
 
 import (
+	"Cubernetes/pkg/cubelet/container"
 	network "Cubernetes/pkg/cubelet/network/options"
+	"context"
 	"errors"
 	"fmt"
 	"github.com/containernetworking/cni/libcni"
@@ -152,7 +154,8 @@ func (plugin *CniNetworkPlugin) Status() error {
 	return plugin.checkInitialized()
 }
 
-func (plugin *CniNetworkPlugin) addToNetwork(network *cniNetwork, podName string, podNamespace string, podSandboxID kubecontainer.ContainerID, podNetnsPath string) (types.Result, error) {
+func (plugin *CniNetworkPlugin) addToNetwork(network *cniNetwork, podName string, podNamespace string,
+	podSandboxID container.ContainerID, podNetnsPath string) (types.Result, error) {
 	rt, err := plugin.buildCNIRuntimeConf(podName, podNamespace, podSandboxID, podNetnsPath)
 	if err != nil {
 		log.Fatalf("Error adding network when building cni runtime conf: %v", err)
@@ -161,7 +164,7 @@ func (plugin *CniNetworkPlugin) addToNetwork(network *cniNetwork, podName string
 
 	netConf, cniNet := network.NetworkConfig, network.CNIConfig
 	log.Printf("About to add CNI network %v (type=%v)", netConf.Name, netConf.Plugins[0].Network.Type)
-	res, err := cniNet.AddNetworkList(netConf, rt)
+	res, err := cniNet.AddNetworkList(context.TODO(), netConf, rt)
 	if err != nil {
 		log.Fatalf("Error adding network: %v", err)
 		return nil, err
@@ -170,7 +173,7 @@ func (plugin *CniNetworkPlugin) addToNetwork(network *cniNetwork, podName string
 	return res, nil
 }
 
-func (plugin *CniNetworkPlugin) deleteFromNetwork(network *cniNetwork, podName string, podNamespace string, podSandboxID kubecontainer.ContainerID, podNetnsPath string) error {
+func (plugin *CniNetworkPlugin) deleteFromNetwork(network *cniNetwork, podName string, podNamespace string, podSandboxID container.ContainerID, podNetnsPath string) error {
 	rt, err := plugin.buildCNIRuntimeConf(podName, podNamespace, podSandboxID, podNetnsPath)
 	if err != nil {
 		log.Fatalf("Error deleting network when building cni runtime conf: %v", err)
@@ -179,7 +182,7 @@ func (plugin *CniNetworkPlugin) deleteFromNetwork(network *cniNetwork, podName s
 
 	netConf, cniNet := network.NetworkConfig, network.CNIConfig
 	log.Printf("About to del CNI network %v (type=%v)", netConf.Name, netConf.Plugins[0].Network.Type)
-	err = cniNet.DelNetworkList(netConf, rt)
+	err = cniNet.DelNetworkList(context.TODO(), netConf, rt)
 	if err != nil {
 		log.Fatalf("Error deleting network: %v", err)
 		return err
@@ -187,7 +190,7 @@ func (plugin *CniNetworkPlugin) deleteFromNetwork(network *cniNetwork, podName s
 	return nil
 }
 
-func (plugin *CniNetworkPlugin) buildCNIRuntimeConf(podName string, podNs string, podSandboxID string, podNetnsPath string) (*libcni.RuntimeConf, error) {
+func (plugin *CniNetworkPlugin) buildCNIRuntimeConf(podName string, podNs string, podSandboxID container.ContainerID, podNetnsPath string) (*libcni.RuntimeConf, error) {
 	log.Printf("Got netns path %v", podNetnsPath)
 	log.Printf("Using podns path %v", podNs)
 
@@ -197,15 +200,15 @@ func (plugin *CniNetworkPlugin) buildCNIRuntimeConf(podName string, podNs string
 		IfName:      network.DefaultInterfaceName,
 		Args: [][2]string{
 			{"IgnoreUnknown", "1"},
-			{"K8S_POD_NAMESPACE", podNs},
-			{"K8S_POD_NAME", podName},
-			{"K8S_POD_INFRA_CONTAINER_ID", podSandboxID.ID},
+			{"POD_NAMESPACE", podNs},
+			{"POD_NAME", podName},
+			{"POD_INFRA_CONTAINER_ID", podSandboxID.ID},
 		},
 	}
 
 	// port mappings are a cni capability-based args, rather than parameters
 	// to a specific plugin
-	portMappings, err := plugin.host.GetPodPortMappings(podSandboxID.ID)
+	portMappings, err := plugin.host.GetPodPortMappings(podSandboxID)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve port mappings: %v", err)
 	}
@@ -242,16 +245,11 @@ func (plugin *CniNetworkPlugin) Init(host Host, nonMasqueradeCIDR string, mtu in
 	return nil
 }
 
-func (plugin *CniNetworkPlugin) Event(name string, details map[string]interface{}) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (plugin *CniNetworkPlugin) SetUpPod(namespace string, name string, podSandboxID string, annotations map[string]string) error {
+func (plugin *CniNetworkPlugin) SetUpPod(namespace string, name string, id container.ContainerID, annotations map[string]string) error {
 	if err := plugin.checkInitialized(); err != nil {
 		return err
 	}
-	netnsPath, err := plugin.host.GetNetNS(podSandboxID)
+	netnsPath, err := plugin.host.GetNetNS(id)
 	if err != nil {
 		return fmt.Errorf("CNI failed to retrieve network namespace path: %v", err)
 	}
@@ -273,13 +271,13 @@ func (plugin *CniNetworkPlugin) SetUpPod(namespace string, name string, podSandb
 	return err
 }
 
-func (plugin *CniNetworkPlugin) TearDownPod(namespace string, name string, podSandboxID string) error {
+func (plugin *CniNetworkPlugin) TearDownPod(namespace string, name string, id container.ContainerID) error {
 	if err := plugin.checkInitialized(); err != nil {
 		return err
 	}
 
 	// Lack of namespace should not be fatal on teardown
-	netnsPath, err := plugin.host.GetNetNS(podSandboxID)
+	netnsPath, err := plugin.host.GetNetNS(id)
 	if err != nil {
 		log.Printf("CNI failed to retrieve network namespace path: %v", err)
 	}
@@ -288,11 +286,10 @@ func (plugin *CniNetworkPlugin) TearDownPod(namespace string, name string, podSa
 }
 
 func (plugin *CniNetworkPlugin) Capabilities() int32 {
-	//TODO implement me
-	panic("implement me")
+	panic("unsupported by now:)")
 }
 
-func (plugin *CniNetworkPlugin) GetPodNetworkStatus(namespace string, name string, podSandboxID int) (int, error) {
+func (plugin *CniNetworkPlugin) Event(name string, details map[string]interface{}) {
 	//TODO implement me
-	panic("implement me")
+	panic("unsupported by now:)")
 }

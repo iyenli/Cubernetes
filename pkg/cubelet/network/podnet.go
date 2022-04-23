@@ -2,7 +2,10 @@ package network
 
 import (
 	"Cubernetes/pkg/object"
+	"fmt"
 	"net"
+	osexec "os/exec"
+	"strings"
 )
 
 // ConstructPodPortMapping creates a PodPortMapping from the ports specified in the pod's
@@ -27,4 +30,43 @@ func ConstructPodPortMapping(pod *object.Pod, podIP net.IP) *PodPortMapping {
 		PortMappings: portMappings,
 		IP:           podIP,
 	}
+}
+
+func GetPodIP(nsenterPath, netnsPath, interfaceName string) (net.IP, error) {
+	ip, err := getOnePodIP(nsenterPath, netnsPath, interfaceName, "-4")
+	if err != nil {
+		// Fall back to IPv6 address if no IPv4 address is present
+		ip, err = getOnePodIP(nsenterPath, netnsPath, interfaceName, "-6")
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return ip, nil
+}
+
+func getOnePodIP(nsenterPath, netnsPath, interfaceName, addrType string) (net.IP, error) {
+	// Try to retrieve ip inside container network namespace
+	cmd := osexec.Command(nsenterPath, fmt.Sprintf("--net=%s", netnsPath), "-F", "--",
+		"ip", "-o", addrType, "addr", "show", "dev", interfaceName, "scope", "global")
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("Unexpected command output %s with error: %v", output, err)
+	}
+
+	lines := strings.Split(string(output), "\n")
+	if len(lines) < 1 {
+		return nil, fmt.Errorf("Unexpected command output %s", output)
+	}
+	fields := strings.Fields(lines[0])
+	if len(fields) < 4 {
+		return nil, fmt.Errorf("Unexpected address output %s ", lines[0])
+	}
+	ip, _, err := net.ParseCIDR(fields[3])
+	if err != nil {
+		return nil, fmt.Errorf("CNI failed to parse ip from output %s due to %v", output, err)
+	}
+
+	return ip, nil
 }

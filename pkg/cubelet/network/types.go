@@ -1,6 +1,8 @@
 package network
 
 import (
+	"Cubernetes/pkg/cubelet/container"
+	"Cubernetes/pkg/object"
 	"github.com/containernetworking/cni/libcni"
 	"net"
 	"sync"
@@ -40,12 +42,12 @@ type NamespaceGetter interface {
 	// GetNetNS returns network namespace information for the given containerID.
 	// Runtimes should *never* return an empty namespace and nil error for
 	// a container; if error is nil then the namespace string must be valid.
-	GetNetNS(containerID string) (string, error)
+	GetNetNS(containerID container.ContainerID) (string, error)
 }
 
 type PortMappingGetter interface {
 	// GetPodPortMappings returns sandbox port mappings information.
-	GetPodPortMappings(containerID string) ([]*PortMapping, error)
+	GetPodPortMappings(containerID container.ContainerID) ([]*PortMapping, error)
 }
 
 // CniNetworkPlugin support 2 network, one of them is lo
@@ -76,15 +78,28 @@ type CniPortMapping struct {
 	HostIP        string `json:"hostIP"`
 }
 
+// PodNetworkStatus stores the network status of a pod (currently just the primary IP address)
+// This struct represents version "v1beta1"
+type PodNetworkStatus struct {
+	object.TypeMeta `json:",inline"`
+
+	// IP is the primary ipv4/ipv6 address of the pod. Among other things it is the address that -
+	//   - kube expects to be reachable across the cluster
+	//   - service endpoints are constructed with
+	//   - will be reported in the PodStatus.PodIP field (will override the IP reported by docker)
+	IP net.IP `json:"ip" description:"Primary IP address of the pod"`
+}
+
 // CniNetworkPluginInterface NetworkPlugin Plugin is an interface to network plugins for the kubelet
 type CniNetworkPluginInterface interface {
-	// Init initializes the plugin. This will be called exactly once
+	// Init initializes the plugin.  This will be called exactly once
 	// before any other methods are called.
 	Init(host Host, nonMasqueradeCIDR string, mtu int) error
 
 	Event(name string, details map[string]interface{})
 
-	// Name returns the plugin's name.
+	// Name returns the plugin's name. This will be used when searching
+	// for a plugin by name, e.g.
 	Name() string
 
 	// Capabilities Returns a set of NET_PLUGIN_CAPABILITY_*
@@ -93,13 +108,13 @@ type CniNetworkPluginInterface interface {
 	// SetUpPod is the method called after the infra container of
 	// the pod has been created but before the other containers of the
 	// pod are launched.
-	SetUpPod(namespace string, name string, podSandboxID string, annotations map[string]string) error
+	SetUpPod(namespace string, name string, podSandboxID container.ContainerID, annotations map[string]string) error
 
 	// TearDownPod is the method called before a pod's infra container will be deleted
-	TearDownPod(namespace string, name string, podSandboxID int) error
+	TearDownPod(namespace string, name string, podSandboxID container.ContainerID) error
 
 	// GetPodNetworkStatus is the method called to obtain the ipv4 or ipv6 addresses of the container
-	GetPodNetworkStatus(namespace string, name string, podSandboxID int) (int, error)
+	GetPodNetworkStatus(namespace string, name string, podSandboxID container.ContainerID) (*PodNetworkStatus, error)
 
 	// Status returns error if the network plugin is in error state
 	Status() error
