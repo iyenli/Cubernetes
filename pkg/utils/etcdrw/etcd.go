@@ -13,8 +13,6 @@ var client *clientv3.Client
 func Init() {
 	log.Println("initializing etcd client...")
 
-	watchMap = make(map[string]context.CancelFunc)
-
 	var err error
 	client, err = clientv3.New(clientv3.Config{
 		Endpoints:   []string{cubeconfig.ETCDAddr},
@@ -22,7 +20,7 @@ func Init() {
 	})
 
 	if err != nil {
-		log.Fatalf("fail to initialize etcd client, err:%v\n", err)
+		log.Fatalf("fail to initialize etcd client, err: %v\n", err)
 		return
 	}
 
