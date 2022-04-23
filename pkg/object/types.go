@@ -48,4 +48,5 @@ type ContainerPort struct {
 	HostPort      int32  `json:"hostPort"`
 	ContainerPort int32  `json:"containerPort"`
 	Protocol      string `json:"protocol"`
+	HostIP        string `json:"hostIP"`
 }
