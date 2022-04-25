@@ -12,7 +12,7 @@ type Runtime interface {
 	Type() string
 	GetPods() ([]*Pod, error)
 	GetPodStatus(uid, name, namespace string)
-	SyncPod(pod *object.Pod, podStatus *PodStatus)
+	SyncPod(pod *object.Pod, podStatus *PodStatus) error
 }
 
 type ContainerID struct {
@@ -58,7 +58,7 @@ type PodStatus struct {
 	Namespace         string
 	IPs               []string
 	ContainerStatuses []*ContainerStatus
-	SandboxStatuses   []*runtimeapi.PodSandboxStatus
+	SandboxStatus     *runtimeapi.PodSandboxStatus
 }
 
 // Annotation represents an annotation.

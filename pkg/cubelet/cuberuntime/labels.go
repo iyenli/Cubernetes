@@ -18,3 +18,16 @@ func newContainerLabels(container *object.Container, pod *object.Pod) map[string
 
 	return labels
 }
+
+func newPodLabels(pod *object.Pod) map[string]string {
+	labels := map[string]string{}
+
+	for k, v := range pod.Labels {
+		labels[k] = v
+	}
+	labels[CubernetesPodNameLabel] = pod.Name
+	labels[CubernetesPodNameSpaceLabel] = pod.Namespace
+	labels[CubernetesPodUIDLabel] = pod.UID
+
+	return labels
+}
