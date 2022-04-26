@@ -2,104 +2,87 @@ package cuberuntime
 
 import (
 	"Cubernetes/pkg/object"
-	"fmt"
 	"log"
-	"net"
-	"os"
+	"strconv"
 
-	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
+	dockertypes "github.com/docker/docker/api/types"
+	dockercontainer "github.com/docker/docker/api/types/container"
+	dockernat "github.com/docker/go-connections/nat"
 )
 
-func (m *cubeRuntimeManager) createPodSandbox(pod *object.Pod, attempt uint32) (string, string, error) {
-	podSandboxConfig, err := m.generatePodSandboxConfig(pod, attempt)
+const (
+	defaultPauseImage = "docker/desktop-kubernetes-pause:3.7"
+)
+
+// sandboxName, sandboxID, err
+func (m *cubeRuntimeManager) createPodSandbox(pod *object.Pod) (string, string, error) {
+	err := m.dockerRuntime.PullImage(defaultPauseImage)
 	if err != nil {
-		message := fmt.Sprintf("Failed to generate sandbox config for pod %s: %v", pod.Name, err)
-		log.Println(message)
-		return "", message, err
+		log.Printf("ensure image for sandbox of pod %s failed\n", pod.Name)
+		return "", "", err
 	}
 
-	err = os.MkdirAll(podSandboxConfig.LogDirectory, 0755)
+	podSandboxConfig := generatePodSandboxConfig(pod)
+	sandboxID, err := m.dockerRuntime.CreateContainer(podSandboxConfig)
 	if err != nil {
-		message := fmt.Sprintf("Failed to create log directory for pod %s: %v", pod.Name, err)
-		log.Println(message)
-		return "", message, err
+		log.Printf("fail to create sandbox of pod %s\n", pod.Name)
+		return "", "", err
 	}
 
-	// use default runtime handler now
-	runtimeHandler := ""
+	return podSandboxConfig.Name, sandboxID, nil
 
-	podSandBoxID, err := m.runtimeService.RunPodSandbox(podSandboxConfig, runtimeHandler)
-	if err != nil {
-		message := fmt.Sprintf("Failed to create sandbox for pod %s: %v", pod.Name, err)
-		log.Println(message)
-		return "", message, err
-	}
-
-	return podSandBoxID, "", nil
 }
 
-func (m *cubeRuntimeManager) generatePodSandboxConfig(pod *object.Pod, attempt uint32) (*runtimeapi.PodSandboxConfig, error) {
-	podSandboxConfig := &runtimeapi.PodSandboxConfig{
-		Metadata: &runtimeapi.PodSandboxMetadata{
-			Name:      pod.Name,
-			Namespace: pod.Namespace,
-			Uid:       pod.UID,
-			Attempt:   attempt,
-		},
-		LogDirectory: BuildPodLogsDirectory(pod.Namespace, pod.Name, pod.UID),
-		Labels:       newPodLabels(pod),
-		Annotations:  pod.Annotations,
-	}
+func generatePodSandboxConfig(pod *object.Pod) *dockertypes.ContainerCreateConfig {
+	sandboxName := pod.Name + "_sandbox"
 
-	// configure port mapping
-	portMappings := []*runtimeapi.PortMapping{}
+	exposedPorts := dockernat.PortSet{}
+	portBindings := map[dockernat.Port][]dockernat.PortBinding{}
+
+	// port bindings
 	for _, c := range pod.Spec.Containers {
 		for _, p := range c.Ports {
-			portMappings = append(portMappings, &runtimeapi.PortMapping{
-				HostIp:        p.HostIP,
-				HostPort:      p.HostPort,
-				ContainerPort: p.ContainerPort,
-				Protocol:      toRuntimeProtocol(p.Protocol),
-			})
+			exteriorPort := p.HostPort
+			if exteriorPort == 0 {
+				// No need to do port binding when HostPort is not specified
+				continue
+			}
+			interiorPort := p.ContainerPort
+			// only support tcp now
+			dockerPort := dockernat.Port(
+				strconv.Itoa(int(interiorPort)) +
+					toPortProtocol(p.Protocol))
+			exposedPorts[dockerPort] = struct{}{}
+
+			hostBinding := dockernat.PortBinding{
+				HostPort: strconv.Itoa(int(exteriorPort)),
+				HostIP:   p.HostIP,
+			}
+			// Allow multiple host ports bind to same docker port
+			if existedBindings, ok := portBindings[dockerPort]; ok {
+				// If a docker port already map to a host port, just append the host ports
+				portBindings[dockerPort] = append(existedBindings, hostBinding)
+			} else {
+				// Otherwise, it's fresh new port binding
+				portBindings[dockerPort] = []dockernat.PortBinding{
+					hostBinding,
+				}
+			}
 		}
 	}
-	if len(portMappings) > 0 {
-		podSandboxConfig.PortMappings = portMappings
+
+	sandboxConfig := &dockertypes.ContainerCreateConfig{
+		Name: sandboxName,
+		Config: &dockercontainer.Config{
+			Image:        defaultPauseImage,
+			ExposedPorts: exposedPorts,
+		},
+		HostConfig: &dockercontainer.HostConfig{
+			IpcMode:      dockercontainer.IpcMode("shareable"),
+			PortBindings: portBindings,
+		},
 	}
 
-	// TODO: configure pod request & limit resources
-
-	return podSandboxConfig, nil
+	return sandboxConfig
 }
 
-// determinePodSandboxIP determines the IP addresses of the given pod sandbox.
-func (m *cubeRuntimeManager) determinePodSandboxIPs(podNamespace, podName string, podSandbox *runtimeapi.PodSandboxStatus) []string {
-	podIPs := make([]string, 0)
-	if podSandbox.Network == nil {
-		log.Printf("Pod %s's Sandbox status doesn't have network information, cannot report IPs", podName)
-		return podIPs
-	}
-
-	// ip could be an empty string if runtime is not responsible for the
-	// IP (e.g., host networking).
-
-	// pick primary IP
-	if len(podSandbox.Network.Ip) != 0 {
-		if net.ParseIP(podSandbox.Network.Ip) == nil {
-			log.Printf("Pod %s's Sandbox reported an unparseable primary IP %s", podName, podSandbox.Network.Ip)
-			return nil
-		}
-		podIPs = append(podIPs, podSandbox.Network.Ip)
-	}
-
-	// pick additional ips, if cri reported them
-	for _, podIP := range podSandbox.Network.AdditionalIps {
-		if nil == net.ParseIP(podIP.Ip) {
-			log.Printf("Pod %s's Sandbox reported an unparseable additional IP %s", podName, podIP.Ip)
-			return nil
-		}
-		podIPs = append(podIPs, podIP.Ip)
-	}
-
-	return podIPs
-}

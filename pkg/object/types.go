@@ -29,8 +29,9 @@ type Container struct {
 }
 
 type ResourceRequirements struct {
-	Limits   map[string]string `json:"limits,omitempty"`
-	Requests map[string]string `json:"requests,omitempty"`
+	Cpus float64 `json:"cpus,omitempty"`
+	// Memory in bytes
+	Memory int64 `json:"memory,omitempty"`
 }
 
 type Volume struct {

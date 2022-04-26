@@ -2,7 +2,6 @@ package container
 
 import (
 	object "Cubernetes/pkg/object"
-	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 	"time"
 )
 
@@ -30,6 +29,7 @@ type Container struct {
 }
 
 type ContainerState string
+type SandboxState string
 
 const (
 	runtimeName = "containerd"
@@ -41,6 +41,9 @@ const (
 	ContainerStateExited ContainerState = "exited"
 	// ContainerStateUnknown encompasses all the states that we currently don't care about (like restarting, paused, dead).
 	ContainerStateUnknown ContainerState = "unknown"
+
+	SandboxStateReady    SandboxState = "ready"
+	SandboxStateNotReady SandboxState = "not ready"
 )
 
 type ContainerStatus struct {
@@ -58,6 +61,14 @@ type ContainerStatus struct {
 	Message    string
 }
 
+type SandboxStatus struct {
+	Id     string
+	Name   string
+	PodUID string
+	State  SandboxState
+	Ip     string
+}
+
 type Pod struct {
 	UID        string
 	Name       string
@@ -72,7 +83,7 @@ type PodStatus struct {
 	Namespace         string
 	IPs               []string
 	ContainerStatuses []*ContainerStatus
-	SandboxStatuses   []*runtimeapi.PodSandboxStatus
+	SandboxStatuses   []*SandboxStatus
 }
 
 // Annotation represents an annotation.
@@ -91,13 +102,6 @@ type Image struct {
 	ID   string
 	Size int64
 	Spec ImageSpec
-}
-
-type ImageService interface {
-	PullImage(image ImageSpec, podSandboxConfig *runtimeapi.PodSandboxConfig) (string, error)
-	GetImageRef(image ImageSpec) (string, error)
-	ListImages() ([]Image, error)
-	RemoveImage(image ImageSpec) error
 }
 
 func (podStatus *PodStatus) FindContainerStatusByName(containerName string) *ContainerStatus {
