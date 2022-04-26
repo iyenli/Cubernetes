@@ -12,6 +12,7 @@ import (
 
 var watchList = []Handler{
 	{http.MethodPost, "/apis/watch/pod/:uid", watchPod},
+	{http.MethodPost, "/apis/watch/pods", watchPods},
 }
 
 func handleEvent(ctx *gin.Context, e *clientv3.Event) {
@@ -25,9 +26,16 @@ func handleEvent(ctx *gin.Context, e *clientv3.Event) {
 	flusher.Flush()
 }
 
-func postWatch(ctx *gin.Context, path string) {
+func postWatch(ctx *gin.Context, path string, withPrefix bool) {
 	c, cancel := context.WithCancel(context.TODO())
-	watchChan := etcdrw.WatchObj(c, path)
+
+	var watchChan clientv3.WatchChan
+	if withPrefix {
+		watchChan = etcdrw.WatchObjs(c, path)
+	} else {
+		watchChan = etcdrw.WatchObj(c, path)
+	}
+
 	for {
 		select {
 		case <-ctx.Request.Context().Done():
@@ -43,5 +51,9 @@ func postWatch(ctx *gin.Context, path string) {
 }
 
 func watchPod(ctx *gin.Context) {
-	postWatch(ctx, "/apis/pod/"+ctx.Param("uid"))
+	postWatch(ctx, "/apis/pod/"+ctx.Param("uid"), false)
+}
+
+func watchPods(ctx *gin.Context) {
+	postWatch(ctx, "/apis/pod", true)
 }
