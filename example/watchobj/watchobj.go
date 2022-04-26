@@ -22,10 +22,10 @@ func test() {
 
 // simple example of use
 func main() {
-	ch, cancel := watchobj.WatchObj("/apis/watch/pod/hello:e0a77a11-f736-4f5f-934e-f1f0a3c39172")
-	go test()
-	for str := range ch {
-		fmt.Println(str)
+	ch, cancel := watchobj.WatchPods()
+	//go test()
+	for podEvent := range ch {
+		fmt.Println(podEvent)
 	}
 	// cancel watching
 	cancel()

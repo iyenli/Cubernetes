@@ -3,6 +3,7 @@ package watchobj
 import (
 	cubeconfig "Cubernetes/config"
 	"context"
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
@@ -10,7 +11,7 @@ import (
 	"strings"
 )
 
-func watching(url string, ch chan string, ctx context.Context) {
+func watching(ctx context.Context, url string, handler func(ObjEvent)) {
 	resp, err := http.Post(url, "application/json", strings.NewReader("{}"))
 	defer resp.Body.Close()
 	if err != nil {
@@ -25,7 +26,13 @@ func watching(url string, ch chan string, ctx context.Context) {
 		default:
 			readN, err := resp.Body.Read(data)
 			if readN > 0 {
-				ch <- string(data[:readN])
+				var objEvent ObjEvent
+				err := json.Unmarshal(data[:readN], &objEvent)
+				if err != nil {
+					log.Println("fail to parse objEvent")
+					continue
+				}
+				handler(objEvent)
 			}
 			if err == io.EOF {
 				log.Println("connection closed by server")
@@ -38,10 +45,43 @@ func watching(url string, ch chan string, ctx context.Context) {
 	}
 }
 
-func WatchObj(path string) (chan string, context.CancelFunc) {
+func WatchObj(path string) (chan ObjEvent, context.CancelFunc) {
 	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + path
-	ch := make(chan string)
+	ch := make(chan ObjEvent)
 	ctx, cancel := context.WithCancel(context.TODO())
-	go watching(url, ch, ctx)
+	go watching(ctx, url, func(e ObjEvent) {
+		ch <- e
+	})
 	return ch, cancel
+}
+
+func createPodWatch(url string) (chan PodEvent, context.CancelFunc) {
+	ch := make(chan PodEvent)
+	ctx, cancel := context.WithCancel(context.TODO())
+	go watching(ctx, url, func(e ObjEvent) {
+		var podEvent PodEvent
+		podEvent.EType = e.EType
+		switch e.EType {
+		case EVENT_PUT:
+			err := json.Unmarshal([]byte(e.Object), &podEvent.Pod)
+			if err != nil {
+				log.Println("fail to parse Pod in PodEvent")
+				return
+			}
+		case EVENT_DELETE:
+			podEvent.Pod.UID = e.Path[len("/apis/pod/"):]
+		}
+		ch <- podEvent
+	})
+	return ch, cancel
+}
+
+func WatchPod(UID string) (chan PodEvent, context.CancelFunc) {
+	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/watch/pod/" + UID
+	return createPodWatch(url)
+}
+
+func WatchPods() (chan PodEvent, context.CancelFunc) {
+	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/watch/pods"
+	return createPodWatch(url)
 }
