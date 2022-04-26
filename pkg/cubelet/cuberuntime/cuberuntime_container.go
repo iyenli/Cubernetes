@@ -11,7 +11,6 @@ import (
 	dockercontainer "github.com/docker/docker/api/types/container"
 )
 
-
 func (m *cubeRuntimeManager) startContainer(container *object.Container, pod *object.Pod, podSandboxName string) (string, error) {
 	err := m.dockerRuntime.PullImage(container.Image)
 	if err != nil {

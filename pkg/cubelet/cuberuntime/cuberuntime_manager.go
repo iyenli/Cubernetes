@@ -167,7 +167,7 @@ func (m *cubeRuntimeManager) computePodActions(pod *object.Pod, podStatus *cubec
 
 // podSandboxChanged checks whether the spec of the pod is changed and returns
 // (changed, original sandboxID if exist).
-func (m *cubeRuntimeManager) podSandboxChanged(pod *object.Pod, podStatus *cubecontainer.PodStatus) (bool,  string) {
+func (m *cubeRuntimeManager) podSandboxChanged(pod *object.Pod, podStatus *cubecontainer.PodStatus) (bool, string) {
 	if len(podStatus.SandboxStatuses) == 0 {
 		// No sandbox for pod can be found. Need to start a new one.
 		// This branch should return

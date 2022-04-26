@@ -85,4 +85,3 @@ func generatePodSandboxConfig(pod *object.Pod) *dockertypes.ContainerCreateConfi
 
 	return sandboxConfig
 }
-
