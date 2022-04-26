@@ -44,6 +44,7 @@ func (m *cubeRuntimeManager) generateContainerConfig(container *object.Container
 		Command: container.Command,
 		Args:    container.Args,
 		Labels:  newContainerLabels(container, pod),
+		Mounts: generateContainerMounts(pod, container),
 	}
 
 	return config, nil
@@ -63,4 +64,5 @@ func (m *cubeRuntimeManager) killPodContainers(runningPod cubecontainer.Pod) {
 			}
 		}(container)
 	}
+	wg.Wait()
 }
