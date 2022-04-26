@@ -4,8 +4,13 @@ import (
 	cubecontainer "Cubernetes/pkg/cubelet/container"
 	"Cubernetes/pkg/object"
 	"log"
+	"sync"
 
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
+)
+
+const (
+	killContainerTimeout = 2
 )
 
 func (m *cubeRuntimeManager) startContainer(podSandboxID string, podSandboxConfig *runtimeapi.PodSandboxConfig,
@@ -42,4 +47,20 @@ func (m *cubeRuntimeManager) generateContainerConfig(container *object.Container
 	}
 
 	return config, nil
+}
+
+func (m *cubeRuntimeManager) killPodContainers(runningPod cubecontainer.Pod) {
+	wg := sync.WaitGroup{}
+
+	wg.Add(len(runningPod.Containers))
+	for _, container := range runningPod.Containers {
+		go func(container *cubecontainer.Container) {
+			defer wg.Done()
+
+			err := m.runtimeService.StopContainer(container.ID.ID, killContainerTimeout)
+			if err != nil {
+				log.Printf("error %v occurs when killing container %s\n", err, container.Name)
+			}
+		}(container)
+	}
 }

@@ -4,6 +4,7 @@ import (
 	"Cubernetes/pkg/object"
 	"fmt"
 	"log"
+	"net"
 	"os"
 
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
@@ -69,4 +70,36 @@ func (m *cubeRuntimeManager) generatePodSandboxConfig(pod *object.Pod, attempt u
 	// TODO: configure pod request & limit resources
 
 	return podSandboxConfig, nil
+}
+
+// determinePodSandboxIP determines the IP addresses of the given pod sandbox.
+func (m *cubeRuntimeManager) determinePodSandboxIPs(podNamespace, podName string, podSandbox *runtimeapi.PodSandboxStatus) []string {
+	podIPs := make([]string, 0)
+	if podSandbox.Network == nil {
+		log.Printf("Pod %s's Sandbox status doesn't have network information, cannot report IPs", podName)
+		return podIPs
+	}
+
+	// ip could be an empty string if runtime is not responsible for the
+	// IP (e.g., host networking).
+
+	// pick primary IP
+	if len(podSandbox.Network.Ip) != 0 {
+		if net.ParseIP(podSandbox.Network.Ip) == nil {
+			log.Printf("Pod %s's Sandbox reported an unparseable primary IP %s", podName, podSandbox.Network.Ip)
+			return nil
+		}
+		podIPs = append(podIPs, podSandbox.Network.Ip)
+	}
+
+	// pick additional ips, if cri reported them
+	for _, podIP := range podSandbox.Network.AdditionalIps {
+		if nil == net.ParseIP(podIP.Ip) {
+			log.Printf("Pod %s's Sandbox reported an unparseable additional IP %s", podName, podIP.Ip)
+			return nil
+		}
+		podIPs = append(podIPs, podIP.Ip)
+	}
+
+	return podIPs
 }
