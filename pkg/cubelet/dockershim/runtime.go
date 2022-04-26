@@ -3,7 +3,9 @@ package dockershim
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
+	"os"
 	"time"
 
 	dockertypes "github.com/docker/docker/api/types"
@@ -13,6 +15,7 @@ import (
 type DockerRuntime interface {
 	// Container Service
 	CreateContainer(config *dockertypes.ContainerCreateConfig) (string, error)
+	StartContainer(containerID string) error
 	StopContainer(containerID string) error
 
 	// Image Service
@@ -67,6 +70,19 @@ func (c *dockerClient) CreateContainer(config *dockertypes.ContainerCreateConfig
 	return resp.ID, nil
 }
 
+func (c *dockerClient) StartContainer(containerID string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+	defer cancel()
+
+	err := c.client.ContainerStart(ctx, containerID, dockertypes.ContainerStartOptions{})
+	if err != nil {
+		log.Printf("fail to start container %s : %v\n", containerID, err)
+		return err
+	}
+
+	return nil
+}
+
 func (c *dockerClient) StopContainer(containerID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()
@@ -88,6 +104,8 @@ func (c *dockerClient) PullImage(imageName string) error {
 		log.Printf("fail to pull image %s : %v\n", imageName, err)
 		return err
 	}
+
+	io.Copy(os.Stdout, out)
 
 	defer out.Close()
 	return nil

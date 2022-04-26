@@ -25,6 +25,12 @@ func (m *cubeRuntimeManager) startContainer(container *object.Container, pod *ob
 		return "", err
 	}
 
+	err = m.dockerRuntime.StartContainer(containerID)
+	if err != nil {
+		log.Printf("fail to start container #{container.Name}\n")
+		return "", err
+	}
+
 	return containerID, nil
 }
 
@@ -40,7 +46,7 @@ func (m *cubeRuntimeManager) generateContainerConfig(container *object.Container
 		)
 	}
 
-	mode := "container:" + podContainerName
+	mode := "container:" + podSandboxName
 
 	config := &dockertypes.ContainerCreateConfig{
 		Name: podContainerName,

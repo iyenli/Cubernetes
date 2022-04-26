@@ -29,6 +29,12 @@ func (m *cubeRuntimeManager) createPodSandbox(pod *object.Pod) (string, string, 
 		return "", "", err
 	}
 
+	err = m.dockerRuntime.StartContainer(sandboxID)
+	if err != nil {
+		log.Printf("fail to start sandbox of pod %s\n", pod.Name)
+		return "", "", err
+	}
+
 	return podSandboxConfig.Name, sandboxID, nil
 
 }

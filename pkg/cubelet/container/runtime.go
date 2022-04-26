@@ -12,6 +12,8 @@ type Runtime interface {
 	// GetPods() ([]*Pod, error)
 	// GetPodStatus(uid, name, namespace string) (*PodStatus, error)
 	SyncPod(pod *object.Pod, podStatus *PodStatus) error
+
+	Close()
 }
 
 type ContainerID struct {

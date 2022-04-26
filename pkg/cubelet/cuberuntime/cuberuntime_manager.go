@@ -169,7 +169,7 @@ func (m *cubeRuntimeManager) computePodActions(pod *object.Pod, podStatus *cubec
 // (changed, original sandboxID if exist).
 func (m *cubeRuntimeManager) podSandboxChanged(pod *object.Pod, podStatus *cubecontainer.PodStatus) (bool, string) {
 	if len(podStatus.SandboxStatuses) == 0 {
-		// No sandbox for pod can be found. Need to start a new one.
+		log.Printf("no sandbox for pod %s can be found. Need to start a new one.", pod.Name)
 		// This branch should return
 		return true, ""
 	}
@@ -205,4 +205,8 @@ func NewCubeRuntimeManager() (CubeRuntime, error) {
 	}
 
 	return cm, nil
+}
+
+func (c *cubeRuntimeManager) Close() {
+	c.dockerRuntime.CloseConnection()
 }
