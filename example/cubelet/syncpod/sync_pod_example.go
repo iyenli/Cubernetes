@@ -1,15 +1,15 @@
 package main
 
 import (
-	"Cubernetes/pkg/object"
-	"Cubernetes/pkg/cubelet/cuberuntime"
 	"Cubernetes/pkg/cubelet/container"
+	"Cubernetes/pkg/cubelet/cuberuntime"
+	"Cubernetes/pkg/object"
 )
 
 func main() {
 	pod := &object.Pod{
 		TypeMeta: object.TypeMeta{
-			Kind: "Pod",
+			Kind:       "Pod",
 			APIVersion: "wahtever/v1",
 		},
 		ObjectMeta: object.ObjectMeta{
@@ -18,17 +18,17 @@ func main() {
 		Spec: object.PodSpec{
 			Containers: []object.Container{
 				{
-					Name: "foo-nginx",
+					Name:  "foo-nginx",
 					Image: "nginx",
 					Ports: []object.ContainerPort{
 						{
-							HostPort: 8080,
+							HostPort:      8080,
 							ContainerPort: 80,
 						},
 					},
 					VolumeMounts: []object.VolumeMount{
 						{
-							Name: "conf",
+							Name:      "conf",
 							MountPath: "/etc/nginx/nginx.conf",
 						},
 					},
