@@ -9,6 +9,9 @@ const (
 	EVENT_DELETE EventType = "DELETE"
 )
 
+const MSG_DELIM byte = 26
+const WATCH_CONFIRM string = "watch started"
+
 type ObjEvent struct {
 	EType  EventType `json:"eType"`
 	Path   string    `json:"path"`
