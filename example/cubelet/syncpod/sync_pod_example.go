@@ -26,6 +26,19 @@ func main() {
 							ContainerPort: 80,
 						},
 					},
+					VolumeMounts: []object.VolumeMount{
+						{
+							Name: "conf",
+							MountPath: "/etc/nginx/nginx.conf",
+						},
+					},
+				},
+			},
+			Volumes: []object.Volume{
+				{
+					Name: "conf",
+					// switch to your host-path when test
+					HostPath: "/home/jolynefr/WorkSpace/CloudOS/test/nginx.conf/nginx.conf",
 				},
 			},
 		},
@@ -35,6 +48,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer runtime.Close()
 
 	err = runtime.SyncPod(pod, &container.PodStatus{})
 	if err != nil {
