@@ -1,15 +1,35 @@
+# go-cni
+
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/containerd/go-cni)](https://pkg.go.dev/github.com/containerd/go-cni)
+[![Build Status](https://github.com/containerd/go-cni/workflows/CI/badge.svg)](https://github.com/containerd/go-cni/actions?query=workflow%3ACI)
+[![codecov](https://codecov.io/gh/containerd/go-cni/branch/main/graph/badge.svg)](https://codecov.io/gh/containerd/go-cni)
+[![Go Report Card](https://goreportcard.com/badge/github.com/containerd/go-cni)](https://goreportcard.com/report/github.com/containerd/go-cni)
+
+A generic CNI library to provide APIs for CNI plugin interactions. The library provides APIs to:
+
+- Load CNI network config from different sources  
+- Setup networks for container namespace
+- Remove networks from container namespace
+- Query status of CNI network plugin initialization
+- Check verifies the network is still in desired state
+
+go-cni aims to support plugins that implement [Container Network Interface](https://github.com/containernetworking/cni)
+
+## Usage
+```go
 package main
 
 import (
 	"context"
 	"fmt"
-	gocni "github.com/containerd/go-cni"
 	"log"
+
+	gocni "github.com/containerd/go-cni"
 )
 
 func main() {
-	id := "17b4889b4905"
-	netns := "/var/run/netns/ns1"
+	id := "example"
+	netns := "/var/run/netns/example-ns-1"
 
 	// CNI allows multiple CNI configurations and the network interface
 	// will be named by eth0, eth1, ..., ethN.
@@ -59,10 +79,18 @@ func main() {
 	}
 
 	// Get IP of the default interface
-	fmt.Printf("Route Len: %d\n", len(result.Routes))
-	fmt.Printf("Route: %v\n", result.Routes[0].String())
-	fmt.Printf("Interfaces Number: %v\n", result.Interfaces)
-	fmt.Printf("DNS Number: %v\n", len(result.DNS))
 	IP := result.Interfaces[defaultIfName].IPConfigs[0].IP.String()
 	fmt.Printf("IP of the default interface %s:%s", defaultIfName, IP)
 }
+```
+
+## Project details
+
+The go-cni is a containerd sub-project, licensed under the [Apache 2.0 license](./LICENSE).
+As a containerd sub-project, you will find the:
+
+ * [Project governance](https://github.com/containerd/project/blob/main/GOVERNANCE.md),
+ * [Maintainers](https://github.com/containerd/project/blob/main/MAINTAINERS),
+ * and [Contributing guidelines](https://github.com/containerd/project/blob/main/CONTRIBUTING.md)
+
+information in our [`containerd/project`](https://github.com/containerd/project) repository.

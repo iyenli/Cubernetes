@@ -27,6 +27,7 @@ github.com/cncf/xds/go v0.0.0-20210922020428-25de7278fc84/go.mod h1:eXthEFrGJvWH
 github.com/cncf/xds/go v0.0.0-20211011173535-cb28da3451f1/go.mod h1:eXthEFrGJvWHgFFCl3hGmgk+/aYT6PnTQLykKQRLhEs=
 github.com/containerd/containerd v1.6.3 h1:JfgUEIAH07xDWk6kqz0P3ArZt+KJ9YeihSC9uyFtSKg=
 github.com/containerd/containerd v1.6.3/go.mod h1:gCVGrYRYFm2E8GmuUIbj/NGD7DLZQLzSJQazjVKDOig=
+github.com/containerd/go-cni v1.1.4 h1:Mv3XkOjVsjTJHMpSi+dKZQPQGXEMpmXWs8oYZDaCK+s=
 github.com/containerd/go-cni v1.1.4/go.mod h1:Rflh2EJ/++BA2/vY5ao3K6WJRR/bZKsX123aPk+kUtA=
 github.com/containernetworking/cni v1.0.1 h1:9OIL/sZmMYDBe+G8svzILAlulUpaDTUjeAbtH/JNLBo=
 github.com/containernetworking/cni v1.0.1/go.mod h1:AKuhXbN5EzmD4yTNtfSsX3tPcmtrBI6QcRV0NiNt15Y=
