@@ -1,12 +1,48 @@
 package network
 
 import (
+	"Cubernetes/pkg/cubelet/container"
 	"Cubernetes/pkg/object"
 	"fmt"
+	gocni "github.com/containerd/go-cni"
+	"log"
 	"net"
 	osexec "os/exec"
 	"strings"
 )
+
+const (
+	defaultNetworkNamespace = "default"
+)
+
+func InitNetwork(cni gocni.CNI, podStatus *container.PodStatus) error {
+	// TODO: Run pause docker and add it to SandboxStatuses
+
+	if len(podStatus.SandboxStatuses) < 1 {
+		log.Panicln("Error: Pause sandbox create failed")
+	}
+	if podStatus.NetworkNamespace == "" {
+		podStatus.NetworkNamespace = defaultNetworkNamespace
+	}
+
+	result, err := SetUpPod(cni, podStatus.NetworkNamespace, podStatus.UID, container.ContainerID{ID: podStatus.SandboxStatuses[0].Id})
+	if err != nil {
+		log.Println("Setup pod failed.")
+		return err
+	}
+
+	podStatus.PodNetWork.IP = net.ParseIP(result.Interfaces["eth"].IPConfigs[0].IP.String())
+	return nil
+}
+
+func ReleaseNetwork(cni gocni.CNI, podStatus *container.PodStatus) error {
+	err := TearDownPod(cni, podStatus.NetworkNamespace, podStatus.UID, container.ContainerID{ID: podStatus.SandboxStatuses[0].Id})
+	if err != nil {
+		log.Println("Teardown pod failed.")
+		return err
+	}
+	return nil
+}
 
 // ConstructPodPortMapping creates a PodPortMapping from the ports specified in the pod's
 // containers.

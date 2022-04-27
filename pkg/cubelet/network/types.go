@@ -2,10 +2,7 @@ package network
 
 import (
 	"Cubernetes/pkg/cubelet/container"
-	"Cubernetes/pkg/object"
-	"github.com/containernetworking/cni/libcni"
 	"net"
-	"sync"
 )
 
 // Host A host has a namespace and map of port
@@ -50,26 +47,6 @@ type PortMappingGetter interface {
 	GetPodPortMappings(containerID string) ([]*PortMapping, error)
 }
 
-// CniNetworkPlugin support 2 network, one of them is lo
-type CniNetworkPlugin struct {
-	loNetwork      *cniNetwork // local loop
-	defaultNetwork *cniNetwork
-
-	host        Host
-	nsEnterPath string
-	pluginDir   string
-	binDir      string
-
-	sync.RWMutex
-}
-
-// cniNetwork private struct
-type cniNetwork struct {
-	name          string
-	NetworkConfig *libcni.NetworkConfigList
-	CNIConfig     libcni.CNI
-}
-
 // CniPortMapping maps to CNI port mapping
 type CniPortMapping struct {
 	HostPort      int32  `json:"hostPort"`
@@ -78,19 +55,9 @@ type CniPortMapping struct {
 	HostIP        string `json:"hostIP"`
 }
 
-// PodNetworkStatus stores the network status of a pod (currently just the primary IP address)
-// This struct represents version "v1beta1"
-type PodNetworkStatus struct {
-	object.TypeMeta `json:",inline"`
-
-	// IP is the primary ipv4/ipv6 address of the pod. Among other things it is the address that -
-	//   - kube expects to be reachable across the cluster
-	//   - service endpoints are constructed with
-	//   - will be reported in the PodStatus.PodIP field (will override the IP reported by docker)
-	IP net.IP `json:"ip" description:"Primary IP address of the pod"`
-}
-
 // CniNetworkPluginInterface NetworkPlugin Plugin is an interface to network plugins for the kubelet
+// ** Deprecated! ** K8s interface of Network plugin, we use more friendly one(and open-source)
+// to implement some of them
 type CniNetworkPluginInterface interface {
 	// Init initializes the plugin.  This will be called exactly once
 	// before any other methods are called.
@@ -114,7 +81,7 @@ type CniNetworkPluginInterface interface {
 	TearDownPod(namespace string, name string, podSandboxID container.ContainerID) error
 
 	// GetPodNetworkStatus is the method called to obtain the ipv4 or ipv6 addresses of the container
-	GetPodNetworkStatus(namespace string, name string, podSandboxID container.ContainerID) (*PodNetworkStatus, error)
+	GetPodNetworkStatus(namespace string, name string, podSandboxID container.ContainerID) (*container.PodNetworkStatus, error)
 
 	// Status returns error if the network plugin is in error state
 	Status() error
