@@ -1,7 +1,6 @@
 package cuberuntime
 
 import (
-	"Cubernetes/pkg/cubelet/container"
 	cubecontainer "Cubernetes/pkg/cubelet/container"
 	dockershim "Cubernetes/pkg/cubelet/dockershim"
 	object "Cubernetes/pkg/object"
@@ -23,43 +22,14 @@ type cubeRuntimeManager struct {
 }
 
 type podActions struct {
-	KillPod           bool
-	CreateSandbox     bool
-	SandboxID         string
+	KillPod       bool
+	CreateSandbox bool
+	// old sandbox id, kill if we need to kill old pod
+	SandboxID string
+	// index of containers in podSpec.Containers to start
 	ContainersToStart []int
-	ContainersToKill  map[cubecontainer.ContainerID]*object.Container
-}
-
-func (m *cubeRuntimeManager) ListImages() ([]cubecontainer.Image, error) {
-	var images []cubecontainer.Image
-
-	allImages, err := m.dockerRuntime.ListImages(true)
-	if err != nil {
-		log.Printf("fail to list images\n")
-		return images, err
-	}
-
-	for _, img := range allImages {
-		images = append(images, cubecontainer.Image{
-			ID:   img.ID,
-			Size: int64(img.Size),
-			Spec: cubecontainer.ImageSpec{
-				Image: img.RepoTags[0],
-			},
-		})
-	}
-
-	return images, nil
-}
-
-func (m *cubeRuntimeManager) RemoveImage(image cubecontainer.ImageSpec) error {
-	err := m.dockerRuntime.RemoveImage(image.Image)
-	if err != nil {
-		log.Printf("fail to remove image #{image.Name}\n")
-		return err
-	}
-
-	return nil
+	// UID of containers to kill
+	ContainersToKill []string
 }
 
 type CubeRuntime interface {
@@ -92,9 +62,9 @@ func (m *cubeRuntimeManager) SyncPod(pod *object.Pod, podStatus *cubecontainer.P
 		}
 	} else {
 		// kill some containers
-		for containerId, containerInfo := range podContainerChanges.ContainersToKill {
-			if err := m.dockerRuntime.StopContainer(containerId.ID); err != nil {
-				log.Printf("fail to kill container %s: %v\n", containerInfo.Name, err)
+		for _, uid := range podContainerChanges.ContainersToKill {
+			if err := m.dockerRuntime.StopContainer(uid); err != nil {
+				log.Printf("fail to kill container uid %s: %v\n", uid, err)
 				return err
 			}
 		}
@@ -132,24 +102,31 @@ func (m *cubeRuntimeManager) computePodActions(pod *object.Pod, podStatus *cubec
 		CreateSandbox:     createPodSandbox,
 		SandboxID:         sandboxID,
 		ContainersToStart: []int{},
-		ContainersToKill:  make(map[cubecontainer.ContainerID]*object.Container),
+		ContainersToKill:  []string{},
 	}
 
 	// create sandbox need to (re-)create all containers
 	if createPodSandbox {
 		var containersToStart []int
+		var containersToKill []string
+
 		for idx := range pod.Spec.Containers {
 			// TODO: RestartPolicy == OnFailure && ExitSucceeded => no need to start
 			containersToStart = append(containersToStart, idx)
 		}
 
+		for _, oldContainer := range podStatus.ContainerStatuses {
+			// kill all old containers
+			containersToKill = append(containersToKill, oldContainer.ID.ID)
+		}
+
 		if len(containersToStart) == 0 {
-			// nothing to create
+			// nothing to create, so don't create sandbox
 			changes.CreateSandbox = false
-			return changes
 		}
 
 		changes.ContainersToStart = containersToStart
+		changes.ContainersToKill = containersToKill
 		return changes
 	}
 
@@ -161,7 +138,7 @@ func (m *cubeRuntimeManager) computePodActions(pod *object.Pod, podStatus *cubec
 			if true /* TODO: container should be restart */ {
 				changes.ContainersToStart = append(changes.ContainersToStart, idx)
 				if containerStatus != nil && containerStatus.State == cubecontainer.ContainerStateUnknown {
-					changes.ContainersToKill[containerStatus.ID] = &pod.Spec.Containers[idx]
+					changes.ContainersToKill = append(changes.ContainersToKill, containerStatus.ID.ID)
 				}
 			}
 		}
@@ -183,7 +160,7 @@ func (m *cubeRuntimeManager) podSandboxChanged(pod *object.Pod, podStatus *cubec
 	}
 
 	sandboxStatus := podStatus.SandboxStatuses[0]
-	if sandboxStatus.State != container.SandboxStateReady {
+	if sandboxStatus.State != cubecontainer.SandboxStateReady {
 		// No ready sandbox for pod can be found. Need to start a new one.
 		return true, sandboxStatus.Id
 	}
@@ -194,6 +171,7 @@ func (m *cubeRuntimeManager) podSandboxChanged(pod *object.Pod, podStatus *cubec
 		return true, sandboxStatus.Id
 	}
 
+	// sandbox unchange and still running
 	return false, sandboxStatus.Id
 }
 
@@ -228,7 +206,7 @@ func (m *cubeRuntimeManager) KillPod(UID string) error {
 	return nil
 }
 
-func (c *cubeRuntimeManager) getPodStatusByUID(UID string) (*container.PodStatus, error) {
+func (c *cubeRuntimeManager) getPodStatusByUID(UID string) (*cubecontainer.PodStatus, error) {
 	containerStatuses, err := c.getContainerStatusesByPodUID(UID)
 	if err != nil {
 		return nil, err
@@ -244,7 +222,7 @@ func (c *cubeRuntimeManager) getPodStatusByUID(UID string) (*container.PodStatus
 		podName = sandboxStatuses[0].Name
 	}
 
-	return &container.PodStatus{
+	return &cubecontainer.PodStatus{
 		UID:               UID,
 		Name:              podName,
 		ContainerStatuses: containerStatuses,

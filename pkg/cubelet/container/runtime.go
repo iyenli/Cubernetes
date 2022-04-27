@@ -23,20 +23,10 @@ type ContainerID struct {
 	ID   string
 }
 
-type Container struct {
-	ID      ContainerID
-	Name    string
-	Image   string
-	ImageID string
-	Hash    uint64
-	State   string
-}
-
 type ContainerState string
 type SandboxState string
 
 const (
-	runtimeName = "docker"
 	// ContainerStateCreated indicates a container that has been created (e.g. with docker create) but not started.
 	ContainerStateCreated ContainerState = "created"
 	// ContainerStateRunning indicates a currently running container.
@@ -73,14 +63,6 @@ type SandboxStatus struct {
 	Ip     string
 }
 
-type Pod struct {
-	UID        string
-	Name       string
-	Namespace  string
-	Containers []*Container
-	SandBoxes  []*Container
-}
-
 type PodStatus struct {
 	UID               string
 	Name              string
@@ -103,24 +85,6 @@ type PodNetworkStatus struct {
 	IP net.IP `json:"ip" description:"Primary IP address of the pod"`
 }
 
-// Annotation represents an annotation.
-type Annotation struct {
-	Name  string
-	Value string
-}
-
-// ImageSpec describes a specified image with annotations.
-type ImageSpec struct {
-	Image       string
-	Annotations []Annotation
-}
-
-type Image struct {
-	ID   string
-	Size int64
-	Spec ImageSpec
-}
-
 func (podStatus *PodStatus) FindContainerStatusByName(containerName string) *ContainerStatus {
 	for _, containerStatus := range podStatus.ContainerStatuses {
 		if containerStatus.Name == containerName {
@@ -128,35 +92,4 @@ func (podStatus *PodStatus) FindContainerStatusByName(containerName string) *Con
 		}
 	}
 	return nil
-}
-
-func ConvertPodStatusToRunningPod(podStatus *PodStatus) Pod {
-	runningPod := Pod{
-		UID:       podStatus.UID,
-		Name:      podStatus.Name,
-		Namespace: podStatus.Namespace,
-	}
-
-	for _, containerStatus := range podStatus.ContainerStatuses {
-		if containerStatus.State != ContainerStateRunning {
-			continue
-		}
-		container := &Container{
-			ID:      containerStatus.ID,
-			Name:    containerStatus.Name,
-			Image:   containerStatus.Image,
-			ImageID: containerStatus.ImageID,
-			Hash:    containerStatus.Hash,
-		}
-		runningPod.Containers = append(runningPod.Containers, container)
-	}
-
-	for _, sandbox := range podStatus.SandboxStatuses {
-		runningPod.SandBoxes = append(runningPod.SandBoxes, &Container{
-			ID:    ContainerID{Type: runtimeName, ID: sandbox.Id},
-			State: string(sandbox.State),
-		})
-	}
-
-	return runningPod
 }
