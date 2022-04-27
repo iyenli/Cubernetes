@@ -4,6 +4,8 @@ import (
 	"Cubernetes/pkg/cubelet/container"
 	"Cubernetes/pkg/cubelet/cuberuntime"
 	"Cubernetes/pkg/object"
+	"log"
+	"time"
 )
 
 func main() {
@@ -14,6 +16,7 @@ func main() {
 		},
 		ObjectMeta: object.ObjectMeta{
 			Name: "test-pod",
+			UID:  "fake-UID-114514-1919810",
 		},
 		Spec: object.PodSpec{
 			Containers: []object.Container{
@@ -55,4 +58,12 @@ func main() {
 		panic(err)
 	}
 
+	time.Sleep(time.Second * 10)
+	log.Printf("start to kill pod %s\n", pod.UID)
+
+	err = runtime.KillPod(pod.UID)
+	if err != nil {
+		panic(err)
+	}
+	log.Println("kill success")
 }

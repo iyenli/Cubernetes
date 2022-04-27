@@ -44,8 +44,8 @@ func (m *cubeRuntimeManager) createPodSandbox(pod *object.Pod) (string, string, 
 func (m *cubeRuntimeManager) getSandboxStatusesByPodUID(UID string) ([]*cubecontainer.SandboxStatus, error) {
 	filter := dockertypes.ContainerListOptions{
 		Filters: filters.NewArgs(
-			filters.Arg(CubernetesContainerTypeLabel, ContainerTypeSandbox),
-			filters.Arg(CubernetesPodUIDLabel, UID),
+			filters.Arg("label", buildLabelSelector(CubernetesContainerTypeLabel, ContainerTypeSandbox)),
+			filters.Arg("label", buildLabelSelector(CubernetesPodUIDLabel, UID)),
 		),
 	}
 

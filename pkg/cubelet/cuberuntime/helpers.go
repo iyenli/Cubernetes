@@ -34,3 +34,7 @@ func findVolumeHostPath(pod *object.Pod, name string) string {
 	}
 	return ""
 }
+
+func buildLabelSelector(label, value string) string {
+	return strings.Join([]string{label, value}, "=")
+}

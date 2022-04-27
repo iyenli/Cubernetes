@@ -39,8 +39,8 @@ func (m *cubeRuntimeManager) startContainer(container *object.Container, pod *ob
 func (m *cubeRuntimeManager) getContainerStatusesByPodUID(UID string) ([]*cubecontainer.ContainerStatus, error) {
 	filter := dockertypes.ContainerListOptions{
 		Filters: filters.NewArgs(
-			filters.Arg(CubernetesContainerTypeLabel, ContainerTypeContainer),
-			filters.Arg(CubernetesPodUIDLabel, UID),
+			filters.Arg("label", buildLabelSelector(CubernetesContainerTypeLabel, ContainerTypeContainer)),
+			filters.Arg("label", buildLabelSelector(CubernetesPodUIDLabel, UID)),
 		),
 	}
 
@@ -102,12 +102,12 @@ func (m *cubeRuntimeManager) generateContainerConfig(container *object.Container
 	return config
 }
 
-func (m *cubeRuntimeManager) killPodContainers(runningPod cubecontainer.Pod, remove bool) {
+func (m *cubeRuntimeManager) killPodContainers(pod *cubecontainer.PodStatus, remove bool) {
 	wg := sync.WaitGroup{}
 
-	wg.Add(len(runningPod.Containers))
-	for _, container := range runningPod.Containers {
-		go func(container *cubecontainer.Container) {
+	wg.Add(len(pod.ContainerStatuses))
+	for _, container := range pod.ContainerStatuses {
+		go func(container *cubecontainer.ContainerStatus) {
 			defer wg.Done()
 
 			if err := m.dockerRuntime.StopContainer(container.ID.ID); err != nil {
