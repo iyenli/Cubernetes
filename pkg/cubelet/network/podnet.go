@@ -8,6 +8,10 @@ import (
 	"strings"
 )
 
+//func (podStatus *container.PodStatus) InitNetwork() {
+//
+//}
+
 // ConstructPodPortMapping creates a PodPortMapping from the ports specified in the pod's
 // containers.
 func ConstructPodPortMapping(pod *object.Pod, podIP net.IP) *PodPortMapping {

@@ -2,13 +2,14 @@ package container
 
 import (
 	object "Cubernetes/pkg/object"
+	"net"
 	"time"
 )
 
 // Runtime interface defines the interfaces that should be implemented
 // by a container runtime.
 type Runtime interface {
-	// Type() string
+	// SyncPod Type() string
 	// GetPods() ([]*Pod, error)
 	// GetPodStatus(uid, name, namespace string) (*PodStatus, error)
 	SyncPod(pod *object.Pod, podStatus *PodStatus) error
@@ -83,9 +84,22 @@ type PodStatus struct {
 	UID               string
 	Name              string
 	Namespace         string
-	IPs               []string
+	NetworkNamespace  string
+	PodNetWork        PodNetworkStatus
 	ContainerStatuses []*ContainerStatus
 	SandboxStatuses   []*SandboxStatus
+}
+
+// PodNetworkStatus stores the network status of a pod (currently just the primary IP address)
+// This struct represents version "v1beta1"
+type PodNetworkStatus struct {
+	object.TypeMeta `json:",inline"`
+
+	// IP is the primary ipv4/ipv6 address of the pod. Among other things it is the address that -
+	//   - kube expects to be reachable across the cluster
+	//   - service endpoints are constructed with
+	//   - will be reported in the PodStatus.PodIP field (will override the IP reported by docker)
+	IP net.IP `json:"ip" description:"Primary IP address of the pod"`
 }
 
 // Annotation represents an annotation.
