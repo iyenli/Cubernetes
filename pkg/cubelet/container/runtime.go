@@ -11,6 +11,7 @@ type Runtime interface {
 	// Type() string
 	// GetPods() ([]*Pod, error)
 	// GetPodStatus(uid, name, namespace string) (*PodStatus, error)
+	KillPod(UID string) error
 	SyncPod(pod *object.Pod, podStatus *PodStatus) error
 
 	Close()
@@ -34,7 +35,7 @@ type ContainerState string
 type SandboxState string
 
 const (
-	runtimeName = "containerd"
+	runtimeName = "docker"
 	// ContainerStateCreated indicates a container that has been created (e.g. with docker create) but not started.
 	ContainerStateCreated ContainerState = "created"
 	// ContainerStateRunning indicates a currently running container.

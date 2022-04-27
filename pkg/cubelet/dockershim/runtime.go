@@ -17,6 +17,8 @@ type DockerRuntime interface {
 	CreateContainer(config *dockertypes.ContainerCreateConfig) (string, error)
 	StartContainer(containerID string) error
 	StopContainer(containerID string) error
+	ListContainers(opts dockertypes.ContainerListOptions) ([]dockertypes.Container, error)
+	RemoveContainer(containerID string, force bool) error
 
 	// Image Service
 	PullImage(imageName string) error
@@ -89,6 +91,32 @@ func (c *dockerClient) StopContainer(containerID string) error {
 
 	if err := c.client.ContainerStop(ctx, containerID, &c.timeout); err != nil {
 		log.Printf("fail to stop container %s : %v\n", containerID, err)
+		return err
+	}
+
+	return nil
+}
+
+func (c *dockerClient) ListContainers(opts dockertypes.ContainerListOptions) ([]dockertypes.Container, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+	defer cancel()
+
+	containers, err := c.client.ContainerList(ctx, opts)
+	if err != nil {
+		log.Printf("fail to list container with filter %v : %v\n", opts, err)
+		return nil, err
+	}
+
+	return containers, nil
+}
+
+func (c *dockerClient) RemoveContainer(containerID string, force bool) error {
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+	defer cancel()
+
+	err := c.client.ContainerRemove(ctx, containerID, dockertypes.ContainerRemoveOptions{Force: force})
+	if err != nil {
+		log.Printf("fail to remove container %s : %v\n", containerID, err)
 		return err
 	}
 

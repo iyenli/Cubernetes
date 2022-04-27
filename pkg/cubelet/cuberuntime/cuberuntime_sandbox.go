@@ -1,12 +1,15 @@
 package cuberuntime
 
 import (
+	cubecontainer "Cubernetes/pkg/cubelet/container"
+	"Cubernetes/pkg/cubelet/dockershim"
 	"Cubernetes/pkg/object"
 	"log"
 	"strconv"
 
 	dockertypes "github.com/docker/docker/api/types"
 	dockercontainer "github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	dockernat "github.com/docker/go-connections/nat"
 )
 
@@ -36,11 +39,36 @@ func (m *cubeRuntimeManager) createPodSandbox(pod *object.Pod) (string, string, 
 	}
 
 	return podSandboxConfig.Name, sandboxID, nil
+}
 
+func (m *cubeRuntimeManager) getSandboxStatusesByPodUID(UID string) ([]*cubecontainer.SandboxStatus, error) {
+	filter := dockertypes.ContainerListOptions{
+		Filters: filters.NewArgs(
+			filters.Arg(CubernetesContainerTypeLabel, ContainerTypeSandbox),
+			filters.Arg(CubernetesPodUIDLabel, UID),
+		),
+	}
+
+	sandboxes, err := m.dockerRuntime.ListContainers(filter)
+	if err != nil {
+		log.Printf("fail to list pod sandbox %s: %v\n", UID, err)
+		return nil, err
+	}
+
+	if len(sandboxes) == 0 {
+		return nil, nil
+	}
+
+	statuses := make([]*cubecontainer.SandboxStatus, len(sandboxes))
+	for i, sandbox := range sandboxes {
+		statuses[i] = toSandboxStatus(&sandbox)
+	}
+
+	return statuses, nil
 }
 
 func generatePodSandboxConfig(pod *object.Pod) *dockertypes.ContainerCreateConfig {
-	sandboxName := pod.Name + "_sandbox"
+	sandboxName := dockershim.MakeSandboxName(pod)
 
 	exposedPorts := dockernat.PortSet{}
 	portBindings := map[dockernat.Port][]dockernat.PortBinding{}
@@ -54,7 +82,6 @@ func generatePodSandboxConfig(pod *object.Pod) *dockertypes.ContainerCreateConfi
 				continue
 			}
 			interiorPort := p.ContainerPort
-			// only support tcp now
 			dockerPort := dockernat.Port(
 				strconv.Itoa(int(interiorPort)) +
 					toPortProtocol(p.Protocol))
@@ -82,6 +109,7 @@ func generatePodSandboxConfig(pod *object.Pod) *dockertypes.ContainerCreateConfi
 		Config: &dockercontainer.Config{
 			Image:        defaultPauseImage,
 			ExposedPorts: exposedPorts,
+			Labels:       newSandboxLabels(pod),
 		},
 		HostConfig: &dockercontainer.HostConfig{
 			IpcMode:      dockercontainer.IpcMode("shareable"),
