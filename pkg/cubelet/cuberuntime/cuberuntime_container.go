@@ -4,42 +4,88 @@ import (
 	cubecontainer "Cubernetes/pkg/cubelet/container"
 	"Cubernetes/pkg/object"
 	"log"
+	"strings"
+	"sync"
 
-	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
+	dockertypes "github.com/docker/docker/api/types"
+	dockercontainer "github.com/docker/docker/api/types/container"
 )
 
-func (m *cubeRuntimeManager) startContainer(podSandboxID string, podSandboxConfig *runtimeapi.PodSandboxConfig,
-	container *object.Container, pod *object.Pod, podStatus *cubecontainer.PodStatus, podIP string, podIPs []string) (string, error) {
-	imageRef, err := m.imagePuller.EnsureImageExists(pod, container, podSandboxConfig)
+func (m *cubeRuntimeManager) startContainer(container *object.Container, pod *object.Pod, podSandboxName string) (string, error) {
+	err := m.dockerRuntime.PullImage(container.Image)
 	if err != nil {
 		log.Printf("ensure image for container #{container.Name} failed\n")
 		return "", err
 	}
 
-	config, _ := m.generateContainerConfig(container, pod, podIP, imageRef, podIPs)
-	containerID, err := m.runtimeService.CreateContainer(podSandboxID, config, podSandboxConfig)
+	config := m.generateContainerConfig(container, pod, podSandboxName)
+	containerID, err := m.dockerRuntime.CreateContainer(config)
 	if err != nil {
 		log.Printf("fail to create container #{container.Name}\n")
+		return "", err
+	}
+
+	err = m.dockerRuntime.StartContainer(containerID)
+	if err != nil {
+		log.Printf("fail to start container #{container.Name}\n")
 		return "", err
 	}
 
 	return containerID, nil
 }
 
-func (m *cubeRuntimeManager) generateContainerConfig(container *object.Container, pod *object.Pod, podIP, imageRef string, podIPs []string) (*runtimeapi.ContainerConfig, error) {
+func (m *cubeRuntimeManager) generateContainerConfig(container *object.Container, pod *object.Pod, podSandboxName string) *dockertypes.ContainerCreateConfig {
 
-	// this generated config is NOT compelete, not even close,
-	// I just filled what make sense to me.
-	config := &runtimeapi.ContainerConfig{
-		Metadata: &runtimeapi.ContainerMetadata{
-			Name:    container.Name,
-			Attempt: 0, // 0 before I figure out its usage
-		},
-		Image:   &runtimeapi.ImageSpec{Image: imageRef},
-		Command: container.Command,
-		Args:    container.Args,
-		Labels:  newContainerLabels(container, pod),
+	podContainerName := strings.Join([]string{pod.Name, container.Name}, "_")
+
+	volumeBinds := make([]string, 0)
+	for _, mount := range container.VolumeMounts {
+		hostPath := findVolumeHostPath(pod, mount.Name)
+		volumeBinds = append(volumeBinds,
+			strings.Join([]string{hostPath, mount.MountPath}, ":"),
+		)
 	}
 
-	return config, nil
+	mode := "container:" + podSandboxName
+
+	config := &dockertypes.ContainerCreateConfig{
+		Name: podContainerName,
+		Config: &dockercontainer.Config{
+			Image: container.Image,
+			Cmd:   container.Command,
+		},
+		HostConfig: &dockercontainer.HostConfig{
+			Binds:       volumeBinds,
+			NetworkMode: dockercontainer.NetworkMode(mode),
+			IpcMode:     dockercontainer.IpcMode(mode),
+			PidMode:     dockercontainer.PidMode(mode),
+		},
+	}
+
+	// set resource if specified
+	if container.Resources != nil {
+		config.HostConfig.Resources = dockercontainer.Resources{
+			NanoCPUs: int64(container.Resources.Cpus * 1000000000),
+			Memory:   container.Resources.Memory,
+		}
+	}
+
+	return config
+}
+
+func (m *cubeRuntimeManager) killPodContainers(runningPod cubecontainer.Pod) {
+	wg := sync.WaitGroup{}
+
+	wg.Add(len(runningPod.Containers))
+	for _, container := range runningPod.Containers {
+		go func(container *cubecontainer.Container) {
+			defer wg.Done()
+
+			err := m.dockerRuntime.StopContainer(container.ID.ID)
+			if err != nil {
+				log.Printf("error %v occurs when killing container %s\n", err, container.Name)
+			}
+		}(container)
+	}
+	wg.Wait()
 }

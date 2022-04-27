@@ -2,21 +2,27 @@ package httpserver
 
 import (
 	cubeconfig "Cubernetes/config"
-	"Cubernetes/pkg/utils/etcd_helper"
+	"Cubernetes/pkg/utils/etcdrw"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"strconv"
 )
 
-var etcd etcd_helper.ETCDContext
+type Handler struct {
+	Method     string
+	Path       string
+	HandleFunc func(ctx *gin.Context)
+}
 
 func Run() {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
-	etcd = etcd_helper.ETCDContext{Client: etcd_helper.NewETCDClient()}
-	defer etcd_helper.CloseETCDClient(etcd.Client)
+	etcdrw.Init()
+	defer etcdrw.Free()
+
+	handlerList := append(restfulList, watchList...)
 
 	for _, handler := range handlerList {
 		switch handler.Method {

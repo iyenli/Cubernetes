@@ -21,6 +21,7 @@ type Container struct {
 	Name    string   `json:"name"`
 	Image   string   `json:"image"`
 	Command []string `json:"command,omitempty"`
+	Args    []string `json:"args,omitempty"`
 	// use pointer or else omitempty is disabled
 	Resources    *ResourceRequirements `json:"resources,omitempty"`
 	VolumeMounts []VolumeMount         `json:"volumeMounts,omitempty"`
@@ -28,8 +29,9 @@ type Container struct {
 }
 
 type ResourceRequirements struct {
-	Limits   map[string]string `json:"limits,omitempty"`
-	Requests map[string]string `json:"requests,omitempty"`
+	Cpus float64 `json:"cpus,omitempty"`
+	// Memory in bytes
+	Memory int64 `json:"memory,omitempty"`
 }
 
 type Volume struct {

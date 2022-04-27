@@ -2,17 +2,18 @@ package container
 
 import (
 	object "Cubernetes/pkg/object"
-	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 	"time"
 )
 
 // Runtime interface defines the interfaces that should be implemented
 // by a container runtime.
 type Runtime interface {
-	Type() string
-	GetPods() ([]*Pod, error)
-	GetPodStatus(uid, name, namespace string)
-	SyncPod(pod *object.Pod, podStatus *PodStatus)
+	// Type() string
+	// GetPods() ([]*Pod, error)
+	// GetPodStatus(uid, name, namespace string) (*PodStatus, error)
+	SyncPod(pod *object.Pod, podStatus *PodStatus) error
+
+	Close()
 }
 
 type ContainerID struct {
@@ -29,10 +30,28 @@ type Container struct {
 	State   string
 }
 
+type ContainerState string
+type SandboxState string
+
+const (
+	runtimeName = "containerd"
+	// ContainerStateCreated indicates a container that has been created (e.g. with docker create) but not started.
+	ContainerStateCreated ContainerState = "created"
+	// ContainerStateRunning indicates a currently running container.
+	ContainerStateRunning ContainerState = "running"
+	// ContainerStateExited indicates a container that ran and completed ("stopped" in other contexts, although a created container is technically also "stopped").
+	ContainerStateExited ContainerState = "exited"
+	// ContainerStateUnknown encompasses all the states that we currently don't care about (like restarting, paused, dead).
+	ContainerStateUnknown ContainerState = "unknown"
+
+	SandboxStateReady    SandboxState = "ready"
+	SandboxStateNotReady SandboxState = "not ready"
+)
+
 type ContainerStatus struct {
 	ID         ContainerID
 	Name       string
-	State      string
+	State      ContainerState
 	CreatedAt  time.Time
 	StartedAt  time.Time
 	FinishedAt time.Time
@@ -42,6 +61,14 @@ type ContainerStatus struct {
 	Hash       uint64
 	Reason     string
 	Message    string
+}
+
+type SandboxStatus struct {
+	Id     string
+	Name   string
+	PodUID string
+	State  SandboxState
+	Ip     string
 }
 
 type Pod struct {
@@ -58,7 +85,7 @@ type PodStatus struct {
 	Namespace         string
 	IPs               []string
 	ContainerStatuses []*ContainerStatus
-	SandboxStatuses   []*runtimeapi.PodSandboxStatus
+	SandboxStatuses   []*SandboxStatus
 }
 
 // Annotation represents an annotation.
@@ -79,9 +106,42 @@ type Image struct {
 	Spec ImageSpec
 }
 
-type ImageService interface {
-	PullImage(image ImageSpec, podSandboxConfig *runtimeapi.PodSandboxConfig) (string, error)
-	GetImageRef(image ImageSpec) (string, error)
-	ListImages() ([]Image, error)
-	RemoveImage(image ImageSpec) error
+func (podStatus *PodStatus) FindContainerStatusByName(containerName string) *ContainerStatus {
+	for _, containerStatus := range podStatus.ContainerStatuses {
+		if containerStatus.Name == containerName {
+			return containerStatus
+		}
+	}
+	return nil
+}
+
+func ConvertPodStatusToRunningPod(podStatus *PodStatus) Pod {
+	runningPod := Pod{
+		UID:       podStatus.UID,
+		Name:      podStatus.Name,
+		Namespace: podStatus.Namespace,
+	}
+
+	for _, containerStatus := range podStatus.ContainerStatuses {
+		if containerStatus.State != ContainerStateRunning {
+			continue
+		}
+		container := &Container{
+			ID:      containerStatus.ID,
+			Name:    containerStatus.Name,
+			Image:   containerStatus.Image,
+			ImageID: containerStatus.ImageID,
+			Hash:    containerStatus.Hash,
+		}
+		runningPod.Containers = append(runningPod.Containers, container)
+	}
+
+	for _, sandbox := range podStatus.SandboxStatuses {
+		runningPod.SandBoxes = append(runningPod.SandBoxes, &Container{
+			ID:    ContainerID{Type: runtimeName, ID: sandbox.Id},
+			State: string(sandbox.State),
+		})
+	}
+
+	return runningPod
 }
