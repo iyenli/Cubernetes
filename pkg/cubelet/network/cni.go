@@ -105,3 +105,13 @@ func TearDownPod(cni gocni.CNI, netNamespace string, name string, id container.C
 
 	return nil
 }
+
+func CheckPodStatus(cni gocni.CNI, netNamespace string, id container.ContainerID) error {
+	ctx := context.Background()
+
+	err := cni.Check(ctx, id.ID, netNamespace)
+	if err != nil {
+		return err
+	}
+	return nil
+}

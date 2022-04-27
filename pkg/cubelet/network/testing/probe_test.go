@@ -26,6 +26,12 @@ func TestCni(t *testing.T) {
 	assert.NoError(t, err, "Setup without error")
 	assert.Equal(t, len(result.Routes), 1)
 
+	err = network.CheckPodStatus(cni, netns, container.ContainerID{
+		Type: "common",
+		ID:   containerID,
+	})
+	assert.NoError(t, err, "Check without error")
+
 	err = network.TearDownPod(cni, netns, podName, container.ContainerID{
 		Type: "common",
 		ID:   containerID,
