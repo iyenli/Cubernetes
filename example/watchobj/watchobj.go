@@ -20,13 +20,25 @@ func test() {
 	}
 }
 
+func waitAndCancel(cancel func()) {
+	time.Sleep(5 * time.Second)
+	cancel()
+}
+
 // simple example of use
 func main() {
-	ch, cancel := watchobj.WatchPods()
+	ch, cancel, err := watchobj.WatchPods()
+	if err != nil {
+		fmt.Println("error")
+		return
+	}
 	//go test()
+	// example for cancel watching
+	go waitAndCancel(cancel)
+
+	fmt.Println("start watching")
 	for podEvent := range ch {
 		fmt.Println(podEvent)
 	}
-	// cancel watching
-	cancel()
+	fmt.Println("watch cancelled")
 }

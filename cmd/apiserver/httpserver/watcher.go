@@ -5,7 +5,6 @@ import (
 	"Cubernetes/pkg/watchobj"
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/gin-gonic/gin"
 	"go.etcd.io/etcd/clientv3"
@@ -19,7 +18,6 @@ var watchList = []Handler{
 }
 
 func handleEvent(ctx *gin.Context, e *clientv3.Event) {
-	flusher, _ := ctx.Writer.(http.Flusher)
 	log.Println("watched event, telling client...")
 	var objEvent watchobj.ObjEvent
 	switch e.Type {
@@ -31,12 +29,13 @@ func handleEvent(ctx *gin.Context, e *clientv3.Event) {
 	objEvent.Path = string(e.Kv.Key)
 	objEvent.Object = string(e.Kv.Value)
 	buf, _ := json.Marshal(objEvent)
-	_, err := fmt.Fprint(ctx.Writer, string(buf))
+	buf = append(buf, watchobj.MSG_DELIM)
+	_, err := ctx.Writer.Write(buf)
 	if err != nil {
 		log.Println("fail to write to http client, error: ", err)
 		return
 	}
-	flusher.Flush()
+	ctx.Writer.Flush()
 }
 
 func postWatch(ctx *gin.Context, path string, withPrefix bool) {
@@ -48,6 +47,16 @@ func postWatch(ctx *gin.Context, path string, withPrefix bool) {
 	} else {
 		watchChan = etcdrw.WatchObj(c, path)
 	}
+
+	buf := []byte(watchobj.WATCH_CONFIRM)
+	buf = append(buf, watchobj.MSG_DELIM)
+	_, err := ctx.Writer.Write(buf)
+	if err != nil {
+		log.Println("fail to write to http client, error: ", err)
+		cancel()
+		return
+	}
+	ctx.Writer.Flush()
 
 	for {
 		select {
