@@ -58,6 +58,12 @@ func main() {
 		panic(err)
 	}
 
+	podStatus, err := runtime.GetPodStatus(pod.UID)
+	if err != nil {
+		panic(err)
+	}
+	log.Println(podStatus.SandboxStatuses[0], podStatus.ContainerStatuses[0])
+
 	time.Sleep(time.Second * 10)
 	log.Printf("start to kill pod %s\n", pod.UID)
 

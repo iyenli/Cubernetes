@@ -24,6 +24,7 @@ type DockerRuntime interface {
 	PullImage(imageName string) error
 	RemoveImage(imageName string) error
 	ListImages(all bool) ([]*dockertypes.ImageSummary, error)
+	// GetImageName(imageID string) (string, error)
 
 	// Closer
 	CloseConnection()

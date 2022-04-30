@@ -3,6 +3,7 @@ package cuberuntime
 import (
 	cubecontainer "Cubernetes/pkg/cubelet/container"
 	dockershim "Cubernetes/pkg/cubelet/dockershim"
+	"Cubernetes/pkg/cubelet/network"
 	object "Cubernetes/pkg/object"
 	"log"
 	"time"
@@ -43,22 +44,9 @@ func (m *cubeRuntimeManager) SyncPod(pod *object.Pod, podStatus *cubecontainer.P
 	removeContainer := false
 	// Kill the pod if sandbox changed
 	if podContainerChanges.KillPod {
-		// kill all pod's containers
-		m.killPodContainers(podStatus, removeContainer)
-
-		// kill pod sandbox
-		for _, sandbox := range podStatus.SandboxStatuses {
-			if err := m.dockerRuntime.StopContainer(sandbox.Id); err != nil {
-				log.Printf("fail to stop sandbox %s: %v\n", sandbox.Id, err)
-				return err
-			}
-
-			if removeContainer {
-				if err := m.dockerRuntime.RemoveContainer(sandbox.Id, false); err != nil {
-					log.Printf("fail to remove sandbox %s: %v\n", sandbox.Id, err)
-					return err
-				}
-			}
+		if err := m.killPodByStatus(podStatus, removeContainer); err != nil {
+			log.Printf("fail to kill pod %s: %v\n", pod.Name, err)
+			return err
 		}
 	} else {
 		// kill some containers
@@ -80,6 +68,11 @@ func (m *cubeRuntimeManager) SyncPod(pod *object.Pod, podStatus *cubecontainer.P
 			return err
 		}
 		log.Printf("create sandbox %s for pod %s\n", podSandboxID, pod.Name)
+
+		// Update sandbox to initnetwork
+		newSandboxStatuses, _ := m.getSandboxStatusesByPodUID(pod.UID)
+		podStatus.UpdateSandboxStatuses(newSandboxStatuses)
+		network.InitNetwork(network.ProbeNetworkPlugins("", ""), podStatus)
 	}
 
 	// Create containers
@@ -95,6 +88,7 @@ func (m *cubeRuntimeManager) SyncPod(pod *object.Pod, podStatus *cubecontainer.P
 	return nil
 }
 
+// FIXME: only compute container changes by its name now
 func (m *cubeRuntimeManager) computePodActions(pod *object.Pod, podStatus *cubecontainer.PodStatus) podActions {
 	createPodSandbox, sandboxID := m.podSandboxChanged(pod, podStatus)
 	changes := podActions{
@@ -130,22 +124,35 @@ func (m *cubeRuntimeManager) computePodActions(pod *object.Pod, podStatus *cubec
 		return changes
 	}
 
+	var remain []string
+	for _, oldContainer := range podStatus.ContainerStatuses {
+		remain = append(remain, oldContainer.ID.ID)
+	}
+
 	for idx, container := range pod.Spec.Containers {
 		containerStatus := podStatus.FindContainerStatusByName(container.Name)
 
 		if containerStatus == nil || containerStatus.State != cubecontainer.ContainerStateRunning {
-			// container not exist or container not running
-			if true /* TODO: container should be restart */ {
-				changes.ContainersToStart = append(changes.ContainersToStart, idx)
-				if containerStatus != nil && containerStatus.State == cubecontainer.ContainerStateUnknown {
-					changes.ContainersToKill = append(changes.ContainersToKill, containerStatus.ID.ID)
+			// container not exist or container not running => simply restart
+			// assume no name change => no spec change for easy impl
+			changes.ContainersToStart = append(changes.ContainersToStart, idx)
+			if containerStatus != nil /* just kill all old containers now */ {
+				changes.ContainersToKill = append(changes.ContainersToKill, containerStatus.ID.ID)
+			}
+		} else {
+			// container:name no change: keep the old container
+			var keep int
+			for idx := range remain {
+				if remain[idx] == containerStatus.ID.ID {
+					keep = idx; break
 				}
 			}
+			remain = append(remain[:keep], remain[keep + 1:]...)
 		}
-
-		// TODO: when we need to kill container?
-
 	}
+
+	// kill not mentioned containers
+	changes.ContainersToKill = append(changes.ContainersToKill, remain...)
 
 	return changes
 }
@@ -184,26 +191,34 @@ func (m *cubeRuntimeManager) KillPod(UID string) error {
 	// for debug only
 	removeContainer := true
 
-	// kill containers
-	m.killPodContainers(podStatus, removeContainer)
+	return m.killPodByStatus(podStatus, removeContainer)
+}
+
+func (m *cubeRuntimeManager) killPodByStatus(status *cubecontainer.PodStatus, remove bool) error {
+	m.killPodContainers(status, remove)
 
 	// kill pod sandbox
-	for _, sandbox := range podStatus.SandboxStatuses {
+	for _, sandbox := range status.SandboxStatuses {
 		log.Printf("start to kill sandbox %s\n", sandbox.Id)
 		if err := m.dockerRuntime.StopContainer(sandbox.Id); err != nil {
 			log.Printf("fail to stop sandbox %s: %v\n", sandbox.Id, err)
 			return err
 		}
 
-		if removeContainer {
+		if remove {
 			if err := m.dockerRuntime.RemoveContainer(sandbox.Id, false); err != nil {
 				log.Printf("fail to remove sandbox %s: %v\n", sandbox.Id, err)
 				return err
 			}
 		}
+		network.ReleaseNetwork(network.ProbeNetworkPlugins("", ""), status)
 	}
 
 	return nil
+}
+
+func (m *cubeRuntimeManager) GetPodStatus(UID string) (*cubecontainer.PodStatus, error) {
+	return m.getPodStatusByUID(UID)
 }
 
 func (c *cubeRuntimeManager) getPodStatusByUID(UID string) (*cubecontainer.PodStatus, error) {
@@ -225,6 +240,7 @@ func (c *cubeRuntimeManager) getPodStatusByUID(UID string) (*cubecontainer.PodSt
 	return &cubecontainer.PodStatus{
 		UID:               UID,
 		Name:              podName,
+		NetworkNamespace:  "default",
 		ContainerStatuses: containerStatuses,
 		SandboxStatuses:   sandboxStatuses,
 	}, nil

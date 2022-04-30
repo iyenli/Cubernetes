@@ -11,7 +11,7 @@ import (
 type Runtime interface {
 	// SyncPod Type() string
 	// GetPods() ([]*Pod, error)
-	// GetPodStatus(uid, name, namespace string) (*PodStatus, error)
+	GetPodStatus(UID string) (*PodStatus, error)
 	KillPod(UID string) error
 	SyncPod(pod *object.Pod, podStatus *PodStatus) error
 
@@ -85,11 +85,15 @@ type PodNetworkStatus struct {
 	IP net.IP `json:"ip" description:"Primary IP address of the pod"`
 }
 
-func (podStatus *PodStatus) FindContainerStatusByName(containerName string) *ContainerStatus {
-	for _, containerStatus := range podStatus.ContainerStatuses {
+func (s *PodStatus) FindContainerStatusByName(containerName string) *ContainerStatus {
+	for _, containerStatus := range s.ContainerStatuses {
 		if containerStatus.Name == containerName {
 			return containerStatus
 		}
 	}
 	return nil
+}
+
+func (s *PodStatus) UpdateSandboxStatuses(sandboxStatuses []*SandboxStatus) {
+	s.SandboxStatuses = sandboxStatuses
 }
