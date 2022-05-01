@@ -1,13 +1,13 @@
 package httpserver
 
 import (
+	"Cubernetes/pkg/apiserver/watchobj"
 	"Cubernetes/pkg/utils/etcdrw"
-	"Cubernetes/pkg/watchobj"
 	"context"
 	"encoding/json"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/gin-gonic/gin"
-	"go.etcd.io/etcd/clientv3"
+	"go.etcd.io/etcd/api/v3/mvccpb"
+	"go.etcd.io/etcd/client/v3"
 	"log"
 	"net/http"
 )
@@ -15,6 +15,9 @@ import (
 var watchList = []Handler{
 	{http.MethodPost, "/apis/watch/pod/:uid", watchPod},
 	{http.MethodPost, "/apis/watch/pods", watchPods},
+
+	{http.MethodPost, "/apis/watch/service/:uid", watchService},
+	{http.MethodPost, "/apis/watch/services", watchServices},
 }
 
 func handleEvent(ctx *gin.Context, e *clientv3.Event) {
@@ -77,5 +80,13 @@ func watchPod(ctx *gin.Context) {
 }
 
 func watchPods(ctx *gin.Context) {
+	postWatch(ctx, "/apis/pod", true)
+}
+
+func watchService(ctx *gin.Context) {
+	postWatch(ctx, "/apis/pod/"+ctx.Param("uid"), false)
+}
+
+func watchServices(ctx *gin.Context) {
 	postWatch(ctx, "/apis/pod", true)
 }
