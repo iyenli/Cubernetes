@@ -56,8 +56,8 @@ type ContainerPort struct {
 type Service struct {
 	TypeMeta   `json:",inline"`
 	ObjectMeta `json:"metadata"`
-	Spec       ServiceSpec    `json:"spec"`
-	Status     *ServiceStatus `json:"status,omitempty"`
+	Spec       ServiceSpec   `json:"spec"`
+	Status     ServiceStatus `json:"status,omitempty"`
 }
 
 type ServiceSpec struct {
@@ -81,5 +81,11 @@ type ServicePort struct {
 }
 
 type ServiceStatus struct {
-	// reserved for later use
+	Ingress []PodIngress `json:"ingress,omitempty"`
+}
+
+type PodIngress struct {
+	HostName string  `json:"hostname,omitempty"`
+	IP       string  `json:"ip,omitempty"`
+	Ports    []int32 `json:"ports,omitempty"`
 }
