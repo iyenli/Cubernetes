@@ -144,10 +144,11 @@ func (m *cubeRuntimeManager) computePodActions(pod *object.Pod, podStatus *cubec
 			var keep int
 			for idx := range remain {
 				if remain[idx] == containerStatus.ID.ID {
-					keep = idx; break
+					keep = idx
+					break
 				}
 			}
-			remain = append(remain[:keep], remain[keep + 1:]...)
+			remain = append(remain[:keep], remain[keep+1:]...)
 		}
 	}
 
