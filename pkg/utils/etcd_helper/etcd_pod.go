@@ -4,7 +4,7 @@ import (
 	"Cubernetes/pkg/object"
 	"context"
 	"encoding/json"
-	"go.etcd.io/etcd/clientv3"
+	"go.etcd.io/etcd/client/v3"
 	"log"
 )
 

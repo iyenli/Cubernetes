@@ -1,7 +1,7 @@
 package main
 
 import (
-	"Cubernetes/pkg/watchobj"
+	"Cubernetes/pkg/apiserver/watchobj"
 	"fmt"
 	"log"
 	"net/http"

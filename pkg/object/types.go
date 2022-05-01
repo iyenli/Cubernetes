@@ -1,5 +1,7 @@
 package object
 
+import "net"
+
 type Pod struct {
 	TypeMeta   `json:",inline"`
 	ObjectMeta `json:"metadata"`
@@ -15,6 +17,7 @@ type PodSpec struct {
 
 type PodStatus struct {
 	// reserved for later use
+	IP net.IP `json:"IP"`
 }
 
 type Container struct {

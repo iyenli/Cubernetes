@@ -1,9 +1,9 @@
 package cubelet
 
 import (
+	watchobj "Cubernetes/pkg/apiserver/watchobj"
 	"Cubernetes/pkg/cubelet/container"
 	cuberuntime "Cubernetes/pkg/cubelet/cuberuntime"
-	"Cubernetes/pkg/watchobj"
 	"log"
 )
 

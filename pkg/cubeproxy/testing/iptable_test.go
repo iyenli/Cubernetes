@@ -2,9 +2,10 @@ package testing
 
 import (
 	"Cubernetes/pkg/cubeproxy/proxyruntime"
+	"testing"
+
 	"github.com/coreos/go-iptables/iptables"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestEnv(t *testing.T) {
@@ -39,6 +40,6 @@ func TestIPAppend(t *testing.T) {
 	ipTable, err := iptables.New(iptables.Timeout(3))
 	assert.NoError(t, err)
 
-	err = ipTable.DeleteChain(proxyruntime.NatTable, "NewChain")
+	err = ipTable.DeleteIfExists(proxyruntime.NatTable, "NewChain")
 	assert.NoError(t, err)
 }
