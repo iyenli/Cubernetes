@@ -46,6 +46,10 @@ func GetPods() ([]object.Pod, error) {
 	return pods, nil
 }
 
+func SelectPods(selectors map[string]string) ([]object.Pod, error) {
+	return nil, nil
+}
+
 func CreatePod(pod object.Pod) (object.Pod, error) {
 	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/pod"
 

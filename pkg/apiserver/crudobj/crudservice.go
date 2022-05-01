@@ -46,6 +46,10 @@ func GetServices() ([]object.Service, error) {
 	return services, nil
 }
 
+func SelectServices(selectors map[string]string) ([]object.Service, error) {
+	return nil, nil
+}
+
 func CreateService(service object.Service) (object.Service, error) {
 	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/service"
 
