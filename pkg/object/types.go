@@ -52,3 +52,34 @@ type ContainerPort struct {
 	Protocol      string `json:"protocol"`
 	HostIP        string `json:"hostIP"`
 }
+
+type Service struct {
+	TypeMeta   `json:",inline"`
+	ObjectMeta `json:"metadata"`
+	Spec       ServiceSpec    `json:"spec"`
+	Status     *ServiceStatus `json:"status,omitempty"`
+}
+
+type ServiceSpec struct {
+	Selector  map[string]string `json:"selector,omitempty"`
+	Ports     []ServicePort     `json:"ports,omitempty"`
+	ClusterIP string            `json:"ip,omitempty"`
+}
+
+type Protocol string
+
+const (
+	ProtocolTCP  Protocol = "TCP"
+	ProtocolUDP  Protocol = "UDP"
+	ProtocolSCTP Protocol = "SCTP"
+)
+
+type ServicePort struct {
+	Protocol   Protocol `json:"protocol,omitempty"`
+	Port       int32    `json:"port,omitempty"`
+	TargetPort int32    `json:"target,omitempty"`
+}
+
+type ServiceStatus struct {
+	// reserved for later use
+}
