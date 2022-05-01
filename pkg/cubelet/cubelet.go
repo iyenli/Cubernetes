@@ -5,6 +5,7 @@ import (
 	"Cubernetes/pkg/cubelet/container"
 	cuberuntime "Cubernetes/pkg/cubelet/cuberuntime"
 	"log"
+	"os"
 )
 
 type Cubelet struct {
@@ -12,7 +13,12 @@ type Cubelet struct {
 }
 
 func (cl *Cubelet) syncLoop() {
-	ch, cancel := watchobj.WatchPods()
+	ch, cancel, err := watchobj.WatchPods()
+	if err != nil {
+		log.Panic("Error occurs when watching pods")
+		os.Exit(0)
+	}
+
 	defer cancel()
 
 	for podEvent := range ch {
