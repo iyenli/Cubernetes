@@ -7,6 +7,7 @@ require k8s.io/cri-api v0.23.5
 require (
 	github.com/coreos/etcd v3.3.27+incompatible
 	github.com/gin-gonic/gin v1.7.7
+	github.com/google/uuid v1.1.2
 	github.com/spf13/cobra v1.4.0
 	github.com/stretchr/testify v1.7.1
 	go.etcd.io/etcd v3.3.27+incompatible
@@ -30,7 +31,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/btree v1.0.1 // indirect
-	github.com/google/uuid v1.1.2 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
