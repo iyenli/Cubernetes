@@ -3,8 +3,9 @@ package object
 type Pod struct {
 	TypeMeta   `json:",inline"`
 	ObjectMeta `json:"metadata"`
-	Spec       PodSpec   `json:"spec"`
-	Status     PodStatus `json:"status,omitempty"`
+	Spec       PodSpec `json:"spec"`
+	// use pointer or else omitempty is disabled
+	Status *PodStatus `json:"status,omitempty"`
 }
 
 type PodSpec struct {
@@ -17,17 +18,20 @@ type PodStatus struct {
 }
 
 type Container struct {
-	Name         string               `json:"name"`
-	Image        string               `json:"image"`
-	Command      []string             `json:"command,omitempty"`
-	Resources    ResourceRequirements `json:"resources,omitempty"`
-	VolumeMounts []VolumeMount        `json:"volumeMounts,omitempty"`
-	Ports        []ContainerPort      `json:"ports,omitempty"`
+	Name    string   `json:"name"`
+	Image   string   `json:"image"`
+	Command []string `json:"command,omitempty"`
+	Args    []string `json:"args,omitempty"`
+	// use pointer or else omitempty is disabled
+	Resources    *ResourceRequirements `json:"resources,omitempty"`
+	VolumeMounts []VolumeMount         `json:"volumeMounts,omitempty"`
+	Ports        []ContainerPort       `json:"ports,omitempty"`
 }
 
 type ResourceRequirements struct {
-	Limits   map[string]string `json:"limits,omitempty"`
-	Requests map[string]string `json:"requests,omitempty"`
+	Cpus float64 `json:"cpus,omitempty"`
+	// Memory in bytes
+	Memory int64 `json:"memory,omitempty"`
 }
 
 type Volume struct {
@@ -46,4 +50,36 @@ type ContainerPort struct {
 	HostPort      int32  `json:"hostPort"`
 	ContainerPort int32  `json:"containerPort"`
 	Protocol      string `json:"protocol"`
+	HostIP        string `json:"hostIP"`
+}
+
+type Service struct {
+	TypeMeta   `json:",inline"`
+	ObjectMeta `json:"metadata"`
+	Spec       ServiceSpec    `json:"spec"`
+	Status     *ServiceStatus `json:"status,omitempty"`
+}
+
+type ServiceSpec struct {
+	Selector  map[string]string `json:"selector,omitempty"`
+	Ports     []ServicePort     `json:"ports,omitempty"`
+	ClusterIP string            `json:"ip,omitempty"`
+}
+
+type Protocol string
+
+const (
+	ProtocolTCP  Protocol = "TCP"
+	ProtocolUDP  Protocol = "UDP"
+	ProtocolSCTP Protocol = "SCTP"
+)
+
+type ServicePort struct {
+	Protocol   Protocol `json:"protocol,omitempty"`
+	Port       int32    `json:"port,omitempty"`
+	TargetPort int32    `json:"target,omitempty"`
+}
+
+type ServiceStatus struct {
+	// reserved for later use
 }
