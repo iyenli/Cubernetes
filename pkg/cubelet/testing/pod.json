@@ -1,0 +1,42 @@
+{
+  "kind": "Pod",
+  "apiVersion": "wahtever/v1",
+  "metadata": {
+    "name": "hello",
+    "uid": "nginx:foo-bar-meaningless-uid"
+  },
+  "spec": {
+    "containers": [
+      {
+        "name": "foo-nginx",
+        "image": "nginx",
+        "ports": [
+          {
+            "containerPort": 8080,
+            "hostPort": 80
+          }
+        ],
+        "volumeMounts": [
+          {
+            "name": "conf",
+            "mountPath": "/etc/nginx/nginx.conf"
+          },
+          {
+            "name": "html",
+            "mountPath": "/www"
+          }
+        ]
+      }
+    ],
+    "volumes": [
+      {
+        "name": "conf",
+        "hostPath": "/home/lee/CloudOS/test/nginx.conf/nginx.conf"
+      },
+      {
+        "name": "html",
+        "hostPath": "/home/lee/CloudOS/test/www"
+      }
+    ]
+  }
+}
