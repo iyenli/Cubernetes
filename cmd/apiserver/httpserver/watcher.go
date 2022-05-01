@@ -5,9 +5,9 @@ import (
 	"Cubernetes/pkg/watchobj"
 	"context"
 	"encoding/json"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/gin-gonic/gin"
-	"go.etcd.io/etcd/clientv3"
+	"go.etcd.io/etcd/api/v3/mvccpb"
+	"go.etcd.io/etcd/client/v3"
 	"log"
 	"net/http"
 )
