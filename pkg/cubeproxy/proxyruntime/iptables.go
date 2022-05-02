@@ -1,12 +1,13 @@
 package proxyruntime
 
 import (
+	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/object"
 	"fmt"
+	"github.com/coreos/go-iptables/iptables"
 	"log"
 	"net"
-
-	"github.com/coreos/go-iptables/iptables"
+	"strconv"
 )
 
 /**
@@ -54,13 +55,17 @@ const (
 	InputChain  = "INPUT"
 	OutputChain = "OUTPUT"
 	DockerChain = "DOCKER"
-	// SNAT use
+	// SnatOP SNAT use
 	SnatOP      = "SNAT"
 	PostRouting = "POSTROUTING"
 
-	//DNAT use
+	// DnatOP DNAT use
 	DnatOP     = "DNAT"
 	PreRouting = "PREROUTING"
+
+	// RANDOM Load balancer policy
+	RANDOM = "random"
+	RR     = "nth"
 )
 
 var ipt *iptables.IPTables
@@ -93,25 +98,38 @@ func InitPodChain() error {
 }
 
 func AddService(service *object.Service) error {
+	// Default value of service
 	// any service's cluster IP, modify to pod IP
 	pods, err := GetPodByService(service)
-	if err != nil {
+	if err != nil || len(pods) == 0 {
 		log.Println("Not matched pods found")
 		return err
 	}
 
+	// Easy load balancer
+	podNums := len(pods)
+	probability := float64(1) / float64(podNums)
+
+	// Load balancer: Random and average
 	for _, pod := range pods {
 		for _, port := range service.Spec.Ports {
 			// push front as the highest priority
 			// TODO: delete service and corresponding rules
 			err = ipt.Insert(NatTable, PreRouting, 1,
 				"-d", service.Spec.ClusterIP,
-				"--dport", string(port.Port),
 				"-p", string(port.Protocol),
+				"--dport", strconv.FormatInt(int64(port.TargetPort), 10),
+				"--mode", RANDOM,
+				"--probability", fmt.Sprintf("%.2f", probability),
 				"-j", DnatOP,
-				"--to-destination", fmt.Sprintf("%v:%v", , string(port.TargetPort)))
+				"--to-destination", fmt.Sprintf("%v:%v", pod.Status.IP.String(), strconv.FormatInt(int64(port.Port), 10)))
 
 			if err != nil {
+				return err
+			}
+			err = crudobj.AddEndpointToService(service, pod.Status.IP)
+			if err != nil {
+				log.Println("Update endpoint IP to API Server failed")
 				return err
 			}
 		}
@@ -120,10 +138,10 @@ func AddService(service *object.Service) error {
 	return nil
 }
 
-// It would work even if the service not exist
+// DeleteService It would work even if the service not exist
 func DeleteService(service *object.Service) error {
 	pods, err := GetPodByService(service)
-	if err != nil {
+	if err != nil || len(pods) == 0 {
 		log.Println("Not matched pods found")
 		return err
 	}
@@ -132,12 +150,12 @@ func DeleteService(service *object.Service) error {
 		for _, port := range service.Spec.Ports {
 			// push front as the highest priority
 			// TODO: delete service and corresponding rules
-			err = ipt.Insert(NatTable, PreRouting, 1,
+			err = ipt.DeleteIfExists(NatTable, PreRouting,
 				"-d", service.Spec.ClusterIP,
-				"--dport", string(port.Port),
 				"-p", string(port.Protocol),
+				"--dport", strconv.FormatInt(int64(port.Port), 10),
 				"-j", DnatOP,
-				"--to-destination", fmt.Sprintf("%v:%v", pod.Status.IP.String(), string(port.TargetPort)))
+				"--to-destination", fmt.Sprintf("%v:%v", pod.Status.IP.String(), strconv.FormatInt(int64(port.TargetPort), 10)))
 
 			if err != nil {
 				return err
@@ -148,16 +166,38 @@ func DeleteService(service *object.Service) error {
 	return nil
 }
 
+// AddPod FIX: -p should set front of --dport
 func AddPod(pod *object.Pod, dockerIP net.IP) error {
 	for _, container := range pod.Spec.Containers {
 		for _, port := range container.Ports {
-			
-			err := ipt.Insert(NatTable, PreRouting, 1,
+			err := ipt.Append(NatTable, PreRouting,
 				"-d", pod.Status.IP.String(),
-				"--dport", string(port.HostPort),
-				"-p", string(port.Protocol),
+				"-p", port.Protocol,
+				"--dport", strconv.FormatInt(int64(port.HostPort), 10),
 				"-j", DnatOP,
-				"--to-destination", fmt.Sprintf("%v:%v", dockerIP.String(), string(port.ContainerPort)))
+				"--to-destination", fmt.Sprintf("%v:%v", dockerIP.String(), strconv.FormatInt(int64(port.ContainerPort), 10)))
+
+			if err != nil {
+				log.Println("Add pod IP to iptables failed")
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// DeletePod FIX: -p should set front of --dport
+func DeletePod(pod *object.Pod, dockerIP net.IP) error {
+	for _, container := range pod.Spec.Containers {
+		for _, port := range container.Ports {
+
+			err := ipt.DeleteIfExists(NatTable, PreRouting,
+				"-d", pod.Status.IP.String(),
+				"-p", port.Protocol,
+				"--dport", strconv.FormatInt(int64(port.HostPort), 10),
+				"-j", DnatOP,
+				"--to-destination", fmt.Sprintf("%v:%v", dockerIP.String(), strconv.FormatInt(int64(port.ContainerPort), 10)))
 
 			if err != nil {
 				return err

@@ -72,7 +72,7 @@ func test() {
 
 // simple example of use
 func main() {
-	ch, cancel := watchobj.WatchPods()
+	ch, cancel, _ := watchobj.WatchPods()
 	go test()
 	for podEvent := range ch {
 		fmt.Println(podEvent)
