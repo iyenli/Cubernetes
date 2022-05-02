@@ -13,3 +13,25 @@ func DefaultService(service *object.Service) error {
 	}
 	return nil
 }
+
+func MatchServiceAndPod(service *object.Service, pod *object.Pod) bool {
+	for sLabelKey, sLabelVal := range service.Labels {
+		hasThisLabel := false
+		for pLabelKey, pLabelVal := range pod.Labels {
+			if pLabelKey == sLabelKey {
+				if pLabelVal == sLabelVal {
+					hasThisLabel = true
+					break
+				} else {
+					return false
+				}
+			}
+		}
+
+		if !hasThisLabel {
+			return false
+		}
+	}
+
+	return true
+}
