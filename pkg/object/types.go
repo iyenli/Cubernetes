@@ -89,3 +89,28 @@ type PodIngress struct {
 	IP       string  `json:"ip,omitempty"`
 	Ports    []int32 `json:"ports,omitempty"`
 }
+
+type ReplicaSet struct {
+	TypeMeta   `json:",inline"`
+	ObjectMeta `json:"metadata"`
+	Spec       ReplicaSetSpec    `json:"spec"`
+	Status     *ReplicaSetStatus `json:"status,omitempty"`
+}
+
+type ReplicaSetSpec struct {
+	Replicas int32             `json:"replicas"`
+	Selector map[string]string `json:"selector,omitempty"`
+	Template PodTemplate       `json:"template"`
+}
+
+type PodTemplate struct {
+	ObjectMeta `json:"metadata"`
+	Spec       PodSpec `json:"spec"`
+}
+
+type ReplicaSetStatus struct {
+	// actual runnig pod replica in PodUIDs
+	RunningReplicas int32 `json:"replicas"`
+	// UID of pods assigned
+	PodUIDs []string `json:"podUIDs"`
+}
