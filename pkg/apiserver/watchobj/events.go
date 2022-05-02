@@ -22,3 +22,8 @@ type PodEvent struct {
 	EType EventType
 	Pod   object.Pod
 }
+
+type ServiceEvent struct {
+	EType   EventType
+	Service object.Service
+}
