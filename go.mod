@@ -10,6 +10,7 @@ require (
 	github.com/docker/go-connections v0.4.0
 	github.com/gin-gonic/gin v1.7.7
 	github.com/google/uuid v1.3.0
+	github.com/prometheus/client_golang v1.12.1
 	github.com/spf13/cobra v1.4.0
 	github.com/stretchr/testify v1.7.1
 	go.etcd.io/etcd/api/v3 v3.5.4
@@ -43,7 +44,6 @@ require (
 	github.com/opencontainers/image-spec v1.0.3-0.20211202183452-c5a74bcca799 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/prometheus/client_golang v1.12.1 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.32.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
