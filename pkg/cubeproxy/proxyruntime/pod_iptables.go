@@ -3,14 +3,35 @@ package proxyruntime
 import (
 	"Cubernetes/pkg/object"
 	"fmt"
+	"github.com/coreos/go-iptables/iptables"
 	"log"
 	"net"
 	"strconv"
 )
 
+type PodTablesRuntime struct {
+	ipt *iptables.IPTables
+}
+
 // InitPodChain Think twice and write pod's iptable
-func InitPodChain() error {
-	return nil
+func InitPodChain() (*PodTablesRuntime, error) {
+	ptr := &PodTablesRuntime{ipt: nil}
+	err := ptr.InitObject()
+	if err != nil {
+		return nil, err
+	}
+
+	return ptr, nil
+}
+
+// InitObject private function! Just for test
+func (ptr *PodTablesRuntime) InitObject() (err error) {
+	ptr.ipt, err = iptables.New(iptables.Timeout(3))
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	return
 }
 
 func ReleasePodChain() error {
@@ -18,10 +39,10 @@ func ReleasePodChain() error {
 }
 
 // AddPod FIX: -p should set front of --dport
-func AddPod(pod *object.Pod, dockerIP net.IP) error {
+func (ptr *PodTablesRuntime) AddPod(pod *object.Pod, dockerIP net.IP) error {
 	for _, container := range pod.Spec.Containers {
 		for _, port := range container.Ports {
-			err := ipt.Append(NatTable, PreRouting,
+			err := ptr.ipt.Append(NatTable, PreRouting,
 				"-d", pod.Status.IP.String(),
 				"-p", port.Protocol,
 				"--dport", strconv.FormatInt(int64(port.HostPort), 10),
@@ -39,11 +60,11 @@ func AddPod(pod *object.Pod, dockerIP net.IP) error {
 }
 
 // DeletePod FIX: -p should set front of --dport
-func DeletePod(pod *object.Pod, dockerIP net.IP) error {
+func (ptr *PodTablesRuntime) DeletePod(pod *object.Pod, dockerIP net.IP) error {
 	for _, container := range pod.Spec.Containers {
 		for _, port := range container.Ports {
 
-			err := ipt.DeleteIfExists(NatTable, PreRouting,
+			err := ptr.ipt.DeleteIfExists(NatTable, PreRouting,
 				"-d", pod.Status.IP.String(),
 				"-p", port.Protocol,
 				"--dport", strconv.FormatInt(int64(port.HostPort), 10),

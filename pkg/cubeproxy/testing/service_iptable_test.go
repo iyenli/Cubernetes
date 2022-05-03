@@ -3,7 +3,9 @@ package testing
 import (
 	"Cubernetes/pkg/cubeproxy/proxyruntime"
 	"Cubernetes/pkg/object"
+	"log"
 	"testing"
+	"time"
 
 	"github.com/coreos/go-iptables/iptables"
 	"github.com/stretchr/testify/assert"
@@ -27,11 +29,11 @@ var service = object.Service{
 			{
 				Protocol:   "TCP",
 				Port:       8080,
-				TargetPort: 8080,
+				TargetPort: 8098,
 			},
 			{
 				Protocol:   "UDP",
-				Port:       9870,
+				Port:       80,
 				TargetPort: 9841,
 			},
 		},
@@ -39,6 +41,10 @@ var service = object.Service{
 	},
 	Status: &object.ServiceStatus{},
 }
+
+/**
+iptables pkg test
+*/
 
 func TestEnv(t *testing.T) {
 	var flag bool
@@ -68,17 +74,6 @@ func TestEnv(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestInitIPTables(t *testing.T) {
-	err := proxyruntime.InitIPTables()
-	assert.NoError(t, err)
-}
-
-func TestReleaseIPTables(t *testing.T) {
-	err := proxyruntime.InitObject()
-	err = proxyruntime.ReleaseIPTables()
-	assert.NoError(t, err)
-}
-
 func TestChainDelete(t *testing.T) {
 	ipTable, err := iptables.New(iptables.Timeout(3))
 	assert.NoError(t, err)
@@ -87,18 +82,77 @@ func TestChainDelete(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestAddService(t *testing.T) {
-	err := proxyruntime.InitIPTables()
+func TestRelease(t *testing.T) {
+	rt, err := proxyruntime.InitIPTables()
 	assert.NoError(t, err)
 
-	err = proxyruntime.AddService(&service)
+	err = rt.ReleaseIPTables()
 	assert.NoError(t, err)
 }
 
-func TestDeleteService(t *testing.T) {
-	err := proxyruntime.InitIPTables()
+// If test failed for
+func TestClearIPT(t *testing.T) {
+	ipt, err := iptables.New(iptables.Timeout(3))
 	assert.NoError(t, err)
 
-	err = proxyruntime.DeleteService(&service)
+	err = ipt.ClearAll()
 	assert.NoError(t, err)
+	err = ipt.DeleteAll()
+	assert.NoError(t, err)
+}
+
+/**
+iptables pkg test end
+*/
+
+func TestInitIPTables(t *testing.T) {
+	rt, err := proxyruntime.InitIPTables()
+	assert.NoError(t, err)
+
+	// Check IP Tables and test release!
+	//time.Sleep(10 * time.Second)
+
+	err = rt.ReleaseIPTables()
+	assert.NoError(t, err)
+}
+
+func TestAddService(t *testing.T) {
+	rt, err := proxyruntime.InitIPTables()
+	assert.NoError(t, err)
+	assert.NotNil(t, rt)
+
+	err = rt.AddService(&service)
+	assert.NoError(t, err)
+
+	time.Sleep(40 * time.Second)
+	// clear testing env
+	defer func(rt *proxyruntime.ProxyRuntime) {
+		err := rt.DeleteService(&service)
+		if err != nil {
+			t.Log(err)
+			log.Panicln("Release proxy runtime failed.")
+		}
+
+		err = rt.ReleaseIPTables()
+		if err != nil {
+			t.Log(err)
+			log.Panicln("Release proxy runtime failed.")
+		}
+	}(rt)
+}
+
+func TestDeleteService(t *testing.T) {
+	rt, err := proxyruntime.InitIPTables()
+	assert.NoError(t, err)
+
+	err = rt.DeleteService(&service)
+	assert.NoError(t, err)
+
+	// clear testing env
+	defer func(rt *proxyruntime.ProxyRuntime) {
+		err := rt.ReleaseIPTables()
+		if err != nil {
+			log.Panicln("Release proxy runtime failed.")
+		}
+	}(rt)
 }

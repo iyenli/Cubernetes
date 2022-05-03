@@ -8,7 +8,7 @@ import (
 )
 
 func TestAddPod(t *testing.T) {
-	err := proxyruntime.InitIPTables()
+	ptr, err := proxyruntime.InitPodChain()
 	assert.NoError(t, err)
 
 	pod, err := proxyruntime.GetPodByService(nil)
@@ -18,14 +18,14 @@ func TestAddPod(t *testing.T) {
 
 	containerIP := net.ParseIP("10.0.0.4")
 	t.Log(pod[0].Status.IP.String())
-	err = proxyruntime.AddPod(&pod[0], containerIP)
+	err = ptr.AddPod(&pod[0], containerIP)
 	assert.NoError(t, err)
 
 	// Now check IP Table manually...
 }
 
 func TestDeletePod(t *testing.T) {
-	err := proxyruntime.InitIPTables()
+	ptr, err := proxyruntime.InitPodChain()
 	assert.NoError(t, err)
 
 	pod, err := proxyruntime.GetPodByService(nil)
@@ -34,7 +34,7 @@ func TestDeletePod(t *testing.T) {
 	assert.Equal(t, 1, len(pod))
 
 	containerIP := net.ParseIP("10.0.0.4")
-	err = proxyruntime.DeletePod(&pod[0], containerIP)
+	err = ptr.DeletePod(&pod[0], containerIP)
 	assert.NoError(t, err)
 
 	// Now check IP Table manually...
