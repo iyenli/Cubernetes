@@ -51,4 +51,6 @@ func (cl *Cubelet) Run() {
 
 	defer cl.runtime.Close()
 	cl.syncLoop()
+
+	log.Fatalln("Unreachable here")
 }
