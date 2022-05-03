@@ -1,6 +1,9 @@
 package object
 
-import "net"
+import (
+	"net"
+	"time"
+)
 
 type Pod struct {
 	TypeMeta   `json:",inline"`
@@ -46,8 +49,19 @@ const (
 
 type PodStatus struct {
 	// reserved for later use
-	IP    net.IP   `json:"IP"`
-	Phase PodPhase `json:"phase,omitempty"`
+	IP                  net.IP         `json:"IP"`
+	Phase               PodPhase       `json:"phase,omitempty"`
+	ActualResourceUsage *ResourceUsage `json:"actualResourceUsage,omitempty"`
+}
+
+type ResourceUsage struct {
+	LastScaleTime  time.Time `json:"lastScaleTime"`
+	LastUpdateTime time.Time `json:"lastUpdateTime"`
+
+	// for 4 cores, up to 400.00%
+	ActualCPUUsage float64 `json:"actualCPUUsage"`
+	// in bytes
+	ActualMemoryUsage int64 `json:"actualMemoryUsage"`
 }
 
 type Container struct {
@@ -56,9 +70,10 @@ type Container struct {
 	Command []string `json:"command,omitempty"`
 	Args    []string `json:"args,omitempty"`
 	// use pointer or else omitempty is disabled
-	Resources    *ResourceRequirements `json:"resources,omitempty"`
-	VolumeMounts []VolumeMount         `json:"volumeMounts,omitempty"`
-	Ports        []ContainerPort       `json:"ports,omitempty"`
+	Resources *ResourceRequirements `json:"resources,omitempty"`
+
+	VolumeMounts []VolumeMount   `json:"volumeMounts,omitempty"`
+	Ports        []ContainerPort `json:"ports,omitempty"`
 }
 
 type ResourceRequirements struct {
@@ -142,7 +157,7 @@ type PodTemplate struct {
 }
 
 type ReplicaSetStatus struct {
-	// actual runnig pod replica in PodUIDs
+	// actual running pod replica in PodUIDs
 	RunningReplicas int32 `json:"replicas"`
 	// UID of pods assigned
 	PodUIDs []string `json:"podUIDs"`
