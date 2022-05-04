@@ -7,22 +7,21 @@ package cmd
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/object"
+	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"log"
-
-	"github.com/spf13/cobra"
 )
 
-// createCmd represents the create command
-var createCmd = &cobra.Command{
-	Use:   "create",
-	Short: "Create objects from a config file",
+// applyCmd represents the apply command
+var applyCmd = &cobra.Command{
+	Use:   "apply",
+	Short: "Apply a yaml configuration file to Cubernetes",
 	Long: `
-Create objects from a config file
+Apply a yaml configuration file to Cubernetes
 for example:
-	cubectl create -f pod.yaml
-	cubectl create -f [file path]`,
+	cubectl apply -f pod.yaml
+	cubectl apply -f [file path]`,
 	Run: func(cmd *cobra.Command, args []string) {
 		f, err := cmd.Flags().GetString("file")
 		if err != nil {
@@ -74,16 +73,16 @@ for example:
 }
 
 func init() {
-	rootCmd.AddCommand(createCmd)
+	rootCmd.AddCommand(applyCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// createCmd.PersistentFlags().String("foo", "", "A help for foo")
-	createCmd.Flags().StringP("file", "f", "", "path of your config yaml file")
+	// applyCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// createCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// applyCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	applyCmd.Flags().StringP("file", "f", "", "path of your config yaml file")
 }
