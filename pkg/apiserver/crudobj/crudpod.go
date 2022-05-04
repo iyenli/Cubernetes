@@ -47,7 +47,22 @@ func GetPods() ([]object.Pod, error) {
 }
 
 func SelectPods(selectors map[string]string) ([]object.Pod, error) {
-	return nil, nil
+	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/select/pods"
+
+	body, err := postRequest(url, selectors)
+	if err != nil {
+		log.Println("postRequest fail")
+		return nil, err
+	}
+
+	var pods []object.Pod
+	err = json.Unmarshal(body, &pods)
+	if err != nil {
+		log.Println("fail to parse Pods")
+		return nil, err
+	}
+
+	return pods, nil
 }
 
 func CreatePod(pod object.Pod) (object.Pod, error) {

@@ -12,11 +12,23 @@ func main() {
 	pod.Kind = "pod"
 	pod.Name = "hello4"
 
+	pod.Labels = make(map[string]string)
+	pod.Labels["app"] = "hello"
+	pod.Labels["container"] = "1"
+
+	selector := pod.Labels
+
 	pod, err := crudobj.CreatePod(pod)
 	if err != nil {
 		return
 	}
 	fmt.Println("UID:", pod.UID)
+
+	selectedPods, err := crudobj.SelectPods(selector)
+	if err != nil {
+		return
+	}
+	fmt.Println("Selected Pods:", selectedPods)
 
 	pods, err := crudobj.GetPods()
 	if err != nil {

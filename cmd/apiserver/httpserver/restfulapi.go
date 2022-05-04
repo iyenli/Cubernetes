@@ -15,12 +15,14 @@ var restfulList = []Handler{
 	{http.MethodPost, "/apis/pod", postPod},
 	{http.MethodPut, "/apis/pod/:uid", putPod},
 	{http.MethodDelete, "/apis/pod/:uid", delPod},
+	{http.MethodPost, "/apis/select/pods", selectPods},
 
 	{http.MethodGet, "/apis/service/:uid", getService},
 	{http.MethodGet, "/apis/services", getServices},
 	{http.MethodPost, "/apis/service", postService},
 	{http.MethodPut, "/apis/service/:uid", putService},
 	{http.MethodDelete, "/apis/service/:uid", delService},
+	{http.MethodPost, "/apis/select/services", selectServices},
 }
 
 func parseFail(ctx *gin.Context) {
@@ -60,7 +62,8 @@ func getObjs(ctx *gin.Context, prefix string) {
 		return
 	}
 	if buf == nil {
-		notFound(ctx)
+		ctx.Header("Content-Type", "application/json")
+		ctx.String(http.StatusOK, "[]")
 		return
 	}
 
@@ -68,7 +71,36 @@ func getObjs(ctx *gin.Context, prefix string) {
 	for _, str := range buf {
 		objs += string(str) + ","
 	}
-	objs = objs[:len(objs)-1]
+	if len(objs) > 1 {
+		objs = objs[:len(objs)-1]
+	}
+	objs += "]"
+
+	ctx.Header("Content-Type", "application/json")
+	ctx.String(http.StatusOK, objs)
+}
+
+func selectObjs(ctx *gin.Context, prefix string, match func([]byte) bool) {
+	buf, err := etcdrw.GetObjs(prefix)
+	if err != nil {
+		serverError(ctx)
+		return
+	}
+	if buf == nil {
+		ctx.Header("Content-Type", "application/json")
+		ctx.String(http.StatusOK, "[]")
+		return
+	}
+
+	objs := "["
+	for _, str := range buf {
+		if match(str) {
+			objs += string(str) + ","
+		}
+	}
+	if len(objs) > 1 {
+		objs = objs[:len(objs)-1]
+	}
 	objs += "]"
 
 	ctx.Header("Content-Type", "application/json")
@@ -161,6 +193,35 @@ func delPod(ctx *gin.Context) {
 	delObj(ctx, "/apis/pod/"+ctx.Param("uid"))
 }
 
+func selectPods(ctx *gin.Context) {
+	var selectors map[string]string
+	err := ctx.BindJSON(&selectors)
+	if err != nil {
+		parseFail(ctx)
+		return
+	}
+
+	if len(selectors) == 0 {
+		getObjs(ctx, "/apis/pod/")
+		return
+	}
+
+	selectObjs(ctx, "/apis/pod/", func(str []byte) bool {
+		var pod object.Pod
+		err = json.Unmarshal(str, &pod)
+		if err != nil {
+			return false
+		}
+		for key, val := range selectors {
+			v := pod.Labels[key]
+			if v != val {
+				return false
+			}
+		}
+		return true
+	})
+}
+
 func getService(ctx *gin.Context) {
 	getObj(ctx, "/apis/service/"+ctx.Param("uid"))
 }
@@ -226,4 +287,33 @@ func putService(ctx *gin.Context) {
 
 func delService(ctx *gin.Context) {
 	delObj(ctx, "/apis/service/"+ctx.Param("uid"))
+}
+
+func selectServices(ctx *gin.Context) {
+	var selectors map[string]string
+	err := ctx.BindJSON(&selectors)
+	if err != nil {
+		parseFail(ctx)
+		return
+	}
+
+	if len(selectors) == 0 {
+		getObjs(ctx, "/apis/service/")
+		return
+	}
+
+	selectObjs(ctx, "/apis/service/", func(str []byte) bool {
+		var service object.Service
+		err = json.Unmarshal(str, &service)
+		if err != nil {
+			return false
+		}
+		for key, val := range selectors {
+			v := service.Labels[key]
+			if v != val {
+				return false
+			}
+		}
+		return true
+	})
 }
