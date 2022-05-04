@@ -5,6 +5,7 @@ import (
 	dockershim "Cubernetes/pkg/cubelet/dockershim"
 	"Cubernetes/pkg/cubelet/network"
 	object "Cubernetes/pkg/object"
+	"fmt"
 	"log"
 	"time"
 )
@@ -190,7 +191,7 @@ func (m *cubeRuntimeManager) KillPod(UID string) error {
 		return err
 	}
 	// for debug only
-	removeContainer := true
+	removeContainer := false
 
 	return m.killPodByStatus(podStatus, removeContainer)
 }
@@ -222,6 +223,38 @@ func (m *cubeRuntimeManager) GetPodStatus(UID string) (*cubecontainer.PodStatus,
 	return m.getPodStatusByUID(UID)
 }
 
+func (m *cubeRuntimeManager) InspectPod(UID string) (*object.PodStatus, error) {
+	containerStatuses, err := m.getContainerStatusesByPodUID(UID)
+	if err != nil {
+		return nil, err
+	}
+
+	sandboxStatus, err := m.getSandboxStatusesByPodUID(UID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(sandboxStatus) == 0 {
+		return nil, fmt.Errorf("no sandbox for pod %s found", UID)
+	}
+
+	// TODO: get sandbox IP from Network Plugin (Weave)
+	var sandboxIP []byte
+	podPhase := cubecontainer.ComputePodPhase(containerStatuses, sandboxStatus[0])
+
+	usage := &object.ResourceUsage{LastUpdateTime: time.Now()}
+	for _, status := range containerStatuses {
+		usage.ActualCPUUsage += status.ResourceUsage.CPUUsage
+		usage.ActualMemoryUsage += status.ResourceUsage.MemoryUsage
+	}
+
+	return &object.PodStatus{
+		IP:                  sandboxIP,
+		Phase:               podPhase,
+		ActualResourceUsage: usage,
+	}, nil
+}
+
 func (c *cubeRuntimeManager) getPodStatusByUID(UID string) (*cubecontainer.PodStatus, error) {
 	containerStatuses, err := c.getContainerStatusesByPodUID(UID)
 	if err != nil {
@@ -239,9 +272,10 @@ func (c *cubeRuntimeManager) getPodStatusByUID(UID string) (*cubecontainer.PodSt
 	}
 
 	return &cubecontainer.PodStatus{
-		UID:               UID,
-		Name:              podName,
-		NetworkNamespace:  "default",
+		UID:              UID,
+		Name:             podName,
+		NetworkNamespace: "default",
+		// Update PodNetworkStatus?
 		ContainerStatuses: containerStatuses,
 		SandboxStatuses:   sandboxStatuses,
 	}, nil

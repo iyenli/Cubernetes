@@ -14,6 +14,7 @@ type Runtime interface {
 	GetPodStatus(UID string) (*PodStatus, error)
 	KillPod(UID string) error
 	SyncPod(pod *object.Pod, podStatus *PodStatus) error
+	InspectPod(UID string) (*object.PodStatus, error)
 
 	Close()
 }
@@ -41,18 +42,21 @@ const (
 )
 
 type ContainerStatus struct {
-	ID         ContainerID
-	Name       string
-	State      ContainerState
-	CreatedAt  time.Time
-	StartedAt  time.Time
-	FinishedAt time.Time
-	ExitCode   int
-	Image      string
-	ImageID    string
-	Hash       uint64
-	Reason     string
-	Message    string
+	ID            ContainerID
+	Name          string
+	State         ContainerState
+	CreatedAt     time.Time
+	StartedAt     time.Time
+	FinishedAt    time.Time
+	ResourceUsage ContainerResourceUsage
+	ExitCode      int
+	Image         string
+	ImageID       string
+}
+
+type ContainerResourceUsage struct {
+	CPUUsage    float64
+	MemoryUsage int64
 }
 
 type SandboxStatus struct {
@@ -96,4 +100,37 @@ func (s *PodStatus) FindContainerStatusByName(containerName string) *ContainerSt
 
 func (s *PodStatus) UpdateSandboxStatuses(sandboxStatuses []*SandboxStatus) {
 	s.SandboxStatuses = sandboxStatuses
+}
+
+func ComputePodPhase(statuses []*ContainerStatus, sandboxStatus *SandboxStatus) object.PodPhase {
+	isRunning := true
+	runningContainer := 0
+	isSuccess := true
+	isFail := false
+
+	for _, container := range statuses {
+		if container.State == ContainerStateRunning {
+			runningContainer += 1
+		} else if container.State != ContainerStateCreated {
+			isRunning = false
+		}
+		if container.State != ContainerStateExited || container.ExitCode != 0 {
+			isSuccess = false
+			if container.State == ContainerStateExited {
+				isFail = true
+			}
+		}
+	}
+
+	if isFail {
+		return object.PodFailed
+	} else if isSuccess {
+		return object.PodSucceeded
+	} else if isRunning && sandboxStatus.State == SandboxStateReady {
+		return object.PodRunning
+	} else if runningContainer > 0 && sandboxStatus.State == SandboxStateReady {
+		return object.PodCreated
+	} else {
+		return object.PodUnknown
+	}
 }

@@ -7,6 +7,7 @@ import (
 	"log"
 	"strings"
 	"sync"
+	"time"
 
 	dockertypes "github.com/docker/docker/api/types"
 	dockercontainer "github.com/docker/docker/api/types/container"
@@ -56,7 +57,7 @@ func (m *cubeRuntimeManager) getContainerStatusesByPodUID(UID string) ([]*cubeco
 
 	statuses := make([]*cubecontainer.ContainerStatus, len(containers))
 	for i, container := range containers {
-		statuses[i] = toContainerStatus(&container)
+		statuses[i], _ = m.getContainerStatus(container.ID)
 	}
 
 	return statuses, nil
@@ -122,4 +123,42 @@ func (m *cubeRuntimeManager) killPodContainers(pod *cubecontainer.PodStatus, rem
 		}(container)
 	}
 	wg.Wait()
+}
+
+func (m *cubeRuntimeManager) getContainerStatus(UID string) (*cubecontainer.ContainerStatus, error) {
+	containerJson, err := m.dockerRuntime.InspectContainer(UID)
+	if err != nil {
+		return nil, err
+	}
+
+	state, exitCode := toContainerStateAndExitCode(containerJson.State)
+	created, _ := time.Parse(time.RFC3339Nano, containerJson.Created)
+	started, _ := time.Parse(time.RFC3339Nano, containerJson.State.StartedAt)
+	finished, _ := time.Parse(time.RFC3339Nano, containerJson.State.FinishedAt)
+
+	statsJson, err := m.dockerRuntime.GetContainerStats(UID)
+	if err != nil {
+		return nil, err
+	}
+
+	status := &cubecontainer.ContainerStatus{
+		ID: cubecontainer.ContainerID{
+			Type: "docker",
+			ID:   containerJson.ID,
+		},
+		Name:       dockershim.ParseContainerName(containerJson.Name),
+		State:      state,
+		CreatedAt:  created,
+		StartedAt:  started,
+		FinishedAt: finished,
+		ResourceUsage: cubecontainer.ContainerResourceUsage{
+			CPUUsage:    float64(statsJson.CPUStats.CPUUsage.TotalUsage) / 1000000000,
+			MemoryUsage: int64(statsJson.MemoryStats.Usage),
+		},
+		ExitCode: exitCode,
+		Image:    containerJson.Config.Image,
+		ImageID:  strings.TrimLeft(containerJson.Image, "sha256:"),
+	}
+
+	return status, nil
 }

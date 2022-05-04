@@ -2,6 +2,7 @@ package dockershim
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -19,6 +20,8 @@ type DockerRuntime interface {
 	StopContainer(containerID string) error
 	ListContainers(opts dockertypes.ContainerListOptions) ([]dockertypes.Container, error)
 	RemoveContainer(containerID string, force bool) error
+	InspectContainer(containerID string) (*dockertypes.ContainerJSON, error)
+	GetContainerStats(containerID string) (*dockertypes.StatsJSON, error)
 
 	// Image Service
 	PullImage(imageName string) error
@@ -122,6 +125,41 @@ func (c *dockerClient) RemoveContainer(containerID string, force bool) error {
 	}
 
 	return nil
+}
+
+func (c *dockerClient) InspectContainer(containerID string) (*dockertypes.ContainerJSON, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+	defer cancel()
+
+	json, err := c.client.ContainerInspect(ctx, containerID)
+	if err != nil {
+		log.Printf("fail to inspect container %s : %v\n", containerID, err)
+		return nil, err
+	}
+
+	return &json, nil
+}
+
+func (c *dockerClient) GetContainerStats(containerID string) (*dockertypes.StatsJSON, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+	defer cancel()
+
+	resp, err := c.client.ContainerStats(ctx, containerID, false)
+	if err != nil {
+		log.Printf("fail to get container stats %s : %v\n", containerID, err)
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	dec := json.NewDecoder(resp.Body)
+	var stats dockertypes.StatsJSON
+	err = dec.Decode(&stats)
+	if err != nil {
+		log.Printf("fail to decode container stats %s : %v\n", containerID, err)
+		return nil, err
+	}
+
+	return &stats, nil
 }
 
 func (c *dockerClient) PullImage(imageName string) error {
