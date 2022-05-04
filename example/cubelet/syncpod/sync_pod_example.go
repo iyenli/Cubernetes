@@ -64,6 +64,14 @@ func main() {
 	}
 	log.Println(podStatus.SandboxStatuses[0], podStatus.ContainerStatuses[0])
 
+	APIPodStatus, err := runtime.InspectPod(pod.UID)
+	if err != nil {
+		panic(err)
+	}
+	log.Printf("Phase:  %s\n", APIPodStatus.Phase)
+	log.Printf("CPU:    %f%%\n", APIPodStatus.ActualResourceUsage.ActualCPUUsage)
+	log.Printf("Memory: %d bytes\n", APIPodStatus.ActualResourceUsage.ActualMemoryUsage)
+
 	time.Sleep(time.Second * 10)
 	log.Printf("start to kill pod %s\n", pod.UID)
 

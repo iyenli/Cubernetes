@@ -57,3 +57,16 @@ func toContainerState(state string) cubecontainer.ContainerState {
 		return cubecontainer.ContainerStateUnknown
 	}
 }
+
+// State, ExitCode
+func toContainerStateAndExitCode(jsonState *dockertypes.ContainerState) (cubecontainer.ContainerState, int) {
+	if jsonState.Running {
+		return cubecontainer.ContainerStateRunning, 0
+	} else if jsonState.Status == "exited" {
+		return cubecontainer.ContainerStateExited, jsonState.ExitCode
+	} else if jsonState.Status == "created" {
+		return cubecontainer.ContainerStateCreated, 0
+	} else {
+		return cubecontainer.ContainerStateUnknown, 0
+	}
+}
