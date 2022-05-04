@@ -1,4 +1,4 @@
-package controller
+package replicaset_controller
 
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
@@ -18,7 +18,7 @@ const (
 	podNameUUIDLen = 8
 )
 
-type replicaSetController struct {}
+type replicaSetController struct{}
 
 func NewReplicaSetController() (ReplicaSetController, error) {
 	return &replicaSetController{}, nil

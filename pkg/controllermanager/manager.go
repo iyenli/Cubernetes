@@ -1,14 +1,16 @@
 package controllermanager
 
-import "Cubernetes/pkg/controllermanager/controller"
+import (
+	"Cubernetes/pkg/controllermanager/controller/replicaset_controller"
+)
 
 type ControllerManager struct {
-	RSController controller.ReplicaSetController
+	RSController replicaset_controller.ReplicaSetController
 	// other controller here
 }
 
 func NewControllerManager() (ControllerManager, error) {
-	rsController, _ := controller.NewReplicaSetController()
+	rsController, _ := replicaset_controller.NewReplicaSetController()
 	return ControllerManager{
 		RSController: rsController,
 	}, nil

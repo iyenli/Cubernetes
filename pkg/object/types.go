@@ -55,7 +55,6 @@ type PodStatus struct {
 }
 
 type ResourceUsage struct {
-	LastScaleTime  time.Time `json:"lastScaleTime"`
 	LastUpdateTime time.Time `json:"lastUpdateTime"`
 
 	// for 4 cores, up to 400.00%
