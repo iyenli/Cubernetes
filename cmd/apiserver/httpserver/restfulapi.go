@@ -23,6 +23,13 @@ var restfulList = []Handler{
 	{http.MethodPut, "/apis/service/:uid", putService},
 	{http.MethodDelete, "/apis/service/:uid", delService},
 	{http.MethodPost, "/apis/select/services", selectServices},
+
+	{http.MethodGet, "/apis/replicaSet/:uid", getReplicaSet},
+	{http.MethodGet, "/apis/replicaSets", getReplicaSets},
+	{http.MethodPost, "/apis/replicaSet", postReplicaSet},
+	{http.MethodPut, "/apis/replicaSet/:uid", putReplicaSet},
+	{http.MethodDelete, "/apis/replicaSet/:uid", delReplicaSet},
+	{http.MethodPost, "/apis/select/replicaSets", selectReplicaSets},
 }
 
 func parseFail(ctx *gin.Context) {
@@ -168,7 +175,7 @@ func putPod(ctx *gin.Context) {
 		return
 	}
 
-	oldBuf, err := etcdrw.GetObj("/apis/pod/" + ctx.Param("uid"))
+	oldBuf, err := etcdrw.GetObj("/apis/pod/" + newPod.UID)
 	if err != nil {
 		serverError(ctx)
 		return
@@ -264,7 +271,7 @@ func putService(ctx *gin.Context) {
 		return
 	}
 
-	oldBuf, err := etcdrw.GetObj("/apis/service/" + ctx.Param("uid"))
+	oldBuf, err := etcdrw.GetObj("/apis/service/" + newService.UID)
 	if err != nil {
 		serverError(ctx)
 		return
@@ -310,6 +317,102 @@ func selectServices(ctx *gin.Context) {
 		}
 		for key, val := range selectors {
 			v := service.Labels[key]
+			if v != val {
+				return false
+			}
+		}
+		return true
+	})
+}
+
+func getReplicaSet(ctx *gin.Context) {
+	getObj(ctx, "/apis/replicaSet/"+ctx.Param("uid"))
+}
+
+func getReplicaSets(ctx *gin.Context) {
+	getObjs(ctx, "/apis/replicaSet/")
+}
+
+func postReplicaSet(ctx *gin.Context) {
+	rs := object.ReplicaSet{}
+	err := ctx.BindJSON(&rs)
+	if err != nil {
+		parseFail(ctx)
+		return
+	}
+	if rs.Name == "" {
+		badRequest(ctx)
+		return
+	}
+	rs.UID = uuid.New().String()
+	buf, _ := json.Marshal(rs)
+	err = etcdrw.PutObj("/apis/replicaSet/"+rs.UID, string(buf))
+	if err != nil {
+		serverError(ctx)
+		return
+	}
+	ctx.JSON(http.StatusOK, rs)
+}
+
+func putReplicaSet(ctx *gin.Context) {
+	newRs := object.ReplicaSet{}
+	err := ctx.BindJSON(&newRs)
+	if err != nil {
+		parseFail(ctx)
+		return
+	}
+
+	if newRs.UID != ctx.Param("uid") {
+		badRequest(ctx)
+		return
+	}
+
+	oldBuf, err := etcdrw.GetObj("/apis/replicaSet/" + newRs.UID)
+	if err != nil {
+		serverError(ctx)
+		return
+	}
+	if oldBuf == nil {
+		notFound(ctx)
+		return
+	}
+
+	newBuf, _ := json.Marshal(newRs)
+	err = etcdrw.PutObj("/apis/replicaSet/"+newRs.UID, string(newBuf))
+	if err != nil {
+		serverError(ctx)
+		return
+	}
+
+	ctx.Header("Content-Type", "application/json")
+	ctx.String(http.StatusOK, string(newBuf))
+}
+
+func delReplicaSet(ctx *gin.Context) {
+	delObj(ctx, "/apis/replicaSet/"+ctx.Param("uid"))
+}
+
+func selectReplicaSets(ctx *gin.Context) {
+	var selectors map[string]string
+	err := ctx.BindJSON(&selectors)
+	if err != nil {
+		parseFail(ctx)
+		return
+	}
+
+	if len(selectors) == 0 {
+		getObjs(ctx, "/apis/replicaSet/")
+		return
+	}
+
+	selectObjs(ctx, "/apis/replicaSet/", func(str []byte) bool {
+		var rs object.ReplicaSet
+		err = json.Unmarshal(str, &rs)
+		if err != nil {
+			return false
+		}
+		for key, val := range selectors {
+			v := rs.Labels[key]
 			if v != val {
 				return false
 			}
