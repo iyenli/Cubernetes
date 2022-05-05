@@ -103,6 +103,29 @@ func UpdatePod(pod object.Pod) (object.Pod, error) {
 	return newPod, nil
 }
 
+func UpdatePodStatus(UID string, status object.PodStatus) (object.Pod, error) {
+	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/pod/status/" + UID
+
+	pod := object.Pod{}
+	pod.UID = UID
+	pod.Status = &status
+
+	body, err := putRequest(url, pod)
+	if err != nil {
+		log.Println("putRequest fail")
+		return pod, err
+	}
+
+	var newPod object.Pod
+	err = json.Unmarshal(body, &newPod)
+	if err != nil {
+		log.Println("fail to parse Pod")
+		return pod, err
+	}
+
+	return newPod, nil
+}
+
 func DeletePod(UID string) error {
 	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/pod/" + UID
 
