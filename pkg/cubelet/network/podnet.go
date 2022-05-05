@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	defaultNetworkNamespace = "default"
+	defaultNetworkNamespace = "/var/run/netns/default"
 )
 
 func InitNetwork(cni gocni.CNI, podStatus *container.PodStatus) error {

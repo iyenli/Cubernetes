@@ -274,7 +274,7 @@ func (c *cubeRuntimeManager) getPodStatusByUID(UID string) (*cubecontainer.PodSt
 	return &cubecontainer.PodStatus{
 		UID:              UID,
 		Name:             podName,
-		NetworkNamespace: "default",
+		NetworkNamespace: "/var/run/netns/default",
 		// Update PodNetworkStatus?
 		ContainerStatuses: containerStatuses,
 		SandboxStatuses:   sandboxStatuses,
