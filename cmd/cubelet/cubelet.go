@@ -1,10 +1,10 @@
 package main
 
 import (
-	"os"
+	"Cubernetes/pkg/cubelet"
 )
 
 func main() {
-	// TODO: init cubelet from cobra.Command
-	os.Exit(0)
+	cubelet := cubelet.NewCubelet()
+	cubelet.Run()
 }
