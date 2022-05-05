@@ -1,0 +1,62 @@
+/*
+Copyright © 2022 NAME HERE <EMAIL ADDRESS>
+
+*/
+package cmd
+
+import (
+	"Cubernetes/pkg/apiserver/crudobj"
+	"fmt"
+	"github.com/spf13/cobra"
+	"log"
+)
+
+// deleteCmd represents the delete command
+var deleteCmd = &cobra.Command{
+	Use:   "delete",
+	Short: "Delete an object from Cubernetes",
+	Long: `
+Delete an object from Cubernetes
+for example:
+	cubectl delete pod nginx:452cbd60-131c-4efa-9e06-7b364692a737
+	cubectl delete [Object kind] [UID]
+`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) < 2 {
+			log.Fatal("[FATAL] lack arguments")
+			return
+		}
+		switch args[0] {
+		case "pod", "Pod":
+			err := crudobj.DeletePod(args[1])
+			if err != nil {
+				log.Fatal("[FATAL] fail to delete pod")
+			} else {
+				fmt.Printf("Pod UID=%s deleted", args[1])
+			}
+		case "service", "Service", "svc":
+			err := crudobj.DeleteService(args[1])
+			if err != nil {
+				log.Fatal("[FATAL] fail to delete service")
+			} else {
+				fmt.Printf("Service UID=%s deleted", args[1])
+			}
+		default:
+			log.Fatal("[FATAL] Unknown kind: " + args[0])
+		}
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(deleteCmd)
+
+	// Here you will define your flags and configuration settings.
+
+	// Cobra supports Persistent Flags which will work for this command
+	// and all subcommands, e.g.:
+	// deleteCmd.PersistentFlags().String("foo", "", "A help for foo")
+
+	// Cobra supports local flags which will only run when this command
+	// is called directly, e.g.:
+	// deleteCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}

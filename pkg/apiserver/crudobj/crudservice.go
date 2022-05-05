@@ -48,7 +48,22 @@ func GetServices() ([]object.Service, error) {
 }
 
 func SelectServices(selectors map[string]string) ([]object.Service, error) {
-	return nil, nil
+	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/select/services"
+
+	body, err := postRequest(url, selectors)
+	if err != nil {
+		log.Println("postRequest fail")
+		return nil, err
+	}
+
+	var services []object.Service
+	err = json.Unmarshal(body, &services)
+	if err != nil {
+		log.Println("fail to parse Services")
+		return nil, err
+	}
+
+	return services, nil
 }
 
 func CreateService(service object.Service) (object.Service, error) {

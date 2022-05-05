@@ -39,7 +39,7 @@ var service = object.Service{
 		},
 		ClusterIP: "10.0.1.3",
 	},
-	Status: object.ServiceStatus{
+	Status: &object.ServiceStatus{
 		Ingress: nil,
 	},
 }
