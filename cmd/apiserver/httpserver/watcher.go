@@ -18,6 +18,9 @@ var watchList = []Handler{
 
 	{http.MethodPost, "/apis/watch/service/:uid", watchService},
 	{http.MethodPost, "/apis/watch/services", watchServices},
+
+	{http.MethodPost, "/apis/watch/replicaSet/:uid", watchReplicaSet},
+	{http.MethodPost, "/apis/watch/replicaSets", watchReplicaSets},
 }
 
 func handleEvent(ctx *gin.Context, e *clientv3.Event) {
@@ -80,13 +83,21 @@ func watchPod(ctx *gin.Context) {
 }
 
 func watchPods(ctx *gin.Context) {
-	postWatch(ctx, "/apis/pod", true)
+	postWatch(ctx, "/apis/pod/", true)
 }
 
 func watchService(ctx *gin.Context) {
-	postWatch(ctx, "/apis/pod/"+ctx.Param("uid"), false)
+	postWatch(ctx, "/apis/service/"+ctx.Param("uid"), false)
 }
 
 func watchServices(ctx *gin.Context) {
-	postWatch(ctx, "/apis/pod", true)
+	postWatch(ctx, "/apis/service/", true)
+}
+
+func watchReplicaSet(ctx *gin.Context) {
+	postWatch(ctx, "/apis/replicaSet/"+ctx.Param("uid"), false)
+}
+
+func watchReplicaSets(ctx *gin.Context) {
+	postWatch(ctx, "/apis/replicaSet/", true)
 }

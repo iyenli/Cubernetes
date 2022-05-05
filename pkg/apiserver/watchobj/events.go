@@ -20,10 +20,21 @@ type ObjEvent struct {
 
 type PodEvent struct {
 	EType EventType
-	Pod   object.Pod
+	// if EType == EVENT_DELETE,
+	// Pod will only have its UID
+	Pod object.Pod
 }
 
 type ServiceEvent struct {
-	EType   EventType
+	EType EventType
+	// if EType == EVENT_DELETE,
+	// Service will only have its UID
 	Service object.Service
+}
+
+type ReplicaSetEvent struct {
+	EType EventType
+	// if EType == EVENT_DELETE,
+	// ReplicaSet will only have its UID
+	ReplicaSet object.ReplicaSet
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/object"
+	"encoding/json"
 	"fmt"
 )
 
@@ -42,6 +43,15 @@ func main() {
 		return
 	}
 	fmt.Println("Pod:", pod)
+
+	status := object.PodStatus{
+		IP:                  nil,
+		Phase:               object.PodCreated,
+		ActualResourceUsage: nil,
+	}
+	pod, err = crudobj.UpdatePodStatus(pod.UID, status)
+	buf, err := json.Marshal(pod)
+	fmt.Println("Pod:", string(buf))
 
 	err = crudobj.DeletePod(pod.UID)
 	if err != nil {
