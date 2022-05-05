@@ -49,18 +49,18 @@ const (
 
 type PodStatus struct {
 	// reserved for later use
-	IP                  net.IP         `json:"IP"`
-	Phase               PodPhase       `json:"phase,omitempty"`
-	ActualResourceUsage *ResourceUsage `json:"actualResourceUsage,omitempty"`
+	IP                  net.IP         `json:"IP" yaml:"IP"`
+	Phase               PodPhase       `json:"phase,omitempty" yaml:"phase,omitempty"`
+	ActualResourceUsage *ResourceUsage `json:"actualResourceUsage,omitempty" yaml:"actualResourceUsage,omitempty"`
 }
 
 type ResourceUsage struct {
-	LastUpdateTime time.Time `json:"lastUpdateTime"`
+	LastUpdateTime time.Time `json:"lastUpdateTime" yaml:"lastUpdateTime"`
 
 	// for 4 cores, up to 400.00%
-	ActualCPUUsage float64 `json:"actualCPUUsage"`
+	ActualCPUUsage float64 `json:"actualCPUUsage" yaml:"actualCPUUsage"`
 	// in bytes
-	ActualMemoryUsage int64 `json:"actualMemoryUsage"`
+	ActualMemoryUsage int64 `json:"actualMemoryUsage" yaml:"actualMemoryUsage"`
 }
 
 type Container struct {
@@ -77,7 +77,7 @@ type Container struct {
 type ResourceRequirements struct {
 	Cpus float64 `json:"cpus,omitempty" yaml:"cpus,omitempty"`
 	// Memory in bytes
-	Memory int64 `json:"memory,omitempty" json:"memory,omitempty"`
+	Memory int64 `json:"memory,omitempty" yaml:"memory,omitempty"`
 }
 
 type Volume struct {
@@ -127,36 +127,36 @@ type ServicePort struct {
 }
 
 type ServiceStatus struct {
-	Ingress []PodIngress `json:"ingress,omitempty"`
+	Ingress []PodIngress `json:"ingress,omitempty" yaml:"ingress,omitempty"`
 }
 
 type PodIngress struct {
-	HostName string  `json:"hostname,omitempty"`
-	IP       string  `json:"ip,omitempty"`
-	Ports    []int32 `json:"ports,omitempty"`
+	HostName string  `json:"hostname,omitempty" yaml:"hostname,omitempty"`
+	IP       string  `json:"ip,omitempty" yaml:"ip,omitempty"`
+	Ports    []int32 `json:"ports,omitempty" yaml:"ports,omitempty"`
 }
 
 type ReplicaSet struct {
-	TypeMeta   `json:",inline"`
-	ObjectMeta `json:"metadata"`
-	Spec       ReplicaSetSpec    `json:"spec"`
-	Status     *ReplicaSetStatus `json:"status,omitempty"`
+	TypeMeta   `json:",inline" yaml:",inline"`
+	ObjectMeta `json:"metadata" yaml:"metadata"`
+	Spec       ReplicaSetSpec    `json:"spec" yaml:"spec"`
+	Status     *ReplicaSetStatus `json:"status,omitempty" yaml:"status,omitempty"`
 }
 
 type ReplicaSetSpec struct {
-	Replicas int32             `json:"replicas"`
-	Selector map[string]string `json:"selector,omitempty"`
-	Template PodTemplate       `json:"template"`
+	Replicas int32             `json:"replicas" yaml:"replicas"`
+	Selector map[string]string `json:"selector,omitempty" yaml:"selector,omitempty"`
+	Template PodTemplate       `json:"template" yaml:"template"`
 }
 
 type PodTemplate struct {
-	ObjectMeta `json:"metadata"`
-	Spec       PodSpec `json:"spec"`
+	ObjectMeta `json:"metadata" yaml:"metadata"`
+	Spec       PodSpec `json:"spec" yaml:"spec"`
 }
 
 type ReplicaSetStatus struct {
 	// actual running pod replica in PodUIDs
-	RunningReplicas int32 `json:"replicas"`
+	RunningReplicas int32 `json:"replicas" yaml:"replicas"`
 	// UID of pods assigned
-	PodUIDs []string `json:"podUIDs"`
+	PodUIDs []string `json:"podUIDs" yaml:"podUIDs"`
 }

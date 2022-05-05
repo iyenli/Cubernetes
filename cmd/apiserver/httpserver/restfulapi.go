@@ -145,7 +145,7 @@ func postPod(ctx *gin.Context) {
 		badRequest(ctx)
 		return
 	}
-	pod.UID = pod.Name + ":" + uuid.New().String()
+	pod.UID = uuid.New().String()
 	buf, _ := json.Marshal(pod)
 	err = etcdrw.PutObj("/apis/pod/"+pod.UID, string(buf))
 	if err != nil {
@@ -241,7 +241,7 @@ func postService(ctx *gin.Context) {
 		badRequest(ctx)
 		return
 	}
-	service.UID = service.Name + ":" + uuid.New().String()
+	service.UID = uuid.New().String()
 	buf, _ := json.Marshal(service)
 	err = etcdrw.PutObj("/apis/service/"+service.UID, string(buf))
 	if err != nil {
