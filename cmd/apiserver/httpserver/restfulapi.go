@@ -16,6 +16,7 @@ var restfulList = []Handler{
 	{http.MethodPut, "/apis/pod/:uid", putPod},
 	{http.MethodDelete, "/apis/pod/:uid", delPod},
 	{http.MethodPost, "/apis/select/pods", selectPods},
+	{http.MethodPut, "/apis/pod/status/:uid", updatePodStatus},
 
 	{http.MethodGet, "/apis/service/:uid", getService},
 	{http.MethodGet, "/apis/services", getServices},
@@ -227,6 +228,48 @@ func selectPods(ctx *gin.Context) {
 		}
 		return true
 	})
+}
+
+func updatePodStatus(ctx *gin.Context) {
+	newPod := object.Pod{}
+	err := ctx.BindJSON(&newPod)
+	if err != nil {
+		parseFail(ctx)
+		return
+	}
+
+	if newPod.UID != ctx.Param("uid") {
+		badRequest(ctx)
+		return
+	}
+
+	buf, err := etcdrw.GetObj("/apis/pod/" + newPod.UID)
+	if err != nil {
+		serverError(ctx)
+		return
+	}
+	if buf == nil {
+		notFound(ctx)
+		return
+	}
+
+	var pod object.Pod
+	err = json.Unmarshal(buf, &pod)
+	if err != nil {
+		serverError(ctx)
+		return
+	}
+
+	pod.Status = newPod.Status
+	newBuf, _ := json.Marshal(pod)
+	err = etcdrw.PutObj("/apis/pod/"+newPod.UID, string(newBuf))
+	if err != nil {
+		serverError(ctx)
+		return
+	}
+
+	ctx.Header("Content-Type", "application/json")
+	ctx.String(http.StatusOK, string(newBuf))
 }
 
 func getService(ctx *gin.Context) {
