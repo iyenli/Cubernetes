@@ -17,6 +17,29 @@ type Host struct {
 	IP net.IP
 }
 
+// ExposeHost Execute in host, and return an IP in containers' net segment
+// you can visit host's port in any container:)
+func ExposeHost() (net.IP, error) {
+	path, err := osexec.LookPath(weaveName)
+	if err != nil {
+		log.Println("Weave Not found.")
+		return nil, err
+	}
+
+	cmd := osexec.Command(path, "expose")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, err
+	}
+
+	ip := net.ParseIP(string(output))
+	if ip == nil {
+		return nil, err
+	}
+
+	return ip, nil
+}
+
 func CheckSuperUser() error {
 	cmd := osexec.Command(sudo, "-s")
 	err := cmd.Run()
@@ -105,4 +128,21 @@ func CheckPeers() ([]byte, error) {
 		return nil, err
 	}
 	return output, nil
+}
+
+func CloseNetwork() error {
+	path, err := osexec.LookPath(weaveName)
+	if err != nil {
+		log.Println("Weave Not found.")
+		return err
+	}
+
+	cmd := osexec.Command(path, "reset")
+	err = cmd.Run()
+	if err != nil {
+		log.Panicf("Weave reset error: %s\n", err)
+		return err
+	}
+
+	return nil
 }
