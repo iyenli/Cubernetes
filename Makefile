@@ -16,3 +16,6 @@ cubelet: cmd/cubelet/cubelet.go
 
 cuberoot: cmd/cuberoot/cuberoot.go
 	@go build -o $(build_path)/cuberoot cmd/cuberoot/cuberoot.go
+
+cubeproxy: cmd/cubeproxy/cubeproxy.go
+	@go build -o $(build_path)/cubeproxy cmd/cubeproxy/cubeproxy.go
