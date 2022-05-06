@@ -5,6 +5,6 @@ import (
 )
 
 func main() {
-	cubelet := cubelet.NewCubelet()
-	cubelet.Run()
+	cubeletInstance := cubelet.NewCubelet()
+	cubeletInstance.Run()
 }

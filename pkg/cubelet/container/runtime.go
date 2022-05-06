@@ -9,7 +9,7 @@ import (
 // Runtime interface defines the interfaces that should be implemented
 // by a container runtime.
 type Runtime interface {
-	// SyncPod Type() string
+	// GetPodStatus SyncPod Type() string
 	// GetPods() ([]*Pod, error)
 	GetPodStatus(UID string) (*PodStatus, error)
 	KillPod(UID string) error

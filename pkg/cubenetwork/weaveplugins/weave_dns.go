@@ -1,4 +1,4 @@
-package dns
+package weaveplugins
 
 import (
 	"log"
@@ -7,7 +7,6 @@ import (
 )
 
 const (
-	weaveName     = "weave"
 	dnsAdd        = "dns-add"
 	dnsRemove     = "dns-remove"
 	defaultSuffix = ".weave.local"

@@ -1,16 +1,14 @@
-package host
+package weaveplugins
 
 import (
-	"Cubernetes/pkg/cubenetwork/weaveplugins/weave"
 	"log"
 	"net"
 	osexec "os/exec"
 )
 
 const (
-	weaveName = "weave"
-	launch    = "launch"
-	sudo      = "sudo"
+	launch = "launch"
+	sudo   = "sudo"
 )
 
 type Host struct {
@@ -55,7 +53,7 @@ func InitWeave() error {
 	path, err := osexec.LookPath(weaveName)
 	if err != nil {
 		log.Println("Weave not found.")
-		err = weave.InstallWeave()
+		err = InstallWeave()
 		if err != nil {
 			log.Println("Weave Install failed in adding node to cluster.")
 			return err
@@ -87,7 +85,7 @@ func AddNode(newHost Host, apiServerHost Host) error {
 	path, err := osexec.LookPath(weaveName)
 	if err != nil {
 		log.Println("Weave not found.")
-		err = weave.InstallWeave()
+		err = InstallWeave()
 		if err != nil {
 			log.Println("Weave Install failed in adding node to cluster.")
 			return err
