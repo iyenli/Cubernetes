@@ -255,6 +255,10 @@ func (m *cubeRuntimeManager) InspectPod(UID string) (*object.PodStatus, error) {
 	}, nil
 }
 
+func (m *cubeRuntimeManager) ListPodsUID() ([]string, error) {
+	return m.getAllPodsUID()
+}
+
 func (c *cubeRuntimeManager) getPodStatusByUID(UID string) (*cubecontainer.PodStatus, error) {
 	containerStatuses, err := c.getContainerStatusesByPodUID(UID)
 	if err != nil {

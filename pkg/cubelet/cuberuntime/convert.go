@@ -13,7 +13,7 @@ func toSandboxStatus(dc *dockertypes.Container) *cubecontainer.SandboxStatus {
 	status := &cubecontainer.SandboxStatus{
 		Id:     dc.ID,
 		Name:   dockershim.ParseSandboxName(dc.Names[0]),
-		PodUID: dc.Labels[CubernetesPodUIDLabel],
+		PodUID: dc.Labels[PodUIDLabel],
 		State:  toSandboxState(dc.Status),
 	}
 
@@ -26,7 +26,7 @@ func toContainerStatus(dc *dockertypes.Container) *cubecontainer.ContainerStatus
 			Type: "docker",
 			ID:   dc.ID,
 		},
-		Name:      dc.Labels[CubernetesContainerNameLabel],
+		Name:      dc.Labels[ContainerNameLabel],
 		State:     toContainerState(dc.Status),
 		CreatedAt: time.Unix(0, dc.Created),
 		Image:     dc.Image,
