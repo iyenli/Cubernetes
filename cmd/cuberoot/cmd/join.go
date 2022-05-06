@@ -2,11 +2,10 @@ package cmd
 
 import (
 	"Cubernetes/cmd/cuberoot/options"
+	"Cubernetes/cmd/cuberoot/utils"
 	"github.com/spf13/cobra"
 	"log"
 	"net"
-	"os"
-	"os/exec"
 )
 
 // getCmd represents the get command
@@ -34,22 +33,11 @@ example:
 			return
 		}
 
-		_, err := os.Stat(options.CUBELET)
+		err := utils.StartDaemonProcess(options.APISERVERLOG, options.APISERVER, args[0], args[1])
 		if err != nil {
-			log.Panicf("Cubelet not found: %v", err.Error())
 			return
 		}
-
-		server := exec.Command(options.CUBELET, args[0], args[1])
-		stdout, err := os.OpenFile(options.CUBELETLOG, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
-		if err != nil {
-			log.Println(os.Getpid(), ": open log file error", err)
-		}
-		server.Stderr = stdout
-		server.Stdout = stdout
-		err = server.Start()
-
-		// TODO: Start cubeproxy
+		err = utils.StartDaemonProcess(options.CUBEPROXYLOG, options.CUBEPROXY, args[0], args[1])
 		if err != nil {
 			return
 		}
