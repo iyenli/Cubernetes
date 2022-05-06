@@ -40,8 +40,8 @@ func (m *cubeRuntimeManager) startContainer(container *object.Container, pod *ob
 func (m *cubeRuntimeManager) getContainerStatusesByPodUID(UID string) ([]*cubecontainer.ContainerStatus, error) {
 	filter := dockertypes.ContainerListOptions{
 		Filters: filters.NewArgs(
-			filters.Arg("label", buildLabelSelector(CubernetesContainerTypeLabel, ContainerTypeContainer)),
-			filters.Arg("label", buildLabelSelector(CubernetesPodUIDLabel, UID)),
+			filters.Arg("label", buildLabelSelector(ContainerTypeLabel, ContainerTypeContainer)),
+			filters.Arg("label", buildLabelSelector(PodUIDLabel, UID)),
 		),
 	}
 

@@ -15,6 +15,7 @@ type Runtime interface {
 	KillPod(UID string) error
 	SyncPod(pod *object.Pod, podStatus *PodStatus) error
 	InspectPod(UID string) (*object.PodStatus, error)
+	ListPodsUID() ([]string, error)
 
 	Close()
 }

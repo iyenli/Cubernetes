@@ -19,5 +19,6 @@
 /.vscode
 /build
 
-# temp etcd database for test
+# temp etcd database & log for test
 /default.etcd
+/.test_log
