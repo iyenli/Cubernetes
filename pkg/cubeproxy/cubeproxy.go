@@ -8,8 +8,8 @@ import (
 )
 
 type Cubeproxy struct {
-	//runtime CubeproxyRuntime
-	runtime *proxyruntime.ProxyRuntime
+	//Runtime CubeproxyRuntime
+	Runtime *proxyruntime.ProxyRuntime
 }
 
 func (cp *Cubeproxy) syncLoop() {
@@ -24,13 +24,13 @@ func (cp *Cubeproxy) syncLoop() {
 	for serviceEvent := range ch {
 		switch serviceEvent.EType {
 		case watchobj.EVENT_PUT:
-			err := cp.runtime.AddService(&serviceEvent.Service)
+			err := cp.Runtime.AddService(&serviceEvent.Service)
 			if err != nil {
 				log.Printf("Add service error: %v", err.Error())
 				return
 			}
 		case watchobj.EVENT_DELETE:
-			err := cp.runtime.DeleteService(&serviceEvent.Service)
+			err := cp.Runtime.DeleteService(&serviceEvent.Service)
 
 			if err != nil {
 				log.Printf("Delete service error: %v", err.Error())
@@ -43,21 +43,21 @@ func (cp *Cubeproxy) syncLoop() {
 }
 
 func (cp *Cubeproxy) Run() {
-	if cp.runtime == nil {
+	if cp.Runtime == nil {
 		runtime, err := proxyruntime.InitIPTables()
 		if err != nil {
 			panic(err)
 		}
 
-		cp.runtime = runtime
+		cp.Runtime = runtime
 	}
 
 	defer func(runtime *proxyruntime.ProxyRuntime) {
 		err := runtime.ReleaseIPTables()
 		if err != nil {
-			log.Panicln("Error when release proxy runtime")
+			log.Panicln("Error when release proxy Runtime")
 		}
-	}(cp.runtime)
+	}(cp.Runtime)
 
 	cp.syncLoop()
 

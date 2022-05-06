@@ -4,6 +4,7 @@ import (
 	cubecontainer "Cubernetes/pkg/cubelet/container"
 	dockershim "Cubernetes/pkg/cubelet/dockershim"
 	"Cubernetes/pkg/cubelet/network"
+	"Cubernetes/pkg/cubenetwork/weaveplugins"
 	object "Cubernetes/pkg/object"
 	"fmt"
 	"log"
@@ -73,7 +74,14 @@ func (m *cubeRuntimeManager) SyncPod(pod *object.Pod, podStatus *cubecontainer.P
 		// Update sandbox to initnetwork
 		newSandboxStatuses, _ := m.getSandboxStatusesByPodUID(pod.UID)
 		podStatus.UpdateSandboxStatuses(newSandboxStatuses)
-		network.InitNetwork(network.ProbeNetworkPlugins("", ""), podStatus)
+
+		ip, err := weaveplugins.AddPodToNetwork(podSandboxID)
+		if err != nil {
+			return err
+		}
+		//network.InitNetwork(network.ProbeNetworkPlugins("", ""), podStatus)
+
+		podStatus.PodNetWork.IP = ip
 	}
 
 	// Create containers
@@ -253,6 +261,10 @@ func (m *cubeRuntimeManager) InspectPod(UID string) (*object.PodStatus, error) {
 		Phase:               podPhase,
 		ActualResourceUsage: usage,
 	}, nil
+}
+
+func (m *cubeRuntimeManager) ListPodsUID() ([]string, error) {
+	return m.getAllPodsUID()
 }
 
 func (c *cubeRuntimeManager) getPodStatusByUID(UID string) (*cubecontainer.PodStatus, error) {

@@ -1,8 +1,17 @@
 package main
 
-import "os"
+import (
+	"Cubernetes/pkg/cubeproxy"
+	"Cubernetes/pkg/cubeproxy/proxyruntime"
+	"log"
+)
 
 func main() {
-	// TODO: Wait for summary :)
-	os.Exit(0)
+	runtime, err := proxyruntime.InitIPTables()
+	if err != nil {
+		log.Printf("Create cube proxy runtime error: %v", err.Error())
+	}
+
+	cubeProxyInstance := cubeproxy.Cubeproxy{Runtime: runtime}
+	cubeProxyInstance.Run()
 }

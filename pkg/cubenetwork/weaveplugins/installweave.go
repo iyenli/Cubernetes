@@ -1,4 +1,4 @@
-package weave
+package weaveplugins
 
 import (
 	"bufio"
