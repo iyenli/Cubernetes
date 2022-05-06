@@ -23,12 +23,17 @@ func AddDNSEntry(containerName string, containerID string) error {
 	// add default name
 	var str strings.Builder
 	str.WriteString(containerName)
-	if strings.HasSuffix(containerName, defaultSuffix) {
+	if !strings.HasSuffix(containerName, defaultSuffix) {
 		str.WriteString(defaultSuffix)
 	}
 
-	cmd := osexec.Command(path, dnsAdd, containerID, str.String())
-	err = cmd.Run()
+	containerName = str.String()
+	containerName = strings.Trim(containerName, "\n")
+	containerID = strings.Trim(containerID, "\n")
+
+	cmd := osexec.Command(path, dnsAdd, containerID, "-h", containerName)
+	output, err := cmd.CombinedOutput()
+	log.Println(string(output))
 	if err != nil {
 		return err
 	}

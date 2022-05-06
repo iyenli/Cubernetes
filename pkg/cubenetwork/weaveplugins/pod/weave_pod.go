@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	osexec "os/exec"
+	"strings"
 )
 
 const (
@@ -21,9 +22,12 @@ func AddPodToNetwork(sandboxID string) (net.IP, error) {
 	}
 
 	cmd := osexec.Command(path, attach, sandboxID)
-	output, err := cmd.CombinedOutput()
+	byteOutput, err := cmd.CombinedOutput()
 
-	ip := net.ParseIP(string(output))
+	output := strings.Trim(string(byteOutput), "\n")
+	output = strings.Trim(output, " ")
+
+	ip := net.ParseIP(output)
 	if ip == nil {
 		log.Printf("Weave not return correct ip: %v", string(output))
 		return nil, errors.New("weave not return correct ip")
@@ -32,21 +36,15 @@ func AddPodToNetwork(sandboxID string) (net.IP, error) {
 	return ip, nil
 }
 
-func DeletePodFromNetwork(sandboxID string) (net.IP, error) {
+func DeletePodFromNetwork(sandboxID string) error {
 	path, err := osexec.LookPath(weaveName)
 	if err != nil {
 		log.Println("Weave Not found.")
-		return nil, err
+		return err
 	}
 
 	cmd := osexec.Command(path, detach, sandboxID)
-	output, err := cmd.CombinedOutput()
+	err = cmd.Run()
 
-	ip := net.ParseIP(string(output))
-	if ip == nil {
-		log.Printf("Weave not return correct ip: %v", string(output))
-		return nil, errors.New("weave not return correct ip")
-	}
-
-	return ip, nil
+	return nil
 }

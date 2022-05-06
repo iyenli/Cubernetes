@@ -51,7 +51,7 @@ func CheckSuperUser() error {
 	return nil
 }
 
-func InitWeave(server Host) error {
+func InitWeave() error {
 	path, err := osexec.LookPath(weaveName)
 	if err != nil {
 		log.Println("Weave not found.")
@@ -72,7 +72,7 @@ func InitWeave(server Host) error {
 		return err
 	}
 
-	cmd := osexec.Command(path, launch, server.IP.String())
+	cmd := osexec.Command(path, launch)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Panicf("Weave add node error: %s, %s\n", err, string(output))
@@ -105,9 +105,9 @@ func AddNode(newHost Host, apiServerHost Host) error {
 	}
 
 	cmd := osexec.Command(path, launch, newHost.IP.String(), apiServerHost.IP.String())
-	err = cmd.Run()
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Panicf("Weave add node error: %s\n", err)
+		log.Panicf("Weave add node error: %s, %v\n", err, string(output))
 		return err
 	}
 
@@ -124,7 +124,7 @@ func CheckPeers() ([]byte, error) {
 	cmd := osexec.Command(path, "status", "peers")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Panicf("Weave add node error: %s\n", err)
+		log.Panicf("Weave status error: %s\n", err)
 		return nil, err
 	}
 	return output, nil
@@ -137,7 +137,7 @@ func CloseNetwork() error {
 		return err
 	}
 
-	cmd := osexec.Command(path, "reset")
+	cmd := osexec.Command(path, "stop")
 	err = cmd.Run()
 	if err != nil {
 		log.Panicf("Weave reset error: %s\n", err)

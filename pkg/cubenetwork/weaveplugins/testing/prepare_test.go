@@ -3,6 +3,7 @@ package testing
 import (
 	"log"
 	osexec "os/exec"
+	"strings"
 )
 
 const (
@@ -26,12 +27,29 @@ func PrepareTest() error {
 		return err
 	}
 
-	cmd = osexec.Command("docker", "rm", "$(docker ps -a -q)")
-	err = cmd.Run()
+	cmd = osexec.Command("docker", "ps", "-aq")
+	byteOutput, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Panicf("rm docker error: %s\n", err)
+		log.Printf("rm docker error: %s\n", err)
 		return err
 	}
 
+	// Warning: If you have docker running, be careful of this test
+	if len(string(byteOutput)) != 0 {
+		output := strings.ReplaceAll(string(byteOutput), "\n", " ")
+
+		cmd = osexec.Command("docker", "stop", output)
+		err = cmd.Run()
+
+		cmd = osexec.Command("docker", "rm", output)
+		err = cmd.Run()
+	}
 	return nil
+}
+
+func RunContainer() string {
+	cmd := osexec.Command("docker", "run", "-d", "-ti", "weaveworks/ubuntu")
+	byteOutput, _ := cmd.CombinedOutput()
+
+	return string(byteOutput)
 }
