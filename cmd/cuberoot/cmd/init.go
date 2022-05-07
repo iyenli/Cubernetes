@@ -37,6 +37,10 @@ example:
 		if err != nil {
 			return
 		}
+		err = utils.StartDaemonProcess(options.MANAGERLOG, options.MANAGER, args[0])
+		if err != nil {
+			return
+		}
 	},
 }
 

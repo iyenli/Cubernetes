@@ -57,7 +57,8 @@ func (i *cubePodInformer) InformPod(newPod *object.Pod, eType watchobj.EventType
 				Pod:  newPod}
 		} else {
 			// compute pod change: Name / Label / Spec
-			if object.ComputePodSpecChange(newPod, oldPod) {
+			if object.ComputeObjectMetaChange(&newPod.ObjectMeta, &oldPod.ObjectMeta) ||
+				object.ComputePodSpecChange(&newPod.Spec, &oldPod.Spec) {
 				log.Printf("pod %s spec configured\n", newPod.Name)
 				i.podEvent <- types.PodEvent{
 					Type: types.PodUpdate,

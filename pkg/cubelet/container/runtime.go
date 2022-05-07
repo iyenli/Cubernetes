@@ -130,7 +130,7 @@ func ComputePodPhase(statuses []*ContainerStatus, sandboxStatus *SandboxStatus) 
 	} else if isRunning && sandboxStatus.State == SandboxStateReady {
 		return object.PodRunning
 	} else if runningContainer > 0 && sandboxStatus.State == SandboxStateReady {
-		return object.PodCreated
+		return object.PodPending
 	} else {
 		return object.PodUnknown
 	}

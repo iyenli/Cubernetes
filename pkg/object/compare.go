@@ -1,6 +1,6 @@
 package object
 
-func ComputePodSpecChange(new *Pod, old *Pod) bool {
+func ComputeObjectMetaChange(new *ObjectMeta, old *ObjectMeta) bool {
 	if new.UID != old.UID {
 		panic("Compute 2 pod change with different uid")
 	}
@@ -21,24 +21,55 @@ func ComputePodSpecChange(new *Pod, old *Pod) bool {
 		}
 	}
 
+	return false
+}
+
+func ComputePodSpecChange(new *PodSpec, old *PodSpec) bool {
+
 	// Spec change
-	if len(new.Spec.Containers) != len(old.Spec.Containers) {
+	if len(new.Containers) != len(old.Containers) {
 		return true
 	}
-	for i, oldC := range old.Spec.Containers {
-		if ComputeContainerSpecChange(&new.Spec.Containers[i], &oldC) {
+	for i, oldC := range old.Containers {
+		if ComputeContainerSpecChange(&new.Containers[i], &oldC) {
 			return true
 		}
 	}
 
-	if len(new.Spec.Volumes) != len(old.Spec.Volumes) {
+	if len(new.Volumes) != len(old.Volumes) {
 		return true
 	}
-	for i, oldV := range old.Spec.Volumes {
-		newV := new.Spec.Volumes[i]
+	for i, oldV := range old.Volumes {
+		newV := new.Volumes[i]
 		if newV.HostPath != oldV.HostPath || newV.Name != oldV.Name {
 			return true
 		}
+	}
+
+	return false
+}
+
+func ComputeReplicaSetSpecChange(new *ReplicaSetSpec, old *ReplicaSetSpec) bool {
+	if new.Replicas != old.Replicas {
+		return true
+	}
+
+	if len(new.Selector) != len(old.Selector) {
+		return true
+	}
+	for k, oldV := range old.Selector {
+		newV, ok := new.Selector[k]
+		if !ok || newV != oldV {
+			return true
+		}
+	}
+
+	if ComputeObjectMetaChange(&new.Template.ObjectMeta, &old.Template.ObjectMeta) {
+		return true
+	}
+
+	if ComputePodSpecChange(&new.Template.Spec, &old.Template.Spec) {
+		return true
 	}
 
 	return false
@@ -103,4 +134,14 @@ func ComputeContainerSpecChange(new *Container, old *Container) bool {
 	}
 
 	return false
+}
+
+func MatchLabelSelector(selector map[string]string, labels map[string]string) bool {
+	for k, v := range selector {
+		podV, ok := labels[k]
+		if !ok || podV != v {
+			return false
+		}
+	}
+	return true
 }

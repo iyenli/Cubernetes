@@ -144,7 +144,7 @@ func (m *cubeRuntimeManager) getAllPodsUID() ([]string, error) {
 	}
 
 	var uids []string
-	for uid, _ := range podUIDSet {
+	for uid := range podUIDSet {
 		uids = append(uids, uid)
 	}
 
