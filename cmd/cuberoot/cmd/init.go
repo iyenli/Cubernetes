@@ -8,16 +8,16 @@ import (
 	"net"
 )
 
-// getCmd represents the get command
+// initCmd represents the init cubernetes master
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Init an API Server as a cubernetes master",
 	Long: `
 Init an API Server as a cubernetes master
 usage:
-	cuberoot join local-ip
+	cuberoot init local-ip
 example:
-	cuberoot join 192.168.1.5`,
+	cuberoot init 192.168.1.5`,
 
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
@@ -34,6 +34,10 @@ example:
 			return
 		}
 		err = utils.StartDaemonProcess(options.CUBEPROXYLOG, options.CUBEPROXY, args[0])
+		if err != nil {
+			return
+		}
+		err = utils.StartDaemonProcess(options.CUBELETLOG, options.CUBELET, args[0])
 		if err != nil {
 			return
 		}

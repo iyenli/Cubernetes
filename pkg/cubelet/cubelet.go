@@ -94,7 +94,6 @@ func (cl *Cubelet) syncLoop() {
 				log.Printf("fail to kill pod %s: %v\n", podEvent.Pod.Name, err)
 			}
 		}
-
 		time.Sleep(time.Second * 2)
 	}
 }
@@ -110,6 +109,7 @@ func (cl *Cubelet) updatePodsPeriod() {
 	// parallelly push all pod status to apiserver
 	wg := sync.WaitGroup{}
 	wg.Add(len(uids))
+
 	for _, podUID := range uids {
 		go func(uid string) {
 			defer wg.Done()

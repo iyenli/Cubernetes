@@ -8,7 +8,7 @@ import (
 	"net"
 )
 
-// getCmd represents the get command
+// joinCmd represents join master as a slave
 var joinCmd = &cobra.Command{
 	Use:   "join",
 	Short: "Join exist API Server as a slave",
@@ -33,7 +33,7 @@ example:
 			return
 		}
 
-		err := utils.StartDaemonProcess(options.APISERVERLOG, options.APISERVER, args[0], args[1])
+		err := utils.StartDaemonProcess(options.CUBELETLOG, options.CUBELET, args[0], args[1])
 		if err != nil {
 			return
 		}
