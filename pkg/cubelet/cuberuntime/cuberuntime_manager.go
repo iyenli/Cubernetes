@@ -3,7 +3,6 @@ package cuberuntime
 import (
 	cubecontainer "Cubernetes/pkg/cubelet/container"
 	dockershim "Cubernetes/pkg/cubelet/dockershim"
-	"Cubernetes/pkg/cubelet/network"
 	"Cubernetes/pkg/cubenetwork/weaveplugins"
 	object "Cubernetes/pkg/object"
 	"fmt"
@@ -210,6 +209,11 @@ func (m *cubeRuntimeManager) killPodByStatus(status *cubecontainer.PodStatus, re
 	// kill pod sandbox
 	for _, sandbox := range status.SandboxStatuses {
 		log.Printf("start to kill sandbox %s\n", sandbox.Id)
+		err := weaveplugins.DeletePodFromNetwork(sandbox.Id)
+		if err != nil {
+			return err
+		}
+		
 		if err := m.dockerRuntime.StopContainer(sandbox.Id); err != nil {
 			log.Printf("fail to stop sandbox %s: %v\n", sandbox.Id, err)
 			return err
@@ -221,7 +225,8 @@ func (m *cubeRuntimeManager) killPodByStatus(status *cubecontainer.PodStatus, re
 				return err
 			}
 		}
-		network.ReleaseNetwork(network.ProbeNetworkPlugins("", ""), status)
+
+		//network.ReleaseNetwork(network.ProbeNetworkPlugins("", ""), status)
 	}
 
 	return nil

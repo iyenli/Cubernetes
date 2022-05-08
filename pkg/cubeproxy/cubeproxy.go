@@ -4,7 +4,6 @@ import (
 	"Cubernetes/pkg/apiserver/watchobj"
 	"Cubernetes/pkg/cubeproxy/proxyruntime"
 	"log"
-	"os"
 )
 
 type Cubeproxy struct {
@@ -15,8 +14,8 @@ type Cubeproxy struct {
 func (cp *Cubeproxy) syncLoop() {
 	ch, cancel, err := watchobj.WatchServices()
 	if err != nil {
-		log.Panic("Error occurs when watching services")
-		os.Exit(0)
+		log.Println("Error occurs when watching services")
+		return
 	}
 
 	defer cancel()

@@ -36,7 +36,7 @@ func NewCubelet() *Cubelet {
 func (cl *Cubelet) Run() {
 	defer cl.runtime.Close()
 	defer cl.informer.CloseChan()
-
+	
 	ch, cancel, err := watchobj.WatchPods()
 	if err != nil {
 		log.Panic("Error occurs when watching pods")

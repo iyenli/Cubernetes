@@ -15,7 +15,7 @@ const (
 	defaultNetworkNamespace = "/var/run/netns/default"
 )
 
-func InitNetwork(cni gocni.CNI, podStatus *container.PodStatus) error {
+func InitPodNetwork(cni gocni.CNI, podStatus *container.PodStatus) error {
 	// TODO: Run pause docker and add it to SandboxStatuses
 
 	if len(podStatus.SandboxStatuses) < 1 {

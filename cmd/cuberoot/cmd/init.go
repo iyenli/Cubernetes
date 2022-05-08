@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"log"
 	"net"
+	"time"
 )
 
 // initCmd represents the init cubernetes master
@@ -37,6 +38,8 @@ example:
 		if err != nil {
 			return
 		}
+
+		time.Sleep(10 * time.Second)
 		err = utils.StartDaemonProcess(options.CUBEPROXYLOG, options.CUBEPROXY, args[0])
 		if err != nil {
 			return

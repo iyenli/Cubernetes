@@ -104,6 +104,20 @@ func InitIPTables() (*ProxyRuntime, error) {
 	}
 	/* Check env ends */
 
+	// Clear all service chain:
+	for exist, _ := pr.ipt.Exists(NatTable, PreRouting, "-j", ServiceChain); exist; {
+		err := pr.ipt.Delete(NatTable, PreRouting, "-j", ServiceChain)
+		if err != nil {
+			return nil, err
+		}
+	}
+	for exist, _ := pr.ipt.Exists(NatTable, OutputChain, "-j", ServiceChain); exist; {
+		err := pr.ipt.Delete(NatTable, OutputChain, "-j", ServiceChain)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// Now, create SERVICE CHAIN, and add to PRE-ROUTING/OUTPUT Chain
 	// Ref: https://gitee.com/k9-s/Cubernetes/wikis/IPT
 	if exists, _ := pr.ipt.ChainExists(NatTable, ServiceChain); !exists {

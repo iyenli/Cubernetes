@@ -1,6 +1,7 @@
 package weaveplugins
 
 import (
+	"Cubernetes/pkg/cubenetwork/weaveplugins/option"
 	"errors"
 	"log"
 	"net"
@@ -8,20 +9,14 @@ import (
 	"strings"
 )
 
-const (
-	weaveName = "weave"
-	attach    = "attach"
-	detach    = "detach"
-)
-
 func AddPodToNetwork(sandboxID string) (net.IP, error) {
-	path, err := osexec.LookPath(weaveName)
+	path, err := osexec.LookPath(option.WeaveName)
 	if err != nil {
 		log.Println("Weave Not found.")
 		return nil, err
 	}
 
-	cmd := osexec.Command(path, attach, sandboxID)
+	cmd := osexec.Command(path, option.Attach, sandboxID)
 	byteOutput, err := cmd.CombinedOutput()
 
 	output := strings.Trim(string(byteOutput), "\n")
@@ -37,13 +32,13 @@ func AddPodToNetwork(sandboxID string) (net.IP, error) {
 }
 
 func DeletePodFromNetwork(sandboxID string) error {
-	path, err := osexec.LookPath(weaveName)
+	path, err := osexec.LookPath(option.WeaveName)
 	if err != nil {
 		log.Println("Weave Not found.")
 		return err
 	}
 
-	cmd := osexec.Command(path, detach, sandboxID)
+	cmd := osexec.Command(path, option.Detach, sandboxID)
 	err = cmd.Run()
 
 	return nil

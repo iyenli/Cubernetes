@@ -15,7 +15,7 @@ func StartDaemonProcess(args ...string) error {
 	}
 
 	server := exec.Command(args[1], args[2:]...)
-	stdout, err := os.OpenFile(args[0], os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
+	stdout, err := os.OpenFile(args[0], os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
 		log.Println(os.Getpid(), ": open log file error", err)
 	}
