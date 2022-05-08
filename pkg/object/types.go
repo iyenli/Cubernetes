@@ -160,3 +160,41 @@ type ReplicaSetStatus struct {
 	// UID of pods assigned
 	PodUIDs []string `json:"podUIDs" yaml:"podUIDs"`
 }
+
+type Node struct {
+	TypeMeta   `json:",inline" yaml:",inline"`
+	ObjectMeta `json:"metadata" yaml:"metadata"`
+	Status     *NodeStatus `json:"status,omitempty" yaml:"status,omitempty"`
+}
+
+type NodeStatus struct {
+	Addresses NodeAddresses `json:"addresses,omitempty" yaml:"addresses,omitempty"`
+	Condition NodeCondition `json:"condition,omitempty" yaml:"condition,omitempty"`
+	Capacity  NodeCapacity  `json:"capacity,omitempty" yaml:"capacity,omitempty"`
+	Info      NodeInfo      `json:"info,omitempty" yaml:"info,omitempty"`
+}
+
+type NodeAddresses struct {
+	HostName   string `json:"hostName,omitempty" yaml:"hostName,omitempty"`
+	ExternalIP string `json:"externalIP,omitempty" yaml:"externalIP,omitempty"`
+	InternalIP string `json:"internalIP,omitempty" yaml:"internalIP,omitempty"`
+}
+
+type NodeCondition struct {
+	OutOfDisk      bool `json:"outOfDisk,omitempty" yaml:"outOfDisk,omitempty"`
+	Ready          bool `json:"ready,omitempty" yaml:"ready,omitempty"`
+	MemoryPressure bool `json:"memoryPressure,omitempty" yaml:"memoryPressure,omitempty"`
+	DiskPressure   bool `json:"diskPressure,omitempty" yaml:"diskPressure,omitempty"`
+}
+
+type NodeCapacity struct {
+	CPUCount int `json:"cpuCount,omitempty" yaml:"cpuCount,omitempty"`
+	Memory   int `json:"memory,omitempty" yaml:"memory,omitempty"`
+	MaxPods  int `json:"maxPods,omitempty" yaml:"maxPods,omitempty"`
+}
+
+type NodeInfo struct {
+	CubeVersion   string `json:"cubeVersion,omitempty" yaml:"cubeVersion,omitempty"`
+	KernelVersion string `json:"kernelVersion,omitempty" yaml:"kernelVersion,omitempty"`
+	DeviceName    string `json:"deviceName,omitempty" yaml:"deviceName,omitempty"`
+}

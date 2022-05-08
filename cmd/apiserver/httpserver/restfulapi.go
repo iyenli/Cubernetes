@@ -31,6 +31,8 @@ var restfulList = []Handler{
 	{http.MethodPut, "/apis/replicaSet/:uid", putReplicaSet},
 	{http.MethodDelete, "/apis/replicaSet/:uid", delReplicaSet},
 	{http.MethodPost, "/apis/select/replicaSets", selectReplicaSets},
+
+	{http.MethodPost, "/apis/node", postNode},
 }
 
 func parseFail(ctx *gin.Context) {
@@ -462,4 +464,26 @@ func selectReplicaSets(ctx *gin.Context) {
 		}
 		return true
 	})
+}
+
+func postNode(ctx *gin.Context) {
+	var node object.Node
+	err := ctx.BindJSON(&node)
+	if err != nil {
+		parseFail(ctx)
+		return
+	}
+	if node.Name == "" {
+		badRequest(ctx)
+		return
+	}
+
+	node.UID = uuid.New().String()
+	buf, _ := json.Marshal(node)
+	err = etcdrw.PutObj("/apis/node/"+node.UID, string(buf))
+	if err != nil {
+		serverError(ctx)
+		return
+	}
+	ctx.JSON(http.StatusOK, node)
 }
