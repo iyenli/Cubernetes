@@ -29,7 +29,11 @@ example:
 			return
 		}
 
-		err := utils.StartDaemonProcess(options.APISERVERLOG, options.APISERVER, args[0])
+		err := utils.StartDaemonProcess(options.ETCDLOG, options.ETCD)
+		if err != nil {
+			return
+		}
+		err = utils.StartDaemonProcess(options.APISERVERLOG, options.APISERVER)
 		if err != nil {
 			return
 		}
