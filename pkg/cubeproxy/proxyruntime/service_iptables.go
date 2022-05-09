@@ -105,13 +105,13 @@ func InitIPTables() (*ProxyRuntime, error) {
 	/* Check env ends */
 
 	// Clear all service chain:
-	for exist, _ := pr.ipt.Exists(NatTable, PreRouting, "-j", ServiceChain); exist; {
+	for exist, _ := pr.ipt.Exists(NatTable, PreRouting, "-j", ServiceChain); err != nil && exist; {
 		err := pr.ipt.Delete(NatTable, PreRouting, "-j", ServiceChain)
 		if err != nil {
 			return nil, err
 		}
 	}
-	for exist, _ := pr.ipt.Exists(NatTable, OutputChain, "-j", ServiceChain); exist; {
+	for exist, _ := pr.ipt.Exists(NatTable, OutputChain, "-j", ServiceChain); err != nil && exist; {
 		err := pr.ipt.Delete(NatTable, OutputChain, "-j", ServiceChain)
 		if err != nil {
 			return nil, err
