@@ -52,6 +52,10 @@ example:
 		if err != nil {
 			return
 		}
+		err = utils.StartDaemonProcess(options.SCHEDULERLOG, options.SCHEDULER, args[0])
+		if err != nil {
+			return
+		}
 	},
 }
 

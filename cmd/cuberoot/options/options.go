@@ -7,6 +7,7 @@ const (
 	CUBELET   = BUILDDIR + "cubelet"
 	CUBEPROXY = BUILDDIR + "cubeproxy"
 	MANAGER   = BUILDDIR + "manager"
+	SCHEDULER = BUILDDIR + "scheduler"
 	ETCD      = "/usr/local/bin/etcd"
 
 	LOGDIR       = "/var/log/cubernetes/"
@@ -15,4 +16,5 @@ const (
 	CUBEPROXYLOG = LOGDIR + "cubeproxy.log"
 	MANAGERLOG   = LOGDIR + "manager.log"
 	ETCDLOG      = LOGDIR + "etcd.log"
+	SCHEDULERLOG = LOGDIR + "scheduler.log"
 )
