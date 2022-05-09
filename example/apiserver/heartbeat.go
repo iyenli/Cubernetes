@@ -1,7 +1,7 @@
 package main
 
 import (
-	"Cubernetes/pkg/apiserver"
+	"Cubernetes/pkg/apiserver/heartbeat"
 	"Cubernetes/pkg/object"
 	"fmt"
 	"time"
@@ -17,6 +17,6 @@ func main() {
 	node.Status.Condition.Ready = true
 	fmt.Println(node)
 
-	apiserver.Init(node)
+	heartbeat.InitNode(node)
 	time.Sleep(100 * time.Second)
 }

@@ -2,7 +2,7 @@ package main
 
 import (
 	cubeconfig "Cubernetes/config"
-	"Cubernetes/pkg/apiserver"
+	"Cubernetes/pkg/apiserver/heartbeat"
 	"Cubernetes/pkg/object"
 	"Cubernetes/pkg/utils/etcdrw"
 	"bufio"
@@ -33,14 +33,14 @@ func handle(conn *net.Conn) {
 
 	received := false
 	go func() {
-		time.Sleep(apiserver.TIMEOUT)
+		time.Sleep(heartbeat.TIMEOUT)
 		if !received {
 			log.Println("Timeout, closing connection with ", (*conn).RemoteAddr())
 			_ = (*conn).Close()
 		}
 	}()
 
-	buf, err := reader.ReadBytes(apiserver.MSG_DELIM)
+	buf, err := reader.ReadBytes(heartbeat.MSG_DELIM)
 	received = true
 	if err != nil {
 		log.Println("Fail to read from conn, err:", err)
@@ -90,7 +90,7 @@ func handle(conn *net.Conn) {
 	}()
 
 	for {
-		buf, err = reader.ReadBytes(apiserver.MSG_DELIM)
+		buf, err = reader.ReadBytes(heartbeat.MSG_DELIM)
 		if err != nil {
 			log.Println("Fail to read from conn, err: ", err)
 			return
@@ -121,22 +121,22 @@ func handle(conn *net.Conn) {
 }
 
 func checkHealth() {
-	heartbeat := []byte(apiserver.MSG_HEARTBEAT)
-	heartbeat = append(heartbeat, apiserver.MSG_DELIM)
+	hb := []byte(heartbeat.MSG_HEARTBEAT)
+	hb = append(hb, heartbeat.MSG_DELIM)
 
 	for {
-		time.Sleep(apiserver.INTERVAL)
+		time.Sleep(heartbeat.INTERVAL)
 		var toDelete []string
 		connMap.Range(func(key, value any) bool {
 			nodeConn := value.(NodeConn)
-			if time.Since(nodeConn.LastUpdate) >= apiserver.TIMEOUT {
+			if time.Since(nodeConn.LastUpdate) >= heartbeat.TIMEOUT {
 				log.Println("Timeout, closing connection with ", (*nodeConn.Conn).RemoteAddr())
 				toDelete = append(toDelete, nodeConn.UID)
 				_ = (*nodeConn.Conn).Close()
 				return true
 			}
 
-			_, err := (*nodeConn.Conn).Write(heartbeat)
+			_, err := (*nodeConn.Conn).Write(hb)
 			if err != nil {
 				log.Println("Fail to send Heartbeat message, this is NORMAL when node is lost. err: ", err)
 				toDelete = append(toDelete, nodeConn.UID)

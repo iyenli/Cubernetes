@@ -1,4 +1,4 @@
-package apiserver
+package heartbeat
 
 import (
 	cubeconfig "Cubernetes/config"
@@ -98,7 +98,7 @@ func updateHeartBeat() {
 	}
 }
 
-func Init(n object.Node) {
+func InitNode(n object.Node) {
 	node = n
 	connected = false
 	go updateHeartBeat()
