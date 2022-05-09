@@ -14,7 +14,7 @@ func main() {
 		log.Printf("Create cube proxy runtime error: %v", err.Error())
 	}
 
-	register.RegisterToMaster(os.Args)
+	register.RegistryMaster(os.Args)
 	cubeProxyInstance := cubeproxy.Cubeproxy{Runtime: runtime}
 	cubeProxyInstance.Run()
 }

@@ -10,7 +10,7 @@ import (
 func main() {
 	// Init network according to params, Register to api server
 	network.InitNodeNetwork(os.Args)
-	register.RegisterToMaster(os.Args)
+	register.RegistryMaster(os.Args)
 	cubeletInstance := cubelet.NewCubelet()
 	cubeletInstance.Run()
 }

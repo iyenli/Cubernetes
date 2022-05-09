@@ -160,3 +160,12 @@ type ReplicaSetStatus struct {
 	// UID of pods assigned
 	PodUIDs []string `json:"podUIDs" yaml:"podUIDs"`
 }
+
+type NodeRegisterRequest struct {
+	IP   net.IP `json:"IP,omitempty" yaml:"IP"`
+	UUID string `json:"UUID,omitempty" yaml:"UUID"`
+}
+
+type NodeRegisterResponse struct {
+	UUID string `json:"UUID,omitempty" yaml:"UUID"`
+}
