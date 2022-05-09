@@ -26,7 +26,7 @@ for example:
 			return
 		}
 		switch args[0] {
-		case "pods", "pod", "Pods", "Pod":
+		case "pods", "pod", "2Pods", "Pod":
 			pods, err := crudobj.GetPods()
 			if err != nil {
 				log.Fatal("[FATAL] fail to get pods")

@@ -1,8 +1,20 @@
 package main
 
-import "os"
+import (
+	"Cubernetes/pkg/cubenetwork/register"
+	"Cubernetes/pkg/cubeproxy"
+	"Cubernetes/pkg/cubeproxy/proxyruntime"
+	"log"
+	"os"
+)
 
 func main() {
-	// TODO: Wait for summary :)
-	os.Exit(0)
+	runtime, err := proxyruntime.InitIPTables()
+	if err != nil {
+		log.Printf("Create cube proxy runtime error: %v", err.Error())
+	}
+
+	register.RegistryMaster(os.Args)
+	cubeProxyInstance := cubeproxy.Cubeproxy{Runtime: runtime}
+	cubeProxyInstance.Run()
 }

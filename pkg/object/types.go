@@ -198,3 +198,12 @@ type NodeInfo struct {
 	KernelVersion string `json:"kernelVersion,omitempty" yaml:"kernelVersion,omitempty"`
 	DeviceName    string `json:"deviceName,omitempty" yaml:"deviceName,omitempty"`
 }
+
+type NodeRegisterRequest struct {
+	IP   net.IP `json:"IP,omitempty" yaml:"IP"`
+	UUID string `json:"UUID,omitempty" yaml:"UUID"`
+}
+
+type NodeRegisterResponse struct {
+	UUID string `json:"UUID,omitempty" yaml:"UUID"`
+}

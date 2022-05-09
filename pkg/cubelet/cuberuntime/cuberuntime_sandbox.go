@@ -44,8 +44,8 @@ func (m *cubeRuntimeManager) createPodSandbox(pod *object.Pod) (string, string, 
 func (m *cubeRuntimeManager) getSandboxStatusesByPodUID(UID string) ([]*cubecontainer.SandboxStatus, error) {
 	filter := dockertypes.ContainerListOptions{
 		Filters: filters.NewArgs(
-			filters.Arg("label", buildLabelSelector(CubernetesContainerTypeLabel, ContainerTypeSandbox)),
-			filters.Arg("label", buildLabelSelector(CubernetesPodUIDLabel, UID)),
+			filters.Arg("label", buildLabelSelector(ContainerTypeLabel, ContainerTypeSandbox)),
+			filters.Arg("label", buildLabelSelector(PodUIDLabel, UID)),
 		),
 	}
 
@@ -118,4 +118,35 @@ func generatePodSandboxConfig(pod *object.Pod) *dockertypes.ContainerCreateConfi
 	}
 
 	return sandboxConfig
+}
+
+func (m *cubeRuntimeManager) getAllPodsUID() ([]string, error) {
+	filter := dockertypes.ContainerListOptions{
+		Filters: filters.NewArgs(
+			filters.Arg("label", buildLabelSelector(ContainerTypeLabel, ContainerTypeSandbox)),
+		),
+	}
+
+	sandboxes, err := m.dockerRuntime.ListContainers(filter)
+	if err != nil {
+		log.Printf("fail to list all pods sandbox: %v\n", err)
+		return nil, err
+	}
+
+	// no build-in set in golang, using ugly code
+	podUIDSet := make(map[string]bool)
+	for _, sandbox := range sandboxes {
+		if uid, ok := sandbox.Labels[PodUIDLabel]; ok {
+			podUIDSet[uid] = true
+		} else {
+			log.Printf("[error] uid label of sandbox %s is empty\n", sandbox.Names[0])
+		}
+	}
+
+	var uids []string
+	for uid := range podUIDSet {
+		uids = append(uids, uid)
+	}
+
+	return uids, nil
 }

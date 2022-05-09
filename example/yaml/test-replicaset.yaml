@@ -1,0 +1,16 @@
+apiVersion: wahtever/v1
+kind: ReplicaSet
+metadata:
+  name: test-replicaset
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      use: test-rs
+  template:
+    metadata:
+      labels:
+        use: test-rs
+    spec:
+      containers:
+        - image: docker/desktop-kubernetes-pause:3.7

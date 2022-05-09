@@ -3,7 +3,7 @@ package cuberuntime
 import (
 	cubecontainer "Cubernetes/pkg/cubelet/container"
 	dockershim "Cubernetes/pkg/cubelet/dockershim"
-	"Cubernetes/pkg/cubelet/network"
+	"Cubernetes/pkg/cubenetwork/weaveplugins"
 	object "Cubernetes/pkg/object"
 	"fmt"
 	"log"
@@ -73,7 +73,14 @@ func (m *cubeRuntimeManager) SyncPod(pod *object.Pod, podStatus *cubecontainer.P
 		// Update sandbox to initnetwork
 		newSandboxStatuses, _ := m.getSandboxStatusesByPodUID(pod.UID)
 		podStatus.UpdateSandboxStatuses(newSandboxStatuses)
-		network.InitNetwork(network.ProbeNetworkPlugins("", ""), podStatus)
+
+		ip, err := weaveplugins.AddPodToNetwork(podSandboxID)
+		if err != nil {
+			return err
+		}
+		//network.InitNetwork(network.ProbeNetworkPlugins("", ""), podStatus)
+
+		podStatus.PodNetWork.IP = ip
 	}
 
 	// Create containers
@@ -202,6 +209,11 @@ func (m *cubeRuntimeManager) killPodByStatus(status *cubecontainer.PodStatus, re
 	// kill pod sandbox
 	for _, sandbox := range status.SandboxStatuses {
 		log.Printf("start to kill sandbox %s\n", sandbox.Id)
+		err := weaveplugins.DeletePodFromNetwork(sandbox.Id)
+		if err != nil {
+			return err
+		}
+		
 		if err := m.dockerRuntime.StopContainer(sandbox.Id); err != nil {
 			log.Printf("fail to stop sandbox %s: %v\n", sandbox.Id, err)
 			return err
@@ -213,7 +225,8 @@ func (m *cubeRuntimeManager) killPodByStatus(status *cubecontainer.PodStatus, re
 				return err
 			}
 		}
-		network.ReleaseNetwork(network.ProbeNetworkPlugins("", ""), status)
+
+		//network.ReleaseNetwork(network.ProbeNetworkPlugins("", ""), status)
 	}
 
 	return nil
@@ -255,6 +268,10 @@ func (m *cubeRuntimeManager) InspectPod(UID string) (*object.PodStatus, error) {
 	}, nil
 }
 
+func (m *cubeRuntimeManager) ListPodsUID() ([]string, error) {
+	return m.getAllPodsUID()
+}
+
 func (c *cubeRuntimeManager) getPodStatusByUID(UID string) (*cubecontainer.PodStatus, error) {
 	containerStatuses, err := c.getContainerStatusesByPodUID(UID)
 	if err != nil {
@@ -274,7 +291,7 @@ func (c *cubeRuntimeManager) getPodStatusByUID(UID string) (*cubecontainer.PodSt
 	return &cubecontainer.PodStatus{
 		UID:              UID,
 		Name:             podName,
-		NetworkNamespace: "default",
+		NetworkNamespace: "/var/run/netns/default",
 		// Update PodNetworkStatus?
 		ContainerStatuses: containerStatuses,
 		SandboxStatuses:   sandboxStatuses,
