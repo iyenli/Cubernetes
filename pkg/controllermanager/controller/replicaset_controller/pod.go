@@ -54,9 +54,7 @@ func (rsc *replicaSetController) handlePodKilled(pod *object.Pod) error {
 		if idx, found := rsc.podUIDAppearedIndex(pod.UID, rs.Status.PodUIDsToKill); found {
 			rs.Status.PodUIDsToKill =
 				append(rs.Status.PodUIDsToKill[:idx], rs.Status.PodUIDsToKill[idx+1:]...)
-		} else {
-			log.Printf("[FATAL] unexpected pod %s killed but not in toKill\n", pod.Name)
-		}
+		} // else pod was killed by outside Cubernetes
 
 		if idx, found := rsc.podUIDAppearedIndex(pod.UID, rs.Status.PodUIDsRunning); found {
 			rs.Status.RunningReplicas -= 1

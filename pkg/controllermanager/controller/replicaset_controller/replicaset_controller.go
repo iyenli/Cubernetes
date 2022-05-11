@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	replicaSetPodsUpdateWaitTime = time.Second * 20
+	replicaSetPodsUpdateWaitTime = time.Second * 30
 )
 
 type ReplicaSetController interface {
@@ -163,7 +163,7 @@ func (rsc *replicaSetController) checkAndUpdateReplicaSetStatus(rs *object.Repli
 	log.Println("bad:     ", bads)
 
 	// timeout => create new pods, ignore old
-	toCreate := len(runnings) - int(rs.Spec.Replicas)
+	toCreate := int(rs.Spec.Replicas) - len(runnings)
 	log.Printf("%d pod(s) running, %d expected\n", len(runnings), rs.Spec.Replicas)
 	podsToRun := make([]string, 0)
 	// will do nothing if toCreate <= 0
@@ -179,6 +179,10 @@ func (rsc *replicaSetController) checkAndUpdateReplicaSetStatus(rs *object.Repli
 
 	// timeout => kill toKill again, and try to kill old-fail-to-create
 	podsToKill := append(rs.Status.PodUIDsToKill, rs.Status.PodUIDsToRun...)
+	// kill redundant pod if needed
+	if toCreate < 0 {
+		podsToKill = append(podsToKill, runnings[:-toCreate]...)
+	}
 	// also kill bad pods found in update, then remove duplication
 	podsToKill = utils.RemoveDuplication(append(podsToKill, bads...))
 	for _, uid := range podsToKill {
