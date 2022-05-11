@@ -2,7 +2,6 @@ package httpserver
 
 import (
 	cubeconfig "Cubernetes/config"
-	"Cubernetes/pkg/utils/etcdrw"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -18,9 +17,6 @@ type Handler struct {
 func Run() {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
-
-	etcdrw.Init()
-	defer etcdrw.Free()
 
 	handlerList := append(restfulList, watchList...)
 

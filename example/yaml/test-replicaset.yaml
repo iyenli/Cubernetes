@@ -5,8 +5,7 @@ metadata:
 spec:
   replicas: 3
   selector:
-    matchLabels:
-      use: test-rs
+    use: test-rs
   template:
     metadata:
       labels:

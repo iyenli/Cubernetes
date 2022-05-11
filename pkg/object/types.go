@@ -193,10 +193,10 @@ type NodeAddresses struct {
 }
 
 type NodeCondition struct {
-	OutOfDisk      bool `json:"outOfDisk,omitempty" yaml:"outOfDisk,omitempty"`
-	Ready          bool `json:"ready,omitempty" yaml:"ready,omitempty"`
-	MemoryPressure bool `json:"memoryPressure,omitempty" yaml:"memoryPressure,omitempty"`
-	DiskPressure   bool `json:"diskPressure,omitempty" yaml:"diskPressure,omitempty"`
+	OutOfDisk      bool `json:"outOfDisk" yaml:"outOfDisk"`
+	Ready          bool `json:"ready" yaml:"ready"`
+	MemoryPressure bool `json:"memoryPressure" yaml:"memoryPressure"`
+	DiskPressure   bool `json:"diskPressure" yaml:"diskPressure"`
 }
 
 type NodeCapacity struct {
