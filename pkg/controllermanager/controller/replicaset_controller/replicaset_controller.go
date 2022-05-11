@@ -24,7 +24,7 @@ type ReplicaSetController interface {
 type replicaSetController struct {
 	podInformer informer.PodInformer
 	rsInformer  ReplicaSetInformer
-	biglock sync.Mutex
+	biglock     sync.Mutex
 }
 
 func NewReplicaSetController(podInformer informer.PodInformer) (ReplicaSetController, error) {
@@ -32,7 +32,7 @@ func NewReplicaSetController(podInformer informer.PodInformer) (ReplicaSetContro
 	return &replicaSetController{
 		podInformer: podInformer,
 		rsInformer:  rsInformer,
-		biglock: sync.Mutex{},
+		biglock:     sync.Mutex{},
 	}, nil
 }
 
