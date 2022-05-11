@@ -77,7 +77,7 @@ func CreateNode(node object.Node) (object.Node, error) {
 	var newNode object.Node
 	err = json.Unmarshal(body, &newNode)
 	if err != nil {
-		log.Println("fail to parse Node")
+		log.Println("fail to parse Node, err:", err.Error())
 		return node, err
 	}
 

@@ -1,10 +1,10 @@
-apiVersion: wahtever/v1
+apiVersion: v1
 kind: Pod
 metadata:
-  name: fuck-pod-you
+  name: test-pod
 spec:
   containers:
-    - name: foo-nginx
+    - name: test-pod
       image: nginx
       ports:
         - hostPort: 8085
@@ -14,4 +14,4 @@ spec:
           mountPath: /etc/nginx/nginx.conf
   volumes:
     - name: conf
-      hostPath: /home/jolynefr/WorkSpace/CloudOS/test/nginx.conf/nginx.conf
+      hostPath: /etc/nginx/nginx.conf
