@@ -7,7 +7,7 @@ package cmd
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
 	"fmt"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	"log"
 
 	"github.com/spf13/cobra"

@@ -18,8 +18,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
 
-require gopkg.in/yaml.v2 v2.4.0
-
 require (
 	github.com/Microsoft/go-winio v0.5.1 // indirect
 	github.com/containernetworking/cni v1.0.1 // indirect
@@ -50,6 +48,7 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.17.0 // indirect
 	golang.org/x/text v0.3.7 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
 require (
