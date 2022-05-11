@@ -9,6 +9,7 @@ const (
 	MANAGER   = BUILDDIR + "manager"
 	SCHEDULER = BUILDDIR + "scheduler"
 	ETCD      = "/usr/local/bin/etcd"
+	ETCDDATA  = "/var/lib/etcd"
 
 	LOGDIR       = "/var/log/cubernetes/"
 	APISERVERLOG = LOGDIR + "apiserver.log"

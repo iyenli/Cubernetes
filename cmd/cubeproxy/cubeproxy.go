@@ -1,7 +1,7 @@
 package main
 
 import (
-	"Cubernetes/pkg/cubenetwork/register"
+	"Cubernetes/pkg/cubenetwork/nodenetwork"
 	"Cubernetes/pkg/cubeproxy"
 	"Cubernetes/pkg/cubeproxy/proxyruntime"
 	"log"
@@ -9,12 +9,20 @@ import (
 )
 
 func main() {
+	// 1 param (master): cubeproxy [LocalIP]
+	// 2 params (slave): cubeproxy [LocalIP] [MasterIP]
+	if len(os.Args) < 2 {
+		log.Fatal("[FATAL] Lack arguments")
+	}
+
 	runtime, err := proxyruntime.InitIPTables()
 	if err != nil {
 		log.Printf("Create cube proxy runtime error: %v", err.Error())
 	}
 
-	register.RegistryMaster(os.Args)
+	if len(os.Args) == 3 {
+		nodenetwork.SetMasterIP(os.Args[2])
+	}
 	cubeProxyInstance := cubeproxy.Cubeproxy{Runtime: runtime}
 	cubeProxyInstance.Run()
 }

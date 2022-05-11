@@ -1,4 +1,4 @@
-package main
+package heartbeat
 
 import (
 	cubeconfig "Cubernetes/config"
@@ -151,7 +151,7 @@ func checkHealth() {
 	}
 }
 
-func listenHeartbeat() {
+func ListenHeartbeat() {
 	connMap = sync.Map{}
 	listener, err := net.Listen("tcp", ":"+strconv.Itoa(cubeconfig.HeartbeatPort))
 	if err != nil {

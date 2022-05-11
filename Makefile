@@ -1,6 +1,6 @@
 build_path = build
 
-all: cubectl apiserver cubelet cuberoot cubeproxy controller_manager
+all: cubectl apiserver cubelet cuberoot cubeproxy controller_manager scheduler
 
 clean:
 	rm ${build_path}/cubectl $(build_path)/apiserver $(build_path)/cubelet
@@ -23,5 +23,5 @@ cubeproxy: cmd/cubeproxy/cubeproxy.go
 controller_manager: cmd/controller_manager/manager.go
 	@go build -o $(build_path)/manager cmd/controller_manager/manager.go
 
-controller_manager: cmd/scheduler/scheduler.go
+scheduler: cmd/scheduler/scheduler.go
 	@go build -o $(build_path)/scheduler cmd/scheduler/scheduler.go

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"Cubernetes/cmd/cuberoot/options"
 	"log"
 	"os"
 	"os/exec"
@@ -26,6 +27,58 @@ func StartDaemonProcess(args ...string) error {
 	err = server.Start()
 
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func PreStartMaster() error {
+	err := StartDaemonProcess(options.ETCDLOG, options.ETCD)
+	if err != nil {
+		log.Println("[FATAL] fail to start etcd")
+		return err
+	}
+	err = StartDaemonProcess(options.APISERVERLOG, options.APISERVER)
+	if err != nil {
+		log.Println("[FATAL] fail to start apiserver")
+		return err
+	}
+	return nil
+}
+
+func StartMaster(IP string) error {
+	err := StartDaemonProcess(options.CUBEPROXYLOG, options.CUBEPROXY, IP)
+	if err != nil {
+		log.Println("[FATAL] fail to start cubeproxy")
+		return err
+	}
+	err = StartDaemonProcess(options.CUBELETLOG, options.CUBELET, IP)
+	if err != nil {
+		log.Println("[FATAL] fail to start cubelet")
+		return err
+	}
+	err = StartDaemonProcess(options.MANAGERLOG, options.MANAGER, IP)
+	if err != nil {
+		log.Println("[FATAL] fail to start manager")
+		return err
+	}
+	err = StartDaemonProcess(options.SCHEDULERLOG, options.SCHEDULER, IP)
+	if err != nil {
+		log.Println("[FATAL] fail to start scheduler")
+		return err
+	}
+	return nil
+}
+
+func StartSlave(IP string, masterIP string) error {
+	err := StartDaemonProcess(options.CUBELETLOG, options.CUBELET, IP, masterIP)
+	if err != nil {
+		log.Println("[FATAL] fail to start cubelet")
+		return err
+	}
+	err = StartDaemonProcess(options.CUBEPROXYLOG, options.CUBEPROXY, IP, masterIP)
+	if err != nil {
+		log.Println("[FATAL] fail to start cubeproxy")
 		return err
 	}
 	return nil

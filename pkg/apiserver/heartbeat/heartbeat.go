@@ -100,6 +100,7 @@ func updateHeartBeat() {
 
 func InitNode(n object.Node) {
 	node = n
+	node.Status.Condition.Ready = true
 	connected = false
 	go updateHeartBeat()
 }

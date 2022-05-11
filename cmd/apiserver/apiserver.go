@@ -1,10 +1,11 @@
 package main
 
 import (
+	"Cubernetes/cmd/apiserver/heartbeat"
 	"Cubernetes/cmd/apiserver/httpserver"
 )
 
 func main() {
-	go listenHeartbeat()
+	go heartbeat.ListenHeartbeat()
 	httpserver.Run()
 }

@@ -164,14 +164,26 @@ type ReplicaSetStatus struct {
 type Node struct {
 	TypeMeta   `json:",inline" yaml:",inline"`
 	ObjectMeta `json:"metadata" yaml:"metadata"`
+	Spec       NodeSpec    `json:"spec" yaml:"spec"`
 	Status     *NodeStatus `json:"status,omitempty" yaml:"status,omitempty"`
+}
+
+type NodeType string
+
+const (
+	Master NodeType = "Master"
+	Slave  NodeType = "Slave"
+)
+
+type NodeSpec struct {
+	Type     NodeType     `json:"type" yaml:"type"`
+	Capacity NodeCapacity `json:"capacity,omitempty" yaml:"capacity,omitempty"`
+	Info     NodeInfo     `json:"info,omitempty" yaml:"info,omitempty"`
 }
 
 type NodeStatus struct {
 	Addresses NodeAddresses `json:"addresses,omitempty" yaml:"addresses,omitempty"`
 	Condition NodeCondition `json:"condition,omitempty" yaml:"condition,omitempty"`
-	Capacity  NodeCapacity  `json:"capacity,omitempty" yaml:"capacity,omitempty"`
-	Info      NodeInfo      `json:"info,omitempty" yaml:"info,omitempty"`
 }
 
 type NodeAddresses struct {
@@ -197,13 +209,4 @@ type NodeInfo struct {
 	CubeVersion   string `json:"cubeVersion,omitempty" yaml:"cubeVersion,omitempty"`
 	KernelVersion string `json:"kernelVersion,omitempty" yaml:"kernelVersion,omitempty"`
 	DeviceName    string `json:"deviceName,omitempty" yaml:"deviceName,omitempty"`
-}
-
-type NodeRegisterRequest struct {
-	IP   net.IP `json:"IP,omitempty" yaml:"IP"`
-	UUID string `json:"UUID,omitempty" yaml:"UUID"`
-}
-
-type NodeRegisterResponse struct {
-	UUID string `json:"UUID,omitempty" yaml:"UUID"`
 }

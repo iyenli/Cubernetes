@@ -1,9 +1,12 @@
 package cmd
 
 import (
-	"Cubernetes/cmd/cuberoot/options"
 	"Cubernetes/cmd/cuberoot/utils"
+	"Cubernetes/pkg/object"
+	"Cubernetes/pkg/utils/localstorage"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
+	"io/ioutil"
 	"log"
 	"net"
 	"time"
@@ -14,48 +17,66 @@ var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Init an API Server as a cubernetes master",
 	Long: `
-Init an API Server as a cubernetes master
+Init as a cubernetes master
 usage:
-	cuberoot init local-ip
+	cuberoot init -f [file path]
 example:
-	cuberoot init 192.168.1.5`,
+	cuberoot init -f node.yaml`,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) < 1 {
-			log.Fatal("[FATAL] lack arguments")
-			return
-		}
-		if ip := net.ParseIP(args[0]); ip == nil {
-			log.Fatalf("[FATAL] illegal ip address: %v", args[0])
-			return
+		meta, err := localstorage.TryLoadMeta()
+		if err == nil {
+			if meta.Node.Spec.Type == object.Master {
+				log.Fatal("[FATAL] already initialized as master, please reset first")
+			} else {
+				log.Fatalf("[FATAL] already joined %s as slave, please reset first", meta.MasterIP)
+			}
 		}
 
-		err := utils.StartDaemonProcess(options.ETCDLOG, options.ETCD)
+		f, err := cmd.Flags().GetString("file")
 		if err != nil {
-			return
+			log.Fatal("[FATAL] missing input config file")
 		}
-		err = utils.StartDaemonProcess(options.APISERVERLOG, options.APISERVER)
+		file, err := ioutil.ReadFile(f)
 		if err != nil {
-			return
+			log.Fatal("[FATAL] cannot read input config file")
+		}
+
+		var node object.Node
+		err = yaml.Unmarshal(file, &node)
+		if err != nil {
+			log.Fatal("[FATAL] fail to parse config file")
+		}
+
+		if net.ParseIP(node.Status.Addresses.InternalIP) == nil {
+			log.Fatalf("[FATAL] illegal ip address: %v", node.Status.Addresses.InternalIP)
+		}
+
+		log.Println("Starting etcd & apiserver processes, this may take 10s")
+
+		err = utils.PreStartMaster()
+		if err != nil {
+			log.Fatal("[FATAL] fail to pre-start master processes, err: ", err)
 		}
 
 		time.Sleep(10 * time.Second)
-		err = utils.StartDaemonProcess(options.CUBEPROXYLOG, options.CUBEPROXY, args[0])
+
+		log.Println("Registering as master...")
+		err = utils.RegisterAsMaster(node)
 		if err != nil {
-			return
+			log.Fatal("[FATAL] fail to register as master, err: ", err)
 		}
-		err = utils.StartDaemonProcess(options.CUBELETLOG, options.CUBELET, args[0])
+
+		log.Println("Registered as master, starting processes...")
+
+		err = utils.StartMaster(node.Status.Addresses.InternalIP)
 		if err != nil {
-			return
+			log.Fatal("[FATAL] fail to start master processes, err: ", err)
 		}
-		err = utils.StartDaemonProcess(options.MANAGERLOG, options.MANAGER, args[0])
-		if err != nil {
-			return
-		}
-		err = utils.StartDaemonProcess(options.SCHEDULERLOG, options.SCHEDULER, args[0])
-		if err != nil {
-			return
-		}
+
+		log.Printf("Master node launched successfully\n"+
+			"To join Cubernetes cluster, execute:\n"+
+			"\tcuberoot join %s -f [node config file]\n", node.Status.Addresses.InternalIP)
 	},
 }
 
@@ -71,4 +92,5 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// getCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	initCmd.Flags().StringP("file", "f", "", "path of your node config yaml file")
 }

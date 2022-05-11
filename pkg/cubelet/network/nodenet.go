@@ -1,7 +1,10 @@
 package network
 
 import (
+	"Cubernetes/pkg/apiserver/heartbeat"
+	"Cubernetes/pkg/cubenetwork/nodenetwork"
 	"Cubernetes/pkg/cubenetwork/weaveplugins"
+	"Cubernetes/pkg/utils/localstorage"
 	"log"
 	"net"
 )
@@ -22,4 +25,15 @@ func InitNodeNetwork(args []string) {
 		log.Panicf("Init weave network failed, err: %v", err.Error())
 		return
 	}
+}
+
+func InitNodeHeartbeat() {
+	meta, err := localstorage.LoadMeta()
+	if err != nil {
+		log.Fatal("[FATAL] fail to load node metadata, err: ", err)
+		return
+	}
+
+	nodenetwork.SetMasterIP(meta.MasterIP)
+	heartbeat.InitNode(meta.Node)
 }
