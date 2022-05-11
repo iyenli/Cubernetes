@@ -178,6 +178,40 @@ func createReplicaSetWatch(url string) (chan ReplicaSetEvent, context.CancelFunc
 	}, nil
 }
 
+func createNodeWatch(url string) (chan NodeEvent, context.CancelFunc, error) {
+	ch := make(chan NodeEvent)
+	var closed int32 = 0
+	closeChan := func() {
+		swapped := atomic.CompareAndSwapInt32(&closed, 0, 1)
+		if swapped {
+			log.Println("closing NodeEvent channel")
+			close(ch)
+		}
+	}
+	stop, err := postWatch(url, closeChan, func(e ObjEvent) {
+		var nodeEvent NodeEvent
+		nodeEvent.EType = e.EType
+		switch e.EType {
+		case EVENT_PUT:
+			err := json.Unmarshal([]byte(e.Object), &nodeEvent.Node)
+			if err != nil {
+				log.Println("fail to parse Node in ReplicaSetEvent")
+				return
+			}
+		case EVENT_DELETE:
+			nodeEvent.Node.UID = e.Path[len("/apis/node/"):]
+		}
+		ch <- nodeEvent
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	return ch, func() {
+		closeChan()
+		stop()
+	}, nil
+}
+
 func WatchPod(UID string) (chan PodEvent, func(), error) {
 	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/watch/pod/" + UID
 	return createPodWatch(url)
@@ -215,4 +249,17 @@ func WatchReplicaSet(UID string) (chan ReplicaSetEvent, func(), error) {
 func WatchReplicaSets() (chan ReplicaSetEvent, func(), error) {
 	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/watch/replicaSets"
 	return createReplicaSetWatch(url)
+}
+
+func WatchNode(UID string) (chan NodeEvent, func(), error) {
+	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/watch/node/" + UID
+	return createNodeWatch(url)
+}
+
+// WatchNodes
+// if err != nil, chan and cancel() will be nil
+// if you call cancel() or connection failed, channel will be closed
+func WatchNodes() (chan NodeEvent, func(), error) {
+	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/watch/nodes"
+	return createNodeWatch(url)
 }
