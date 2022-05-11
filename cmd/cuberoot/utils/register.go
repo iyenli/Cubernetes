@@ -77,7 +77,7 @@ func StartFromRegistry() {
 
 		time.Sleep(10 * time.Second)
 
-		err = StartMaster(meta.Node.Status.Addresses.InternalIP)
+		err = StartMaster(meta.Node.Status.Addresses.InternalIP, meta.Node.UID)
 		if err != nil {
 			log.Fatal("[FATAL] fail to start master processes, err: ", err)
 		}
@@ -87,7 +87,7 @@ func StartFromRegistry() {
 			"\tcuberoot join %s -f [node config file]\n", meta.Node.Status.Addresses.InternalIP)
 
 	} else {
-		err = StartSlave(meta.Node.Status.Addresses.InternalIP, meta.MasterIP)
+		err = StartSlave(meta.Node.Status.Addresses.InternalIP, meta.MasterIP, meta.Node.UID)
 		if err != nil {
 			log.Fatal("[FATAL] fail to start slave processes, err: ", err)
 		}

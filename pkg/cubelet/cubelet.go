@@ -1,6 +1,7 @@
 package cubelet
 
 import (
+	cubeconfig "Cubernetes/config"
 	"Cubernetes/pkg/apiserver/crudobj"
 	watchobj "Cubernetes/pkg/apiserver/watchobj"
 	"Cubernetes/pkg/cubelet/container"
@@ -25,22 +26,25 @@ func NewCubelet() *Cubelet {
 		panic(err)
 	}
 
-	informer, _ := informer.NewPodInformer()
+	podInformer, _ := informer.NewPodInformer()
 
 	return &Cubelet{
-		informer: informer,
+		informer: podInformer,
 		runtime:  runtime,
 	}
+}
+
+func (cl *Cubelet) InitCubelet(NodeUID string) {
+	cubeconfig.NodeUID = NodeUID
 }
 
 func (cl *Cubelet) Run() {
 	defer cl.runtime.Close()
 	defer cl.informer.CloseChan()
-	
+
 	ch, cancel, err := watchobj.WatchPods()
 	if err != nil {
 		log.Panic("Error occurs when watching pods")
-		panic(err)
 	}
 
 	defer cancel()
@@ -58,11 +62,16 @@ func (cl *Cubelet) Run() {
 	go cl.syncLoop()
 
 	for podEvent := range ch {
-		switch podEvent.EType {
-		case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
-			cl.informer.InformPod(&podEvent.Pod, podEvent.EType)
-		default:
-			log.Panic("Unsupported type in watch pod.")
+		if podEvent.Pod.Status.PodUID == cubeconfig.NodeUID {
+			switch podEvent.EType {
+			case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
+				err := cl.informer.InformPod(&podEvent.Pod, podEvent.EType)
+				if err != nil {
+					return
+				}
+			default:
+				log.Panic("Unsupported type in watch pod.")
+			}
 		}
 	}
 

@@ -69,7 +69,7 @@ example:
 
 		log.Println("Registered as master, starting processes...")
 
-		err = utils.StartMaster(node.Status.Addresses.InternalIP)
+		err = utils.StartMaster(node.Status.Addresses.InternalIP, meta.Node.UID)
 		if err != nil {
 			log.Fatal("[FATAL] fail to start master processes, err: ", err)
 		}

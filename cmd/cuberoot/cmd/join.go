@@ -70,7 +70,7 @@ example:
 
 		log.Println("Registered as slave, starting processes...")
 
-		err = utils.StartSlave(node.Status.Addresses.InternalIP, masterIP)
+		err = utils.StartSlave(node.Status.Addresses.InternalIP, masterIP, node.UID)
 		if err != nil {
 			log.Fatal("[FATAL] fail to start slave processes, err: ", err)
 		}

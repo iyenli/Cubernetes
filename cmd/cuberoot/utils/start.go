@@ -46,13 +46,13 @@ func PreStartMaster() error {
 	return nil
 }
 
-func StartMaster(IP string) error {
+func StartMaster(IP string, NodeUID string) error {
 	err := StartDaemonProcess(options.CUBEPROXYLOG, options.CUBEPROXY, IP)
 	if err != nil {
 		log.Println("[FATAL] fail to start cubeproxy")
 		return err
 	}
-	err = StartDaemonProcess(options.CUBELETLOG, options.CUBELET, IP)
+	err = StartDaemonProcess(options.CUBELETLOG, options.CUBELET, NodeUID, IP)
 	if err != nil {
 		log.Println("[FATAL] fail to start cubelet")
 		return err
@@ -70,8 +70,8 @@ func StartMaster(IP string) error {
 	return nil
 }
 
-func StartSlave(IP string, masterIP string) error {
-	err := StartDaemonProcess(options.CUBELETLOG, options.CUBELET, IP, masterIP)
+func StartSlave(IP, masterIP, NodeUID string) error {
+	err := StartDaemonProcess(options.CUBELETLOG, options.CUBELET, NodeUID, IP, masterIP)
 	if err != nil {
 		log.Println("[FATAL] fail to start cubelet")
 		return err
