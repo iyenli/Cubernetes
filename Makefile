@@ -25,3 +25,4 @@ controller_manager: cmd/controller_manager/manager.go
 
 scheduler: cmd/scheduler/scheduler.go
 	@go build -o $(build_path)/scheduler cmd/scheduler/scheduler.go
+
