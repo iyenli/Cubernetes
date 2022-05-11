@@ -8,24 +8,25 @@ import (
 )
 
 type PodInformer interface {
-	PodEvent() <-chan types.PodEvent
-	InformPod(newPod *object.Pod, eType watchobj.EventType) error
+	WatchPodEvent() <-chan types.PodEvent
+	InformPod(newPod object.Pod, eType watchobj.EventType) error
+	ListPods() []object.Pod
 	CloseChan()
 }
 
 func NewPodInformer() (PodInformer, error) {
 	return &cubePodInformer{
 		podEvent: make(chan types.PodEvent),
-		podCache: make(map[string]*object.Pod),
+		podCache: make(map[string]object.Pod),
 	}, nil
 }
 
 type cubePodInformer struct {
 	podEvent chan types.PodEvent
-	podCache map[string]*object.Pod
+	podCache map[string]object.Pod
 }
 
-func (i *cubePodInformer) PodEvent() <-chan types.PodEvent {
+func (i *cubePodInformer) WatchPodEvent() <-chan types.PodEvent {
 	return i.podEvent
 }
 
@@ -33,7 +34,18 @@ func (i *cubePodInformer) CloseChan() {
 	close(i.podEvent)
 }
 
-func (i *cubePodInformer) InformPod(newPod *object.Pod, eType watchobj.EventType) error {
+func (i *cubePodInformer) ListPods() []object.Pod {
+	pods := make([]object.Pod, len(i.podCache))
+	idx := 0
+	for _, pod := range i.podCache {
+		pods[idx] = pod
+		idx += 1
+	}
+
+	return pods
+}
+
+func (i *cubePodInformer) InformPod(newPod object.Pod, eType watchobj.EventType) error {
 	oldPod, exist := i.podCache[newPod.UID]
 
 	if eType == watchobj.EVENT_DELETE {

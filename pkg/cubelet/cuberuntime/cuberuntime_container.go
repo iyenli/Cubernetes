@@ -22,6 +22,7 @@ func (m *cubeRuntimeManager) startContainer(container *object.Container, pod *ob
 	}
 
 	config := m.generateContainerConfig(container, pod, podSandboxName)
+	log.Println("creating normal container...")
 	containerID, err := m.dockerRuntime.CreateContainer(config)
 	if err != nil {
 		log.Printf("fail to create container #{container.Name}\n")
