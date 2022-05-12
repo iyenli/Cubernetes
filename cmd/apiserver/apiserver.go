@@ -5,12 +5,16 @@ import (
 	"Cubernetes/cmd/apiserver/httpserver"
 	"Cubernetes/cmd/apiserver/httpserver/restful"
 	"Cubernetes/pkg/cubenetwork/servicenetwork"
+	"Cubernetes/pkg/utils/etcdrw"
 	"log"
 	"sync"
 	"time"
 )
 
 func main() {
+	etcdrw.Init()
+	defer etcdrw.Free()
+
 	var wg sync.WaitGroup
 	wg.Add(2)
 
