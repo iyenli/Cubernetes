@@ -47,6 +47,11 @@ usage:
 			//log.Printf("Error when killing process: %v", err.Error())
 		}
 
+		err = utils.KillDaemonProcess(options.SCHEDULER)
+		if err != nil {
+			//log.Printf("Error when killing process: %v", err.Error())
+		}
+
 	},
 }
 

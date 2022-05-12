@@ -21,6 +21,7 @@ func (cp *Cubeproxy) syncLoop() {
 	defer cancel()
 
 	for serviceEvent := range ch {
+		log.Printf("A service comes, type is %v, id is %v", serviceEvent.EType, serviceEvent.Service.UID)
 		switch serviceEvent.EType {
 		case watchobj.EVENT_PUT:
 			err := cp.Runtime.AddService(&serviceEvent.Service)
@@ -42,6 +43,7 @@ func (cp *Cubeproxy) syncLoop() {
 }
 
 func (cp *Cubeproxy) Run() {
+	log.Println("Init IP Tables...")
 	if cp.Runtime == nil {
 		runtime, err := proxyruntime.InitIPTables()
 		if err != nil {
@@ -50,8 +52,10 @@ func (cp *Cubeproxy) Run() {
 
 		cp.Runtime = runtime
 	}
+	log.Println("Init IP Tables Success")
 
 	defer func(runtime *proxyruntime.ProxyRuntime) {
+		log.Printf("Release IP Tables...")
 		err := runtime.ReleaseIPTables()
 		if err != nil {
 			log.Panicln("Error when release proxy Runtime")

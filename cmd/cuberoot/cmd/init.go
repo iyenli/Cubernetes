@@ -59,7 +59,7 @@ example:
 			log.Fatal("[FATAL] fail to pre-start master processes, err: ", err)
 		}
 
-		time.Sleep(10 * time.Second)
+		time.Sleep(5 * time.Second)
 
 		log.Println("Registering as master...")
 		err = utils.RegisterAsMaster(node)
@@ -67,8 +67,15 @@ example:
 			log.Fatal("[FATAL] fail to register as master, err: ", err)
 		}
 
+		time.Sleep(3 * time.Second)
 		log.Println("Registered as master, starting processes...")
 
+		meta, err = localstorage.TryLoadMeta()
+		if err != nil {
+			log.Fatal("[Fatal]: Meta file should have existed")
+		}
+
+		log.Println("Starting Master, UID = ", meta.Node.UID)
 		err = utils.StartMaster(node.Status.Addresses.InternalIP, meta.Node.UID)
 		if err != nil {
 			log.Fatal("[FATAL] fail to start master processes, err: ", err)

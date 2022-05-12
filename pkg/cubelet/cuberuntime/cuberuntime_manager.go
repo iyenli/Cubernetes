@@ -75,9 +75,10 @@ func (m *cubeRuntimeManager) SyncPod(pod *object.Pod, podStatus *cubecontainer.P
 		podStatus.UpdateSandboxStatuses(newSandboxStatuses)
 
 		ip, err := weaveplugins.AddPodToNetwork(podSandboxID)
-		if err != nil {
+		if err != nil || ip == nil {
 			return err
 		}
+		log.Printf("IP Allocated: %v", ip.String())
 		//network.InitNetwork(network.ProbeNetworkPlugins("", ""), podStatus)
 
 		podStatus.PodNetWork.IP = ip
@@ -213,7 +214,7 @@ func (m *cubeRuntimeManager) killPodByStatus(status *cubecontainer.PodStatus, re
 		if err != nil {
 			return err
 		}
-		
+
 		if err := m.dockerRuntime.StopContainer(sandbox.Id); err != nil {
 			log.Printf("fail to stop sandbox %s: %v\n", sandbox.Id, err)
 			return err

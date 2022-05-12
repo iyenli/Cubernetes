@@ -50,7 +50,13 @@ func (sr *ScheduleRuntime) Run() {
 	for podEvent := range ch {
 		switch podEvent.EType {
 		case watchobj.EVENT_PUT:
-			if podEvent.Pod.Status.PodUID == "" {
+			if podEvent.Pod.Status == nil || podEvent.Pod.Status.PodUID == "" {
+				if podEvent.Pod.Status == nil {
+					podEvent.Pod.Status = &object.PodStatus{
+						ActualResourceUsage: &object.ResourceUsage{},
+					}
+				}
+
 				podInfo, err := sr.Implement.Schedule()
 				if err != nil {
 					log.Println("Error happened when scheduling")
@@ -76,6 +82,8 @@ func (sr *ScheduleRuntime) SendScheduleInfoBack(podToSchedule *object.Pod, info 
 	podToSchedule.Status.PodUID = info.NodeUUID
 
 	_, err := crudobj.UpdatePod(*podToSchedule)
+	log.Println("[INFO]: Schedule pod ", podToSchedule.UID, "To node ", info.NodeUUID)
+
 	if err != nil {
 		log.Println("Update pod failed")
 		return err
@@ -94,19 +102,26 @@ func (sr *ScheduleRuntime) WatchNode() error {
 	defer handler()
 	for nodeEvent := range ch {
 		if nodeEvent.EType == watchobj.EVENT_PUT {
+			if nodeEvent.Node.Status == nil {
+				continue
+			}
+
 			if nodeEvent.Node.Status.Condition.Ready == false {
+				log.Println("[INFO] Scheduler may removed a node: ", nodeEvent.Node.UID)
 				err := sr.Implement.RemoveNode(&types.NodeInfo{NodeUUID: nodeEvent.Node.UID})
 				if err != nil {
 					log.Println("[error]: remove node failed")
 				}
 			}
 			if nodeEvent.Node.Status.Condition.Ready == true {
+				log.Println("[INFO] Scheduler may added a node: ", nodeEvent.Node.UID)
 				err := sr.Implement.AddNode(&types.NodeInfo{NodeUUID: nodeEvent.Node.UID})
 				if err != nil {
 					log.Println("[error]: add node failed")
 				}
 			}
 		} else if nodeEvent.EType == watchobj.EVENT_DELETE {
+			log.Println("[INFO] Scheduler may removed a node: ", nodeEvent.Node.UID)
 			err := sr.Implement.RemoveNode(&types.NodeInfo{NodeUUID: nodeEvent.Node.UID})
 			if err != nil {
 				log.Println("[error]: remove node failed")

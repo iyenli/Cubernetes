@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"time"
 )
 
 // joinCmd represents join master as a slave
@@ -68,9 +69,15 @@ example:
 			log.Fatal("[FATAL] fail to register as slave, err: ", err)
 		}
 
+		time.Sleep(3 * time.Second)
 		log.Println("Registered as slave, starting processes...")
 
-		err = utils.StartSlave(node.Status.Addresses.InternalIP, masterIP, node.UID)
+		meta, err = localstorage.TryLoadMeta()
+		if err != nil {
+			log.Fatal("[Fatal]: Meta file should have existed")
+		}
+
+		err = utils.StartSlave(node.Status.Addresses.InternalIP, masterIP, meta.Node.UID)
 		if err != nil {
 			log.Fatal("[FATAL] fail to start slave processes, err: ", err)
 		}

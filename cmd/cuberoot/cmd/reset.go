@@ -1,14 +1,13 @@
 package cmd
 
 import (
-	"Cubernetes/cmd/cuberoot/options"
+	"Cubernetes/cmd/cuberoot/utils"
 	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/cubenetwork/nodenetwork"
 	"Cubernetes/pkg/object"
 	"Cubernetes/pkg/utils/localstorage"
 	"github.com/spf13/cobra"
 	"log"
-	"os"
 )
 
 // resetCmd represents reset a node
@@ -28,15 +27,19 @@ usage:
 		}
 
 		if meta.Node.Spec.Type == object.Slave {
+			// TODO: What if master is reset too
 			nodenetwork.SetMasterIP(meta.MasterIP)
 			err = crudobj.DeleteNode(meta.Node.UID)
 			if err != nil {
-				log.Fatal("[FATAL] fail to delete node from apiserver, err: ", err)
+				log.Println("[INFO] fail to delete node from apiserver, err: ", err)
+				log.Println("[INFO] Reset before you stop the master")
 			}
 		} else {
-			err = os.RemoveAll(options.ETCDDATA)
+			err = utils.ClearData()
 			if err != nil {
-				log.Fatal("[FATAL] fail to remove etcd data, err: ", err)
+				log.Println("[INFO] fail to remove etcd data, err: ", err)
+				log.Println("[INFO] Reset before you stop the master")
+				return
 			}
 		}
 

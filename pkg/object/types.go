@@ -50,6 +50,7 @@ const (
 type PodStatus struct {
 	// reserved for later use
 	IP                  net.IP         `json:"IP" yaml:"IP"`
+	StartTime           time.Time      `json:"startTime,omitempty" yaml:"startTime,omitempty"`
 	Phase               PodPhase       `json:"phase,omitempty" yaml:"phase,omitempty"`
 	PodUID              string         `json:"pod-uid,omitempty" yaml:"pod-uid,omitempty"`
 	ActualResourceUsage *ResourceUsage `json:"actualResourceUsage,omitempty" yaml:"actualResourceUsage,omitempty"`
