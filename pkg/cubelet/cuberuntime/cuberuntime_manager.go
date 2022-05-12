@@ -1,9 +1,9 @@
 package cuberuntime
 
 import (
+	"Cubernetes/pkg/apiserver/crudobj"
 	cubecontainer "Cubernetes/pkg/cubelet/container"
 	dockershim "Cubernetes/pkg/cubelet/dockershim"
-	"Cubernetes/pkg/cubelet/network"
 	"Cubernetes/pkg/cubenetwork/weaveplugins"
 	object "Cubernetes/pkg/object"
 	"fmt"
@@ -40,10 +40,13 @@ type CubeRuntime interface {
 }
 
 func (m *cubeRuntimeManager) SyncPod(pod *object.Pod, podStatus *cubecontainer.PodStatus) error {
+
 	// Compute sandbox and container changes.
 	podContainerChanges := m.computePodActions(pod, podStatus)
 
-	removeContainer := false
+	log.Printf("\ncreate sandbox: %t\ncreate container: %v\n\n", podContainerChanges.CreateSandbox, podContainerChanges.ContainersToStart)
+
+	removeContainer := true
 	// Kill the pod if sandbox changed
 	if podContainerChanges.KillPod {
 		if err := m.killPodByStatus(podStatus, removeContainer); err != nil {
@@ -76,9 +79,10 @@ func (m *cubeRuntimeManager) SyncPod(pod *object.Pod, podStatus *cubecontainer.P
 		podStatus.UpdateSandboxStatuses(newSandboxStatuses)
 
 		ip, err := weaveplugins.AddPodToNetwork(podSandboxID)
-		if err != nil {
+		if err != nil || ip == nil {
 			return err
 		}
+		log.Printf("IP Allocated: %v", ip.String())
 		//network.InitNetwork(network.ProbeNetworkPlugins("", ""), podStatus)
 
 		podStatus.PodNetWork.IP = ip
@@ -92,6 +96,19 @@ func (m *cubeRuntimeManager) SyncPod(pod *object.Pod, podStatus *cubecontainer.P
 			return err
 		}
 		log.Printf("start container %s\n", pod.Spec.Containers[idx].Name)
+	}
+
+	apiPodStatus, err := m.InspectPod(pod)
+	if err != nil {
+		log.Printf("fail to get pod status %s: %v\n", pod.UID, err)
+		return err
+	}
+	_, err = crudobj.UpdatePodStatus(pod.UID, *apiPodStatus)
+	if err != nil {
+		log.Printf("fail to update Pod %s status to apiserver\n", pod.Name)
+		return err
+	} else {
+		log.Printf("update Pod %s status by SyncPod\n", pod.Name)
 	}
 
 	return nil
@@ -193,13 +210,14 @@ func (m *cubeRuntimeManager) podSandboxChanged(pod *object.Pod, podStatus *cubec
 }
 
 func (m *cubeRuntimeManager) KillPod(UID string) error {
+	log.Printf("Kill pod %s\n", UID)
 	podStatus, err := m.getPodStatusByUID(UID)
 	if err != nil {
 		log.Printf("fail to get podStatus by UID %s\n", UID)
 		return err
 	}
 	// for debug only
-	removeContainer := false
+	removeContainer := true
 
 	return m.killPodByStatus(podStatus, removeContainer)
 }
@@ -210,6 +228,11 @@ func (m *cubeRuntimeManager) killPodByStatus(status *cubecontainer.PodStatus, re
 	// kill pod sandbox
 	for _, sandbox := range status.SandboxStatuses {
 		log.Printf("start to kill sandbox %s\n", sandbox.Id)
+		err := weaveplugins.DeletePodFromNetwork(sandbox.Id)
+		if err != nil {
+			return err
+		}
+
 		if err := m.dockerRuntime.StopContainer(sandbox.Id); err != nil {
 			log.Printf("fail to stop sandbox %s: %v\n", sandbox.Id, err)
 			return err
@@ -221,7 +244,8 @@ func (m *cubeRuntimeManager) killPodByStatus(status *cubecontainer.PodStatus, re
 				return err
 			}
 		}
-		network.ReleaseNetwork(network.ProbeNetworkPlugins("", ""), status)
+
+		//network.ReleaseNetwork(network.ProbeNetworkPlugins("", ""), status)
 	}
 
 	return nil
@@ -231,26 +255,26 @@ func (m *cubeRuntimeManager) GetPodStatus(UID string) (*cubecontainer.PodStatus,
 	return m.getPodStatusByUID(UID)
 }
 
-func (m *cubeRuntimeManager) InspectPod(UID string) (*object.PodStatus, error) {
-	containerStatuses, err := m.getContainerStatusesByPodUID(UID)
+func (m *cubeRuntimeManager) InspectPod(pod *object.Pod) (*object.PodStatus, error) {
+	containerStatuses, err := m.getContainerStatusesByPodUID(pod.UID)
 	if err != nil {
 		return nil, err
 	}
 
-	sandboxStatus, err := m.getSandboxStatusesByPodUID(UID)
+	sandboxStatus, err := m.getSandboxStatusesByPodUID(pod.UID)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(sandboxStatus) == 0 {
-		return nil, fmt.Errorf("no sandbox for pod %s found", UID)
+		return nil, fmt.Errorf("no sandbox for pod %s found", pod.Name)
 	}
 
 	// TODO: get sandbox IP from Network Plugin (Weave)
 	var sandboxIP []byte
-	podPhase := cubecontainer.ComputePodPhase(containerStatuses, sandboxStatus[0])
+	podPhase := cubecontainer.ComputePodPhase(containerStatuses, sandboxStatus[0], &pod.Spec)
 
-	usage := &object.ResourceUsage{LastUpdateTime: time.Now()}
+	usage := &object.ResourceUsage{}
 	for _, status := range containerStatuses {
 		usage.ActualCPUUsage += status.ResourceUsage.CPUUsage
 		usage.ActualMemoryUsage += status.ResourceUsage.MemoryUsage
@@ -260,6 +284,7 @@ func (m *cubeRuntimeManager) InspectPod(UID string) (*object.PodStatus, error) {
 		IP:                  sandboxIP,
 		Phase:               podPhase,
 		ActualResourceUsage: usage,
+		LastUpdateTime:      time.Now(),
 	}, nil
 }
 

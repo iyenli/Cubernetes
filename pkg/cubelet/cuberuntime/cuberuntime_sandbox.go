@@ -26,6 +26,7 @@ func (m *cubeRuntimeManager) createPodSandbox(pod *object.Pod) (string, string, 
 	}
 
 	podSandboxConfig := generatePodSandboxConfig(pod)
+	log.Println("creating sandbox...")
 	sandboxID, err := m.dockerRuntime.CreateContainer(podSandboxConfig)
 	if err != nil {
 		log.Printf("fail to create sandbox of pod %s\n", pod.Name)
@@ -144,7 +145,7 @@ func (m *cubeRuntimeManager) getAllPodsUID() ([]string, error) {
 	}
 
 	var uids []string
-	for uid, _ := range podUIDSet {
+	for uid := range podUIDSet {
 		uids = append(uids, uid)
 	}
 

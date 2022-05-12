@@ -104,6 +104,20 @@ func InitIPTables() (*ProxyRuntime, error) {
 	}
 	/* Check env ends */
 
+	// Clear all service chain:
+	for exist, _ := pr.ipt.Exists(NatTable, PreRouting, "-j", ServiceChain); err != nil && exist; {
+		err := pr.ipt.Delete(NatTable, PreRouting, "-j", ServiceChain)
+		if err != nil {
+			return nil, err
+		}
+	}
+	for exist, _ := pr.ipt.Exists(NatTable, OutputChain, "-j", ServiceChain); err != nil && exist; {
+		err := pr.ipt.Delete(NatTable, OutputChain, "-j", ServiceChain)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// Now, create SERVICE CHAIN, and add to PRE-ROUTING/OUTPUT Chain
 	// Ref: https://gitee.com/k9-s/Cubernetes/wikis/IPT
 	if exists, _ := pr.ipt.ChainExists(NatTable, ServiceChain); !exists {
@@ -284,7 +298,8 @@ func (pr *ProxyRuntime) AddService(service *object.Service) error {
 			err = pr.ipt.Insert(NatTable, podChainUID, 1,
 				"-j", DnatOP,
 				"-p", string(port.Protocol),
-				"--to-destination", fmt.Sprintf("%v:%v", pod.Status.IP.String(), strconv.FormatInt(int64(port.TargetPort), 10)),
+				"--to-destination", fmt.Sprintf("%v:%v", pod.Status.IP.String(),
+					strconv.FormatInt(int64(port.TargetPort), 10)),
 			)
 
 			if err != nil {
@@ -365,5 +380,6 @@ func (pr *ProxyRuntime) AddPodAsEndpoints(pod *object.Pod) error {
 }
 
 func (pr *ProxyRuntime) reshuffleServiceIPTable(service *object.Service) error {
+
 	return nil
 }

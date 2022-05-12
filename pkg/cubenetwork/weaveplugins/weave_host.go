@@ -1,14 +1,10 @@
 package weaveplugins
 
 import (
+	"Cubernetes/pkg/cubenetwork/weaveplugins/option"
 	"log"
 	"net"
 	osexec "os/exec"
-)
-
-const (
-	launch = "launch"
-	sudo   = "sudo"
 )
 
 type Host struct {
@@ -18,7 +14,7 @@ type Host struct {
 // ExposeHost Execute in host, and return an IP in containers' net segment
 // you can visit host's port in any container:)
 func ExposeHost() (net.IP, error) {
-	path, err := osexec.LookPath(weaveName)
+	path, err := osexec.LookPath(option.WeaveName)
 	if err != nil {
 		log.Println("Weave Not found.")
 		return nil, err
@@ -39,7 +35,7 @@ func ExposeHost() (net.IP, error) {
 }
 
 func CheckSuperUser() error {
-	cmd := osexec.Command(sudo, "-s")
+	cmd := osexec.Command(option.Sudo, "-s")
 	err := cmd.Run()
 	if err != nil {
 		log.Panicf("Need Sudo: %s\n", err)
@@ -50,7 +46,7 @@ func CheckSuperUser() error {
 }
 
 func InitWeave() error {
-	path, err := osexec.LookPath(weaveName)
+	path, err := osexec.LookPath(option.WeaveName)
 	if err != nil {
 		log.Println("Weave not found.")
 		err = InstallWeave()
@@ -58,7 +54,7 @@ func InitWeave() error {
 			log.Println("Weave Install failed in adding node to cluster.")
 			return err
 		}
-		if path, err = osexec.LookPath(weaveName); err != nil {
+		if path, err = osexec.LookPath(option.WeaveName); err != nil {
 			log.Println("Weave Install but still can't find weave.")
 			return err
 		}
@@ -70,7 +66,12 @@ func InitWeave() error {
 		return err
 	}
 
-	cmd := osexec.Command(path, launch)
+	log.Println("Init weave node...")
+	// stop weave if weave is running
+	cmd := osexec.Command(path, option.Stop)
+	err = cmd.Run() // Could failed here
+
+	cmd = osexec.Command(path, option.Launch)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Panicf("Weave add node error: %s, %s\n", err, string(output))
@@ -82,7 +83,7 @@ func InitWeave() error {
 
 // AddNode Called by new node cubelet, it should know its ip and api server's ip.
 func AddNode(newHost Host, apiServerHost Host) error {
-	path, err := osexec.LookPath(weaveName)
+	path, err := osexec.LookPath(option.WeaveName)
 	if err != nil {
 		log.Println("Weave not found.")
 		err = InstallWeave()
@@ -90,7 +91,7 @@ func AddNode(newHost Host, apiServerHost Host) error {
 			log.Println("Weave Install failed in adding node to cluster.")
 			return err
 		}
-		if path, err = osexec.LookPath(weaveName); err != nil {
+		if path, err = osexec.LookPath(option.WeaveName); err != nil {
 			log.Println("Weave Install but still can't find weave.")
 			return err
 		}
@@ -102,18 +103,25 @@ func AddNode(newHost Host, apiServerHost Host) error {
 		return err
 	}
 
-	cmd := osexec.Command(path, launch, newHost.IP.String(), apiServerHost.IP.String())
+	// stop weave if weave is running
+	cmd := osexec.Command(path, option.Stop)
+	err = cmd.Run() // Could failed here
+
+	log.Println("Connecting to peers...")
+	cmd = osexec.Command(path, option.Launch, newHost.IP.String(), apiServerHost.IP.String())
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Panicf("Weave add node error: %s, %v\n", err, string(output))
 		return err
 	}
 
+	output, err = CheckPeers()
+	log.Println("Peers: ", string(output))
 	return nil
 }
 
 func CheckPeers() ([]byte, error) {
-	path, err := osexec.LookPath(weaveName)
+	path, err := osexec.LookPath(option.WeaveName)
 	if err != nil {
 		log.Println("Weave Not found.")
 		return nil, err
@@ -129,7 +137,7 @@ func CheckPeers() ([]byte, error) {
 }
 
 func CloseNetwork() error {
-	path, err := osexec.LookPath(weaveName)
+	path, err := osexec.LookPath(option.WeaveName)
 	if err != nil {
 		log.Println("Weave Not found.")
 		return err

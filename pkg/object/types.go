@@ -50,13 +50,14 @@ const (
 type PodStatus struct {
 	// reserved for later use
 	IP                  net.IP         `json:"IP" yaml:"IP"`
+	StartTime           time.Time      `json:"startTime,omitempty" yaml:"startTime,omitempty"`
 	Phase               PodPhase       `json:"phase,omitempty" yaml:"phase,omitempty"`
+	PodUID              string         `json:"pod-uid,omitempty" yaml:"pod-uid,omitempty"`
 	ActualResourceUsage *ResourceUsage `json:"actualResourceUsage,omitempty" yaml:"actualResourceUsage,omitempty"`
+	LastUpdateTime      time.Time      `json:"lastUpdateTime" yaml:"lastUpdateTime"`
 }
 
 type ResourceUsage struct {
-	LastUpdateTime time.Time `json:"lastUpdateTime" yaml:"lastUpdateTime"`
-
 	// for 4 cores, up to 400.00%
 	ActualCPUUsage float64 `json:"actualCPUUsage" yaml:"actualCPUUsage"`
 	// in bytes
@@ -158,5 +159,58 @@ type ReplicaSetStatus struct {
 	// actual running pod replica in PodUIDs
 	RunningReplicas int32 `json:"replicas" yaml:"replicas"`
 	// UID of pods assigned
-	PodUIDs []string `json:"podUIDs" yaml:"podUIDs"`
+	PodUIDsToRun   []string  `json:"podsToRun" yaml:"podsToRun"`
+	PodUIDsToKill  []string  `json:"podsToKill" yaml:"podsTokill"`
+	PodUIDsRunning []string  `json:"pods" yaml:"pods"`
+	LastUpdateTime time.Time `json:"lastUpdate,omitempty" yaml:"lastUpdate,omitempty"`
+}
+
+type Node struct {
+	TypeMeta   `json:",inline" yaml:",inline"`
+	ObjectMeta `json:"metadata" yaml:"metadata"`
+	Spec       NodeSpec    `json:"spec" yaml:"spec"`
+	Status     *NodeStatus `json:"status,omitempty" yaml:"status,omitempty"`
+}
+
+type NodeType string
+
+const (
+	Master NodeType = "Master"
+	Slave  NodeType = "Slave"
+)
+
+type NodeSpec struct {
+	Type     NodeType     `json:"type" yaml:"type"`
+	Capacity NodeCapacity `json:"capacity,omitempty" yaml:"capacity,omitempty"`
+	Info     NodeInfo     `json:"info,omitempty" yaml:"info,omitempty"`
+}
+
+type NodeStatus struct {
+	Addresses NodeAddresses `json:"addresses,omitempty" yaml:"addresses,omitempty"`
+	Condition NodeCondition `json:"condition,omitempty" yaml:"condition,omitempty"`
+}
+
+type NodeAddresses struct {
+	HostName   string `json:"hostName,omitempty" yaml:"hostName,omitempty"`
+	ExternalIP string `json:"externalIP,omitempty" yaml:"externalIP,omitempty"`
+	InternalIP string `json:"internalIP,omitempty" yaml:"internalIP,omitempty"`
+}
+
+type NodeCondition struct {
+	OutOfDisk      bool `json:"outOfDisk,omitempty" yaml:"outOfDisk,omitempty"`
+	Ready          bool `json:"ready,omitempty" yaml:"ready,omitempty"`
+	MemoryPressure bool `json:"memoryPressure,omitempty" yaml:"memoryPressure,omitempty"`
+	DiskPressure   bool `json:"diskPressure,omitempty" yaml:"diskPressure,omitempty"`
+}
+
+type NodeCapacity struct {
+	CPUCount int `json:"cpuCount,omitempty" yaml:"cpuCount,omitempty"`
+	Memory   int `json:"memory,omitempty" yaml:"memory,omitempty"`
+	MaxPods  int `json:"maxPods,omitempty" yaml:"maxPods,omitempty"`
+}
+
+type NodeInfo struct {
+	CubeVersion   string `json:"cubeVersion,omitempty" yaml:"cubeVersion,omitempty"`
+	KernelVersion string `json:"kernelVersion,omitempty" yaml:"kernelVersion,omitempty"`
+	DeviceName    string `json:"deviceName,omitempty" yaml:"deviceName,omitempty"`
 }

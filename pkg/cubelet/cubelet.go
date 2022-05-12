@@ -1,12 +1,14 @@
 package cubelet
 
 import (
+	cubeconfig "Cubernetes/config"
 	"Cubernetes/pkg/apiserver/crudobj"
 	watchobj "Cubernetes/pkg/apiserver/watchobj"
 	"Cubernetes/pkg/cubelet/container"
 	cuberuntime "Cubernetes/pkg/cubelet/cuberuntime"
 	"Cubernetes/pkg/cubelet/informer"
 	informertypes "Cubernetes/pkg/cubelet/informer/types"
+	"Cubernetes/pkg/object"
 	"log"
 	"sync"
 	"time"
@@ -16,6 +18,7 @@ type Cubelet struct {
 	NodeID   string
 	informer informer.PodInformer
 	runtime  cuberuntime.CubeRuntime
+	biglock  sync.Mutex
 }
 
 func NewCubelet() *Cubelet {
@@ -25,12 +28,19 @@ func NewCubelet() *Cubelet {
 		panic(err)
 	}
 
-	informer, _ := informer.NewPodInformer()
+	podInformer, _ := informer.NewPodInformer()
+	log.Println("cubelet init ends")
 
 	return &Cubelet{
-		informer: informer,
+		informer: podInformer,
 		runtime:  runtime,
+		biglock:  sync.Mutex{},
 	}
+}
+
+func (cl *Cubelet) InitCubelet(NodeUID string) {
+	log.Println("Starting node, Node UID is ", NodeUID)
+	cubeconfig.NodeUID = NodeUID
 }
 
 func (cl *Cubelet) Run() {
@@ -40,7 +50,6 @@ func (cl *Cubelet) Run() {
 	ch, cancel, err := watchobj.WatchPods()
 	if err != nil {
 		log.Panic("Error occurs when watching pods")
-		panic(err)
 	}
 
 	defer cancel()
@@ -49,8 +58,8 @@ func (cl *Cubelet) Run() {
 	// simply using for loop to achieve block timer
 	go func() {
 		for {
-			time.Sleep(time.Second * 10)
-			cl.updatePodsPeriod()
+			time.Sleep(time.Second * 7)
+			cl.updatePodsRoutine()
 		}
 	}()
 
@@ -58,11 +67,24 @@ func (cl *Cubelet) Run() {
 	go cl.syncLoop()
 
 	for podEvent := range ch {
-		switch podEvent.EType {
-		case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
-			cl.informer.InformPod(&podEvent.Pod, podEvent.EType)
-		default:
-			log.Panic("Unsupported type in watch pod.")
+		if podEvent.Pod.Status == nil {
+			log.Println("[INFO] Pod Catch, but status is nil so Cubelet don't handle")
+			continue
+		}
+		if podEvent.Pod.Status.PodUID == cubeconfig.NodeUID {
+			log.Println("[INFO] my pod Catch, type is ", podEvent.EType)
+
+			switch podEvent.EType {
+			case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
+				err := cl.informer.InformPod(podEvent.Pod, podEvent.EType)
+				if err != nil {
+					return
+				}
+			default:
+				log.Panic("Unsupported type in watch pod.")
+			}
+		} else {
+			log.Printf("[INFO] Pod Catch, but not my pod, pod UUID = %v, my UUID = %v", podEvent.Pod.Status.PodUID, cubeconfig.NodeUID)
 		}
 	}
 
@@ -70,60 +92,68 @@ func (cl *Cubelet) Run() {
 }
 
 func (cl *Cubelet) syncLoop() {
-	informEvent := cl.informer.PodEvent()
+	informEvent := cl.informer.WatchPodEvent()
 
 	for podEvent := range informEvent {
-		switch podEvent.Type {
+		log.Printf("Main loop working, type is %v, pod id is %v", podEvent.Type, podEvent.Pod.UID)
+		pod := podEvent.Pod
+		eType := podEvent.Type
+		cl.biglock.Lock()
+
+		switch eType {
 		case informertypes.PodCreate:
-			err := cl.runtime.SyncPod(podEvent.Pod, &container.PodStatus{})
+			log.Printf("from podEvent: create pod %s\n", pod.UID)
+			err := cl.runtime.SyncPod(&pod, &container.PodStatus{})
 			if err != nil {
-				log.Printf("fail to create pod %s: %v\n", podEvent.Pod.Name, err)
+				log.Printf("fail to create pod %s: %v\n", pod.Name, err)
 			}
 		case informertypes.PodUpdate:
-			podStatus, err := cl.runtime.GetPodStatus(podEvent.Pod.UID)
+			log.Printf("from podEvent: update pod %s\n", pod.UID)
+			podStatus, err := cl.runtime.GetPodStatus(pod.UID)
 			if err != nil {
-				log.Printf("fail to get pod %s status: %v\n", podEvent.Pod.Name, err)
+				log.Printf("fail to get pod %s status: %v\n", pod.Name, err)
 			}
-			err = cl.runtime.SyncPod(podEvent.Pod, podStatus)
+			err = cl.runtime.SyncPod(&pod, podStatus)
 			if err != nil {
-				log.Printf("fail to update pod %s: %v\n", podEvent.Pod.Name, err)
+				log.Printf("fail to update pod %s: %v\n", pod.Name, err)
 			}
 		case informertypes.PodRemove:
-			err := cl.runtime.KillPod(podEvent.Pod.UID)
+			err := cl.runtime.KillPod(pod.UID)
 			if err != nil {
-				log.Printf("fail to kill pod %s: %v\n", podEvent.Pod.Name, err)
+				log.Printf("fail to kill pod %s: %v\n", pod.Name, err)
 			}
 		}
-
-		time.Sleep(time.Second * 2)
+		cl.biglock.Unlock()
+		// time.Sleep(time.Second * 2)
 	}
 }
 
-func (cl *Cubelet) updatePodsPeriod() {
+func (cl *Cubelet) updatePodsRoutine() {
+	cl.biglock.Lock()
+	defer cl.biglock.Unlock()
 
-	// collect all pod by its sandbox
-	uids, err := cl.runtime.ListPodsUID()
-	if err != nil {
-		log.Printf("fail to list uid of all pods\n")
-	}
+	// collect all pod in podCache
+	pods := cl.informer.ListPods()
 
 	// parallelly push all pod status to apiserver
 	wg := sync.WaitGroup{}
-	wg.Add(len(uids))
-	for _, podUID := range uids {
-		go func(uid string) {
+	wg.Add(len(pods))
+
+	for _, pod := range pods {
+		go func(p object.Pod) {
 			defer wg.Done()
-			podStatus, err := cl.runtime.InspectPod(uid)
+			podStatus, err := cl.runtime.InspectPod(&p)
 			if err != nil {
-				log.Printf("fail to get pod status %s: %v\n", uid, err)
+				log.Printf("fail to get pod status %s: %v\n", p.Name, err)
+				podStatus = &object.PodStatus{Phase: object.PodUnknown}
 			}
-			pod, err := crudobj.UpdatePodStatus(uid, *podStatus)
+			rp, err := crudobj.UpdatePodStatus(p.UID, *podStatus)
 			if err != nil {
-				log.Printf("fail to push pod status %s: %v\n", uid, err)
+				log.Printf("fail to push pod status %s: %v\n", p.UID, err)
 			} else {
-				log.Printf("push pod status %s: %s\n", pod.Name, podStatus.Phase)
+				log.Printf("push pod status %s: %s\n", rp.Name, podStatus.Phase)
 			}
-		}(podUID)
+		}(pod)
 	}
 
 	wg.Wait()

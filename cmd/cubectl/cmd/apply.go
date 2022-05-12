@@ -65,7 +65,20 @@ for example:
 				log.Fatal("[FATAL] fail to create new Service")
 				return
 			}
-			log.Printf("Service UID=%s created\n", newService)
+			log.Printf("Service UID=%s created\n", newService.UID)
+		case "ReplicaSet":
+			var rs object.ReplicaSet
+			err = yaml.Unmarshal(file, &rs)
+			if err != nil {
+				log.Fatal("[FATAL] fail to parse ReplicaSet")
+				return
+			}
+			newRs, err := crudobj.CreateReplicaSet(rs)
+			if err != nil {
+				log.Fatal("[FATAL] fail to create new ReplicaSet")
+				return
+			}
+			log.Printf("ReplicaSet UID=%s created\n", newRs.UID)
 		default:
 			log.Fatal("[FATAL] Unknown kind: " + t.Kind)
 		}

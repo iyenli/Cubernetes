@@ -1,46 +1,87 @@
 package cmd
 
 import (
-	"Cubernetes/cmd/cuberoot/options"
 	"Cubernetes/cmd/cuberoot/utils"
+	"Cubernetes/pkg/cubenetwork/nodenetwork"
+	"Cubernetes/pkg/object"
+	"Cubernetes/pkg/utils/localstorage"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
+	"io/ioutil"
 	"log"
 	"net"
+	"time"
 )
 
-// getCmd represents the get command
+// joinCmd represents join master as a slave
 var joinCmd = &cobra.Command{
 	Use:   "join",
 	Short: "Join exist API Server as a slave",
 	Long: `
-Join exist API Server as a slave
+Join an existed master as a slave
 usage:
-	cuberoot join local-ip api-server-ip
+	cuberoot join [Master IP] -f [file path]
 example:
-	cuberoot join 192.168.1.5 192.168.1.11`,
+	cuberoot join 192.168.1.11 -f node.yaml`,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) < 2 {
-			log.Fatal("[FATAL] lack arguments")
-			return
-		}
-		if ip := net.ParseIP(args[0]); ip == nil {
-			log.Fatalf("[FATAL] illegal ip address: %v", args[0])
-			return
-		}
-		if ip := net.ParseIP(args[1]); ip == nil {
-			log.Fatalf("[FATAL] illegal ip address: %v", args[1])
-			return
+		meta, err := localstorage.TryLoadMeta()
+		if err == nil {
+			if meta.Node.Spec.Type == object.Master {
+				log.Fatal("[FATAL] already initialized as master, please reset first")
+			} else {
+				log.Fatalf("[FATAL] already joined %s as slave, please reset first", meta.MasterIP)
+			}
 		}
 
-		err := utils.StartDaemonProcess(options.APISERVERLOG, options.APISERVER, args[0], args[1])
-		if err != nil {
-			return
+		if len(args) < 1 {
+			log.Fatal("[FATAL] lack arguments")
 		}
-		err = utils.StartDaemonProcess(options.CUBEPROXYLOG, options.CUBEPROXY, args[0], args[1])
-		if err != nil {
-			return
+		if net.ParseIP(args[0]) == nil {
+			log.Fatalf("[FATAL] illegal ip address: %v", args[0])
 		}
+		masterIP := args[0]
+
+		f, err := cmd.Flags().GetString("file")
+		if err != nil {
+			log.Fatal("[FATAL] missing input config file")
+		}
+		file, err := ioutil.ReadFile(f)
+		if err != nil {
+			log.Fatal("[FATAL] cannot read input config file")
+		}
+
+		var node object.Node
+		err = yaml.Unmarshal(file, &node)
+		if err != nil {
+			log.Fatal("[FATAL] fail to parse config file")
+		}
+
+		if net.ParseIP(node.Status.Addresses.InternalIP) == nil {
+			log.Fatalf("[FATAL] illegal ip address: %v", node.Status.Addresses.InternalIP)
+		}
+
+		nodenetwork.SetMasterIP(masterIP)
+
+		log.Println("Registering as slave...")
+		err = utils.RegisterAsSlave(node, masterIP)
+		if err != nil {
+			log.Fatal("[FATAL] fail to register as slave, err: ", err)
+		}
+
+		time.Sleep(3 * time.Second)
+		log.Println("Registered as slave, starting processes...")
+
+		meta, err = localstorage.TryLoadMeta()
+		if err != nil {
+			log.Fatal("[Fatal]: Meta file should have existed")
+		}
+
+		err = utils.StartSlave(node.Status.Addresses.InternalIP, masterIP, meta.Node.UID)
+		if err != nil {
+			log.Fatal("[FATAL] fail to start slave processes, err: ", err)
+		}
+		log.Println("Slave node launched successfully")
 	},
 }
 
@@ -56,4 +97,5 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// getCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	joinCmd.Flags().StringP("file", "f", "", "path of your node config yaml file")
 }

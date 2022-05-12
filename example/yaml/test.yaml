@@ -1,13 +1,13 @@
 apiVersion: wahtever/v1
 kind: Pod
 metadata:
-  name: fuck-pod-you
+  name: fuck-pod-me
 spec:
   containers:
     - name: foo-nginx
       image: nginx
       ports:
-        - hostPort: 8085
+        - hostPort: 8083
           containerPort: 80
       volumeMounts:
         - name: conf

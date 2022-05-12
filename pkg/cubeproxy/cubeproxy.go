@@ -4,7 +4,6 @@ import (
 	"Cubernetes/pkg/apiserver/watchobj"
 	"Cubernetes/pkg/cubeproxy/proxyruntime"
 	"log"
-	"os"
 )
 
 type Cubeproxy struct {
@@ -15,13 +14,14 @@ type Cubeproxy struct {
 func (cp *Cubeproxy) syncLoop() {
 	ch, cancel, err := watchobj.WatchServices()
 	if err != nil {
-		log.Panic("Error occurs when watching services")
-		os.Exit(0)
+		log.Println("Error occurs when watching services")
+		return
 	}
 
 	defer cancel()
 
 	for serviceEvent := range ch {
+		log.Printf("A service comes, type is %v, id is %v", serviceEvent.EType, serviceEvent.Service.UID)
 		switch serviceEvent.EType {
 		case watchobj.EVENT_PUT:
 			err := cp.Runtime.AddService(&serviceEvent.Service)
@@ -43,6 +43,7 @@ func (cp *Cubeproxy) syncLoop() {
 }
 
 func (cp *Cubeproxy) Run() {
+	log.Println("Init IP Tables...")
 	if cp.Runtime == nil {
 		runtime, err := proxyruntime.InitIPTables()
 		if err != nil {
@@ -51,8 +52,10 @@ func (cp *Cubeproxy) Run() {
 
 		cp.Runtime = runtime
 	}
+	log.Println("Init IP Tables Success")
 
 	defer func(runtime *proxyruntime.ProxyRuntime) {
+		log.Printf("Release IP Tables...")
 		err := runtime.ReleaseIPTables()
 		if err != nil {
 			log.Panicln("Error when release proxy Runtime")

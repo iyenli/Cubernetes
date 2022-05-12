@@ -38,3 +38,10 @@ type ReplicaSetEvent struct {
 	// ReplicaSet will only have its UID
 	ReplicaSet object.ReplicaSet
 }
+
+type NodeEvent struct {
+	EType EventType
+	// if EType == EVENT_DELETE,
+	// Node will only have its UID
+	Node object.Node
+}
