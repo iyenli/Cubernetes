@@ -16,7 +16,8 @@ type ControllerManager struct {
 
 func NewControllerManager() ControllerManager {
 	podInformer, _ := informer.NewPodInformer()
-	rsController, _ := replicaset_controller.NewReplicaSetController(podInformer)
+	rsInformer, _ := informer.NewReplicaSetInformer()
+	rsController, _ := replicaset_controller.NewReplicaSetController(podInformer, rsInformer)
 	return ControllerManager{
 		RSController: rsController,
 		PodInformer:  podInformer,
