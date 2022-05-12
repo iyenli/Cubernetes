@@ -96,8 +96,8 @@ func SelectPods(ctx *gin.Context) {
 			return false
 		}
 		for key, val := range selectors {
-			v := pod.Labels[key]
-			if v != val {
+			v, ok := pod.Labels[key]
+			if !ok || v != val {
 				return false
 			}
 		}

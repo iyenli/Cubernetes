@@ -12,5 +12,5 @@ const (
 
 type PodEvent struct {
 	Type PodEventType
-	Pod  *object.Pod
+	Pod  object.Pod
 }

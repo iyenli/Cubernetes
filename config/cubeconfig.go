@@ -8,6 +8,7 @@ const ETCDTimeout = time.Second
 const ETCDAddr = "127.0.0.1:2379"
 
 var APIServerIp = "127.0.0.1"
+var NodeUID = "INVALID_INIT_VALUE"
 
 const APIServerPort = 8080
 const HeartbeatPort = 8081
@@ -28,3 +29,5 @@ const (
 	MetaDir  = "./cubernetes/"
 	MetaFile = MetaDir + "meta"
 )
+
+const ServiceClusterIPRange = "172.16.0.0/12"

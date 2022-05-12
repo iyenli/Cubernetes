@@ -12,11 +12,12 @@ import (
 
 func getRequest(url string) ([]byte, error) {
 	resp, err := http.Get(url)
-	defer func() { _ = resp.Body.Close() }()
+
 	if err != nil {
 		log.Println("fail to send http get request")
 		return nil, err
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -34,11 +35,11 @@ func postRequest(url string, obj any) ([]byte, error) {
 	}
 
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(buf))
-	defer func() { _ = resp.Body.Close() }()
 	if err != nil {
 		log.Println("fail to send http post request")
 		return nil, err
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -62,11 +63,11 @@ func putRequest(url string, obj any) ([]byte, error) {
 	}
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
-	defer func() { _ = resp.Body.Close() }()
 	if err != nil {
 		log.Println("fail to send http put request")
 		return nil, err
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -83,11 +84,13 @@ func deleteRequest(url string) error {
 		return err
 	}
 	resp, err := http.DefaultClient.Do(req)
-	defer func() { _ = resp.Body.Close() }()
-	if err != nil {
+
+	if err != nil || resp == nil {
 		log.Println("fail to send http delete request")
 		return err
 	}
+
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

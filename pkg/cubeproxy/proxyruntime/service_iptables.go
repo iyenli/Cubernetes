@@ -298,7 +298,8 @@ func (pr *ProxyRuntime) AddService(service *object.Service) error {
 			err = pr.ipt.Insert(NatTable, podChainUID, 1,
 				"-j", DnatOP,
 				"-p", string(port.Protocol),
-				"--to-destination", fmt.Sprintf("%v:%v", pod.Status.IP.String(), strconv.FormatInt(int64(port.TargetPort), 10)),
+				"--to-destination", fmt.Sprintf("%v:%v", pod.Status.IP.String(),
+					strconv.FormatInt(int64(port.TargetPort), 10)),
 			)
 
 			if err != nil {
@@ -379,5 +380,6 @@ func (pr *ProxyRuntime) AddPodAsEndpoints(pod *object.Pod) error {
 }
 
 func (pr *ProxyRuntime) reshuffleServiceIPTable(service *object.Service) error {
+
 	return nil
 }

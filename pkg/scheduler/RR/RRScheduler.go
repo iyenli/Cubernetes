@@ -1,8 +1,10 @@
 package RR
 
 import (
+	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/scheduler/types"
 	"errors"
+	"log"
 	"sync/atomic"
 )
 
@@ -19,6 +21,20 @@ func (rr *SchedulerRR) Init() error {
 	rr.Next = 0
 	rr.NumOfNodes = 0
 	rr.NameOfNodes = make([]string, 0)
+
+	// init: Get existed scheduler
+	nodes, err := crudobj.GetNodes()
+	if err != nil {
+		log.Fatalln("[Fatal]: Get nodes to init failed")
+	}
+
+	for _, node := range nodes {
+		if node.Status.Condition.Ready == true {
+			log.Println("[INFO] Init scheduler, add node ", node.UID)
+			rr.NameOfNodes = append(rr.NameOfNodes, node.UID)
+			rr.NumOfNodes++
+		}
+	}
 
 	return nil
 }

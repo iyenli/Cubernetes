@@ -12,4 +12,5 @@ spec:
         use: test-rs
     spec:
       containers:
-        - image: docker/desktop-kubernetes-pause:3.7
+      - name: ppp
+        image: docker/desktop-kubernetes-pause:3.7

@@ -50,13 +50,14 @@ const (
 type PodStatus struct {
 	// reserved for later use
 	IP                  net.IP         `json:"IP" yaml:"IP"`
+	StartTime           time.Time      `json:"startTime,omitempty" yaml:"startTime,omitempty"`
 	Phase               PodPhase       `json:"phase,omitempty" yaml:"phase,omitempty"`
+	PodUID              string         `json:"pod-uid,omitempty" yaml:"pod-uid,omitempty"`
 	ActualResourceUsage *ResourceUsage `json:"actualResourceUsage,omitempty" yaml:"actualResourceUsage,omitempty"`
+	LastUpdateTime      time.Time      `json:"lastUpdateTime" yaml:"lastUpdateTime"`
 }
 
 type ResourceUsage struct {
-	LastUpdateTime time.Time `json:"lastUpdateTime" yaml:"lastUpdateTime"`
-
 	// for 4 cores, up to 400.00%
 	ActualCPUUsage float64 `json:"actualCPUUsage" yaml:"actualCPUUsage"`
 	// in bytes
@@ -158,7 +159,10 @@ type ReplicaSetStatus struct {
 	// actual running pod replica in PodUIDs
 	RunningReplicas int32 `json:"replicas" yaml:"replicas"`
 	// UID of pods assigned
-	PodUIDs []string `json:"podUIDs" yaml:"podUIDs"`
+	PodUIDsToRun   []string  `json:"podsToRun" yaml:"podsToRun"`
+	PodUIDsToKill  []string  `json:"podsToKill" yaml:"podsTokill"`
+	PodUIDsRunning []string  `json:"pods" yaml:"pods"`
+	LastUpdateTime time.Time `json:"lastUpdate,omitempty" yaml:"lastUpdate,omitempty"`
 }
 
 type Node struct {

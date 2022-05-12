@@ -11,12 +11,12 @@ import (
 
 func InitNodeNetwork(args []string) {
 	var err error
-	if len(args) == 2 {
+	if len(args) == 3 {
 		// master
 		err = weaveplugins.InitWeave()
-	} else if len(args) == 3 {
+	} else if len(args) == 4 {
 		// slave
-		err = weaveplugins.AddNode(weaveplugins.Host{IP: net.ParseIP(args[1])}, weaveplugins.Host{IP: net.ParseIP(args[2])})
+		err = weaveplugins.AddNode(weaveplugins.Host{IP: net.ParseIP(args[2])}, weaveplugins.Host{IP: net.ParseIP(args[3])})
 	} else {
 		panic("Error: too much or little args when start cubelet;")
 	}

@@ -4,26 +4,27 @@ import (
 	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/apiserver/watchobj"
 	"Cubernetes/pkg/controllermanager/informer"
+	"Cubernetes/pkg/controllermanager/phase"
 	"Cubernetes/pkg/controllermanager/types"
+	"Cubernetes/pkg/controllermanager/utils"
 	"Cubernetes/pkg/object"
 	"log"
-	"strings"
+	"sync"
 	"time"
+)
 
-	"github.com/google/uuid"
+const (
+	replicaSetPodsUpdateWaitTime = time.Second * 30
 )
 
 type ReplicaSetController interface {
 	Run()
 }
 
-const (
-	podNameUUIDLen = 8
-)
-
 type replicaSetController struct {
 	podInformer informer.PodInformer
 	rsInformer  ReplicaSetInformer
+	biglock     sync.Mutex
 }
 
 func NewReplicaSetController(podInformer informer.PodInformer) (ReplicaSetController, error) {
@@ -31,6 +32,7 @@ func NewReplicaSetController(podInformer informer.PodInformer) (ReplicaSetContro
 	return &replicaSetController{
 		podInformer: podInformer,
 		rsInformer:  rsInformer,
+		biglock:     sync.Mutex{},
 	}, nil
 }
 
@@ -42,12 +44,19 @@ func (rsc *replicaSetController) Run() {
 	}
 	defer cancel()
 
+	go func() {
+		for {
+			time.Sleep(time.Second * 10)
+			rsc.updateReplicaSetsRoutine()
+		}
+	}()
+
 	go rsc.syncLoop()
 
 	for rsEvent := range ch {
 		switch rsEvent.EType {
 		case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
-			rsc.rsInformer.InformReplicaSet(&rsEvent.ReplicaSet, rsEvent.EType)
+			rsc.rsInformer.InformReplicaSet(rsEvent.ReplicaSet, rsEvent.EType)
 		default:
 			log.Fatal("[FATAL] Unknown event type: " + rsEvent.EType)
 		}
@@ -61,34 +70,75 @@ func (rsc *replicaSetController) syncLoop() {
 	rsEventChan := rsc.rsInformer.WatchRSEvent()
 	defer rsc.rsInformer.CloseChan()
 
-	select {
-	case podEvent := <-podEventChan:
-		switch podEvent.Type {
-		case types.PodCreate:
-			rsc.handlePodCreate(podEvent.Pod)
-		case types.PodUpdate:
-			rsc.handlePodUpdate(podEvent.Pod)
-		case types.PodKilled:
-			rsc.handlePodKilled(podEvent.Pod)
+	for {
+		select {
+		case podEvent := <-podEventChan:
+			rsc.biglock.Lock()
+			pod := podEvent.Pod
+			switch podEvent.Type {
+			case types.PodCreate:
+				log.Printf("handle Pod %s create\n", podEvent.Pod.Name)
+				rsc.handlePodCreate(&pod)
+			case types.PodUpdate:
+				log.Printf("handle Pod %s update\n", podEvent.Pod.Name)
+				rsc.handlePodUpdate(&pod)
+			case types.PodKilled:
+				log.Printf("handle Pod %s killed\n", podEvent.Pod.Name)
+				rsc.handlePodKilled(&pod)
+			default:
+				log.Fatal("[FATAL] Unknown podInformer event type: " + podEvent.Type)
+			}
+			rsc.biglock.Unlock()
+		case rsEvent := <-rsEventChan:
+			rsc.biglock.Lock()
+			replicaSet := rsEvent.ReplicaSet
+			switch rsEvent.Type {
+			case rsCreate:
+				log.Printf("handle ReplicaSet %s create\n", rsEvent.ReplicaSet.Name)
+				rsc.handleReplicaSetCreate(&replicaSet)
+			case rsUpdate:
+				log.Printf("handle ReplicaSet %s update\n", rsEvent.ReplicaSet.Name)
+				rsc.handleReplicaSetUpdate(&replicaSet)
+			case rsRemove:
+				log.Printf("handle ReplicaSet %s remove\n", rsEvent.ReplicaSet.Name)
+				rsc.handleReplicaSetRemove(&replicaSet)
+			default:
+				log.Fatal("[FATAL] Unknown rsInformer event type: " + rsEvent.Type)
+			}
+			rsc.biglock.Unlock()
 		default:
-			log.Fatal("[FATAL] Unknown podInformer event type: " + podEvent.Type)
+			time.Sleep(time.Second * 4)
 		}
-	case rsEvent := <-rsEventChan:
-		switch rsEvent.Type {
-		case rsCreate, rsUpdate:
-			rsc.updateReplicaSet(rsEvent.ReplicaSet)
-		case rsRemove:
-			rsc.removeReplicaSet(rsEvent.ReplicaSet)
-		default:
-			log.Fatal("[FATAL] Unknown rsInformer event type: " + rsEvent.Type)
-		}
-	default:
-		time.Sleep(time.Second * 3)
 	}
 
 }
 
-func (rsc *replicaSetController) updateReplicaSet(rs *object.ReplicaSet) error {
+func (rsc *replicaSetController) updateReplicaSetsRoutine() {
+	rsc.biglock.Lock()
+	defer rsc.biglock.Unlock()
+
+	replicaSets := rsc.rsInformer.ListReplicaSets()
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(replicaSets))
+	for _, replicaSet := range replicaSets {
+		go func(rs object.ReplicaSet) {
+			defer wg.Done()
+			// rs.Status will be nil if a ReplicaSet is just created by cubectl
+			// but not yet handled by handleReplicaSetCreate
+			if rs.Status != nil {
+				rsc.checkAndUpdateReplicaSetStatus(&rs)
+			}
+		}(replicaSet)
+	}
+	wg.Wait()
+}
+
+func (rsc *replicaSetController) checkAndUpdateReplicaSetStatus(rs *object.ReplicaSet) error {
+
+	if time.Since(rs.Status.LastUpdateTime) < replicaSetPodsUpdateWaitTime {
+		return nil
+	}
 
 	currentPods, err := rsc.getReplicaSetPods(rs)
 	if err != nil {
@@ -96,104 +146,65 @@ func (rsc *replicaSetController) updateReplicaSet(rs *object.ReplicaSet) error {
 		return err
 	}
 
-	var toKeep, toKill, toCreate []*object.Pod
+	runnings := make([]string, 0)
+	bads := make([]string, 0)
 	for _, pod := range currentPods {
-		if pod.Status.Phase != object.PodFailed && pod.Status.Phase != object.PodUnknown {
-			toKeep = append(toKeep, pod)
+		if phase.Running(pod.Status.Phase) {
+			runnings = append(runnings, pod.UID)
+		} else if phase.Bad(pod.Status.Phase) {
+			bads = append(bads, pod.UID)
+		}
+	}
+
+	log.Printf("check %s status:\n", rs.Name)
+	log.Println("toRun:   ", rs.Status.PodUIDsToRun)
+	log.Println("toKill:  ", rs.Status.PodUIDsToKill)
+	log.Println("running: ", runnings)
+	log.Println("bad:     ", bads)
+
+	// timeout => create new pods, ignore old
+	toCreate := int(rs.Spec.Replicas) - len(runnings)
+	log.Printf("%d pod(s) running, %d expected\n", len(runnings), rs.Spec.Replicas)
+	podsToRun := make([]string, 0)
+	// will do nothing if toCreate <= 0
+	for idx := 0; idx < toCreate; idx += 1 {
+		newPod := rsc.buildNewAPIPod(&rs.Spec.Template, rs.Name)
+		if pod, err := crudobj.CreatePod(*newPod); err != nil {
+			log.Printf("fail to create pod %s to API Server: %v\n", newPod.Name, err)
 		} else {
-			toKill = append(toKill, pod)
+			log.Printf("ReplicaSet %s add pod: %s (%s)\n", rs.Name, pod.Name, pod.UID)
+			podsToRun = append(podsToRun, pod.UID)
 		}
 	}
 
-	// update ReplicaSet status to apiserver
-	rs.Status.RunningReplicas = int32(len(toKeep))
-	rs.Status.PodUIDs = make([]string, len(toKeep))
-	for idx, pod := range toKeep {
-		rs.Status.PodUIDs[idx] = pod.UID
+	// timeout => kill toKill again, and try to kill old-fail-to-create
+	podsToKill := append(rs.Status.PodUIDsToKill, rs.Status.PodUIDsToRun...)
+	// kill redundant pod if needed
+	if toCreate < 0 {
+		podsToKill = append(podsToKill, runnings[:-toCreate]...)
 	}
-	crudobj.UpdateReplicaSet(*rs)
-
-	if len(toKeep) > int(rs.Spec.Replicas) {
-		// kill redundant replica
-		keepCount := rs.Spec.Replicas
-		toKill = append(toKill, toKeep[keepCount:]...)
-	} else {
-		// add new API pod to API Server
-		createCount := int(rs.Spec.Replicas) - len(toKeep)
-		for i := 0; i < createCount; i += 1 {
-			toCreate = append(toKeep, rsc.buildNewAPIPod(&rs.Spec.Template, rs.Name))
-		}
-	}
-
-	for _, kill := range toKill {
-		if err = crudobj.DeletePod(kill.UID); err != nil {
-			log.Printf("fail to delete pod %s from API Server: %v\n", kill.UID, err)
-		}
-	}
-
-	for _, create := range toCreate {
-		if pod, err := crudobj.CreatePod(*create); err != nil {
-			log.Printf("fail to create pod %s to API Server: %v\n", create.Name, err)
+	// also kill bad pods found in update, then remove duplication
+	podsToKill = utils.RemoveDuplication(append(podsToKill, bads...))
+	for _, uid := range podsToKill {
+		if err := crudobj.DeletePod(uid); err != nil {
+			log.Printf("fail to delete pod %s from API Server: %v\n", uid, err)
 		} else {
-			log.Printf("ReplicaSet %s add new pod to API Server: %v\n", rs.Name, pod)
+			log.Printf("ReplicaSet %s remove pod from API Server: %s\n", rs.Name, uid)
 		}
 	}
 
-	return err
-}
-
-func (rsc *replicaSetController) removeReplicaSet(rs *object.ReplicaSet) error {
-	// just set its replica to 0
-	rs.Spec.Replicas = 0
-	return rsc.updateReplicaSet(rs)
-}
-
-// TODO: using the same handler now
-
-func (rsc *replicaSetController) handlePodCreate(pod *object.Pod) error {
-	matched := rsc.rsInformer.GetMatchedReplicaSet(pod)
-	for _, rs := range matched {
-		rsc.updateReplicaSet(rs)
+	rs.Status = &object.ReplicaSetStatus{
+		RunningReplicas: int32(len(runnings)),
+		PodUIDsToRun:    podsToRun,
+		PodUIDsToKill:   podsToKill,
+		PodUIDsRunning:  runnings,
+		LastUpdateTime:  time.Now(),
 	}
+
+	if _, err := crudobj.UpdateReplicaSet(*rs); err != nil {
+		log.Printf("fail to update replicaset status to apiserver\n")
+		return err
+	}
+
 	return nil
-}
-
-func (rsc *replicaSetController) handlePodUpdate(pod *object.Pod) error {
-	matched := rsc.rsInformer.GetMatchedReplicaSet(pod)
-	for _, rs := range matched {
-		rsc.updateReplicaSet(rs)
-	}
-	return nil
-}
-
-func (rsc *replicaSetController) handlePodKilled(pod *object.Pod) error {
-	matched := rsc.rsInformer.GetMatchedReplicaSet(pod)
-	for _, rs := range matched {
-		rsc.updateReplicaSet(rs)
-	}
-	return nil
-}
-
-func (rsc *replicaSetController) buildNewAPIPod(template *object.PodTemplate, scName string) *object.Pod {
-
-	pod := &object.Pod{
-		TypeMeta: object.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Pod",
-		},
-		ObjectMeta: template.ObjectMeta,
-		Spec:       template.Spec,
-	}
-
-	pod.Name = rsc.buildTemplatePodName(scName)
-
-	return pod
-}
-
-func (rsc *replicaSetController) buildTemplatePodName(scName string) string {
-	return strings.Join([]string{scName, uuid.New().String()[:podNameUUIDLen]}, "_")
-}
-
-func (rsc *replicaSetController) getReplicaSetPods(rs *object.ReplicaSet) ([]*object.Pod, error) {
-	return rsc.podInformer.SelectPods(rs.Spec.Selector), nil
 }

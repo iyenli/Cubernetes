@@ -1,6 +1,7 @@
 package restful
 
 import (
+	"Cubernetes/pkg/cubenetwork/servicenetwork"
 	"Cubernetes/pkg/object"
 	"Cubernetes/pkg/utils/etcdrw"
 	"encoding/json"
@@ -8,6 +9,8 @@ import (
 	"github.com/google/uuid"
 	"net/http"
 )
+
+var ClusterIPAllocator *servicenetwork.ClusterIPAllocator
 
 func GetService(ctx *gin.Context) {
 	getObj(ctx, "/apis/service/"+ctx.Param("uid"))
@@ -29,6 +32,12 @@ func PostService(ctx *gin.Context) {
 		return
 	}
 	service.UID = uuid.New().String()
+	service, err = ClusterIPAllocator.AllocateClusterIP(&service)
+	if err != nil {
+		serverError(ctx)
+		return
+	}
+
 	buf, _ := json.Marshal(service)
 	err = etcdrw.PutObj("/apis/service/"+service.UID, string(buf))
 	if err != nil {

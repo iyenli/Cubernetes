@@ -10,30 +10,31 @@ import (
 
 type PodInformer interface {
 	WatchPodEvent() <-chan types.PodEvent
-	InformPod(newPod *object.Pod, eType watchobj.EventType) error
+	InformPod(newPod object.Pod, eType watchobj.EventType) error
 	CloseChan(<-chan types.PodEvent)
-	SelectPods(selector map[string]string) []*object.Pod
+	SelectPods(selector map[string]string) []object.Pod
 }
 
 func NewPodInformer() (PodInformer, error) {
 	return &cmPodInformer{
 		podEventChans: make([]chan types.PodEvent, 0),
-		podCache:      make(map[string]*object.Pod),
+		podCache:      make(map[string]object.Pod),
 	}, nil
 }
 
 type cmPodInformer struct {
 	podEventChans []chan types.PodEvent
-	podCache      map[string]*object.Pod
+	podCache      map[string]object.Pod
 }
 
 func (i *cmPodInformer) WatchPodEvent() <-chan types.PodEvent {
+	log.Printf("pod informer make a new chan!\n")
 	newChan := make(chan types.PodEvent)
 	i.podEventChans = append(i.podEventChans, newChan)
 	return newChan
 }
 
-func (i *cmPodInformer) InformPod(newPod *object.Pod, eType watchobj.EventType) error {
+func (i *cmPodInformer) InformPod(newPod object.Pod, eType watchobj.EventType) error {
 	oldPod, exist := i.podCache[newPod.UID]
 
 	if eType == watchobj.EVENT_DELETE {
@@ -41,7 +42,7 @@ func (i *cmPodInformer) InformPod(newPod *object.Pod, eType watchobj.EventType) 
 			delete(i.podCache, newPod.UID)
 			i.informAll(types.PodEvent{
 				Type: types.PodKilled,
-				Pod:  newPod,
+				Pod:  oldPod,
 			})
 		} else {
 			log.Printf("pod %s not exist, DELETE do nothing\n", newPod.Name)
@@ -49,13 +50,14 @@ func (i *cmPodInformer) InformPod(newPod *object.Pod, eType watchobj.EventType) 
 	}
 
 	if eType == watchobj.EVENT_PUT {
-		i.podCache[newPod.UID] = newPod
-		if !exist {
+		if !exist && phase.Running(newPod.Status.Phase) {
+			i.podCache[newPod.UID] = newPod
 			i.informAll(types.PodEvent{
 				Type: types.PodCreate,
 				Pod:  newPod,
 			})
-		} else {
+		} else if exist {
+			i.podCache[newPod.UID] = newPod
 			newRunning := phase.Running(newPod.Status.Phase)
 			oldRunning := phase.Running(oldPod.Status.Phase)
 			if newRunning && oldRunning {
@@ -84,6 +86,7 @@ func (i *cmPodInformer) InformPod(newPod *object.Pod, eType watchobj.EventType) 
 }
 
 func (i *cmPodInformer) CloseChan(ch <-chan types.PodEvent) {
+	log.Printf("pod informer close a chan!\n")
 	found := -1
 	for idx, c := range i.podEventChans {
 		if c == ch {
@@ -97,8 +100,8 @@ func (i *cmPodInformer) CloseChan(ch <-chan types.PodEvent) {
 	}
 }
 
-func (i *cmPodInformer) SelectPods(selector map[string]string) []*object.Pod {
-	matchedPods := make([]*object.Pod, 0)
+func (i *cmPodInformer) SelectPods(selector map[string]string) []object.Pod {
+	matchedPods := make([]object.Pod, 0)
 	for _, pod := range i.podCache {
 		if object.MatchLabelSelector(selector, pod.Labels) {
 			matchedPods = append(matchedPods, pod)

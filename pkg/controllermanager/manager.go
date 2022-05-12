@@ -19,6 +19,7 @@ func NewControllerManager() ControllerManager {
 	rsController, _ := replicaset_controller.NewReplicaSetController(podInformer)
 	return ControllerManager{
 		RSController: rsController,
+		PodInformer:  podInformer,
 	}
 }
 
@@ -33,12 +34,14 @@ func (cm *ControllerManager) Run() {
 	go cm.RSController.Run()
 
 	for podEvent := range ch {
-		if phase.NotHandle(podEvent.Pod.Status.Phase) {
+		pod := podEvent.Pod
+		// pod status not ready to handle by controller_manager
+		if pod.Status == nil || phase.NotHandle(pod.Status.Phase) {
 			continue
 		}
 		switch podEvent.EType {
 		case watchobj.EVENT_DELETE, watchobj.EVENT_PUT:
-			cm.PodInformer.InformPod(&podEvent.Pod, podEvent.EType)
+			cm.PodInformer.InformPod(pod, podEvent.EType)
 		default:
 			log.Panic("Unsupported type in watch pod.")
 		}
