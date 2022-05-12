@@ -14,7 +14,7 @@ type Runtime interface {
 	GetPodStatus(UID string) (*PodStatus, error)
 	KillPod(UID string) error
 	SyncPod(pod *object.Pod, podStatus *PodStatus) error
-	InspectPod(UID string) (*object.PodStatus, error)
+	InspectPod(pod *object.Pod) (*object.PodStatus, error)
 	ListPodsUID() ([]string, error)
 
 	Close()
@@ -103,7 +103,7 @@ func (s *PodStatus) UpdateSandboxStatuses(sandboxStatuses []*SandboxStatus) {
 	s.SandboxStatuses = sandboxStatuses
 }
 
-func ComputePodPhase(statuses []*ContainerStatus, sandboxStatus *SandboxStatus) object.PodPhase {
+func ComputePodPhase(statuses []*ContainerStatus, sandboxStatus *SandboxStatus, podSpec *object.PodSpec) object.PodPhase {
 	isRunning := true
 	runningContainer := 0
 	isSuccess := true
@@ -125,12 +125,13 @@ func ComputePodPhase(statuses []*ContainerStatus, sandboxStatus *SandboxStatus) 
 
 	if isFail {
 		return object.PodFailed
+	} else if isRunning && sandboxStatus.State == SandboxStateReady &&
+		runningContainer == len(podSpec.Containers) {
+		return object.PodRunning
+	} else if sandboxStatus.State == SandboxStateReady {
+		return object.PodPending
 	} else if isSuccess {
 		return object.PodSucceeded
-	} else if isRunning && sandboxStatus.State == SandboxStateReady {
-		return object.PodRunning
-	} else if runningContainer > 0 && sandboxStatus.State == SandboxStateReady {
-		return object.PodPending
 	} else {
 		return object.PodUnknown
 	}

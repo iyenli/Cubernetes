@@ -1,6 +1,8 @@
 package phase
 
-import "Cubernetes/pkg/object"
+import (
+	"Cubernetes/pkg/object"
+)
 
 func NotHandle(p object.PodPhase) bool {
 	return p == object.PodCreated || p == object.PodBound
