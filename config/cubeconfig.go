@@ -29,3 +29,5 @@ const (
 	MetaDir  = "./cubernetes/"
 	MetaFile = MetaDir + "meta"
 )
+
+const ServiceClusterIPRange = "172.16.0.0/12"
