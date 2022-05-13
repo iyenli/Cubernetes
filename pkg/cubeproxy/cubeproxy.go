@@ -86,7 +86,7 @@ func (cp *Cubeproxy) syncService() {
 	informEvent := cp.Runtime.ServiceInformer.WatchServiceEvent()
 
 	for serviceEvent := range informEvent {
-		log.Printf("Main loop working, types is %v,service id is %v", serviceEvent, serviceEvent.Service.UID)
+		log.Printf("[INFO]: Main loop working, types is %v,service id is %v", serviceEvent.Type, serviceEvent.Service.UID)
 		service := serviceEvent.Service
 		eType := serviceEvent.Type
 		cp.lock.Lock()
@@ -96,7 +96,7 @@ func (cp *Cubeproxy) syncService() {
 			log.Printf("from serviceEvent: create service %s\n", service.UID)
 			err := cp.Runtime.AddService(&service)
 			if err != nil {
-				log.Printf("Add service error: %v", err.Error())
+				log.Printf("[Error]: Add service error: %v", err.Error())
 				return
 			}
 		case types.ServiceUpdate:
@@ -115,7 +115,7 @@ func (cp *Cubeproxy) syncService() {
 			}
 
 		case types.ServiceRemove:
-			log.Printf("from serviceEvent: delete service %s\n", service.UID)
+			log.Printf("serviceEvent: delete service %s\n", service.UID)
 			err := cp.Runtime.DeleteService(&service)
 			if err != nil {
 				log.Printf("Delete service error: %v", err.Error())
@@ -159,7 +159,6 @@ func (cp *Cubeproxy) WatchPodsChange() error {
 	defer cancel()
 
 	for podEvent := range ch {
-		log.Printf("A pod comes, types is %v, id is %v", podEvent.EType, podEvent.Pod.UID)
 		switch podEvent.EType {
 		case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
 			err := cp.Runtime.PodInformer.InformPod(podEvent.Pod, podEvent.EType)

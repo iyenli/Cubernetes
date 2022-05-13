@@ -56,7 +56,7 @@ func (pr *ProxyRuntime) MapPortToPods(service *object.Service, pods []object.Pod
 	// Then create service chain and add to service
 	err := pr.Ipt.NewChain(NatTable, serviceUID)
 	if err != nil {
-		log.Println("Create chain failed")
+		log.Println("Create service chain failed")
 		return err
 	}
 
@@ -66,7 +66,7 @@ func (pr *ProxyRuntime) MapPortToPods(service *object.Service, pods []object.Pod
 		"-p", string(port.Protocol),
 		"--dport", strconv.FormatInt(int64(port.Port), 10))
 	if err != nil {
-		log.Panicln("Creating chain failed")
+		log.Panicln("Add service chain to service failed")
 		return err
 	}
 
@@ -78,7 +78,7 @@ func (pr *ProxyRuntime) MapPortToPods(service *object.Service, pods []object.Pod
 
 		err = pr.Ipt.NewChain(NatTable, podChainUID)
 		if err != nil {
-			log.Println("Create chain failed")
+			log.Println("Create pod probability chain failed")
 			return err
 		}
 
@@ -92,7 +92,7 @@ func (pr *ProxyRuntime) MapPortToPods(service *object.Service, pods []object.Pod
 				"--probability", fmt.Sprintf("%.2f", probability),
 			)
 			if err != nil {
-				log.Println("Create chain failed")
+				log.Println("Add probability chain to service chain failed")
 				return err
 			}
 		} else {
@@ -100,7 +100,7 @@ func (pr *ProxyRuntime) MapPortToPods(service *object.Service, pods []object.Pod
 				"-j", podChainUID,
 			)
 			if err != nil {
-				log.Println("Create chain failed")
+				log.Println("Add probability chain to service chain failed")
 				return err
 			}
 		}

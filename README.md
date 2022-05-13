@@ -2,6 +2,8 @@
 Course project for SE3356.
 
 > 注意，在现在，运行Cuberoot的Shell不能被关闭。
+>
+> 测试时可以用Script下的clear.sh清理残留的docker容器。[风险提示]
 
 ## Quick start
 
@@ -39,10 +41,15 @@ Worker1作为master, Worker2作为slave. 假设Worker1 的IP为192.168.1.9, Work
 ./build/cubectl get pods
 ```
 
-至此，`curl ip:8085`可以看到Nginx主页的HTML界面。1尚未测试：
+至此，`curl ip:8085`可以看到Nginx主页的HTML界面。尚未测试*带命令的容器，容器内的localhost访问*。
 
-- 带命令的容器，容器内的localhost访问
-- Warning
+```
+./build/cubectl apply -f ./example/yaml/service.yaml 
+```
+
+
+
+
 
 
 

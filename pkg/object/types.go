@@ -124,7 +124,7 @@ const (
 type ServicePort struct {
 	Protocol   Protocol `json:"protocol,omitempty" yaml:"protocol,omitempty"`
 	Port       int32    `json:"port,omitempty" yaml:"port,omitempty"`
-	TargetPort int32    `json:"target,omitempty" yaml:"target,omitempty"`
+	TargetPort int32    `json:"targetPort,omitempty" yaml:"targetPort,omitempty"`
 }
 
 type ServiceStatus struct {

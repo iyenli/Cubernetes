@@ -7,6 +7,7 @@ import (
 	"errors"
 	"github.com/coreos/go-iptables/iptables"
 	"log"
+	"net"
 	"strconv"
 )
 
@@ -63,17 +64,18 @@ func (pr *ProxyRuntime) AddService(service *object.Service) error {
 		return nil
 	}
 
-	pods, err := crudobj.SelectPods(service.Spec.Selector)
+	alternativePods, err := crudobj.SelectPods(service.Spec.Selector)
 	if err != nil {
 		log.Println("Select pods failed")
 		return err
 	}
 
 	// if pod's ip not filled in, discard it
-	for idx, pod := range pods {
-		if pod.Status.IP == nil {
+	var pods []object.Pod
+	for idx, pod := range alternativePods {
+		if pod.Status.IP != nil {
 			log.Printf("[INFO]: Pod %v can't act as endpoint because no IP allocated", pod.UID)
-			pods = append(pods[:idx], pods[idx+1:]...)
+			pods = append(pods, alternativePods[idx])
 		}
 	}
 	if len(pods) == 0 {
@@ -81,6 +83,7 @@ func (pr *ProxyRuntime) AddService(service *object.Service) error {
 		return nil
 	}
 
+	log.Println("[INFO]: Ready to map pod ports, pod number", len(pods), "port number", len(service.Spec.Ports))
 	prob := make([][]string, len(service.Spec.Ports))
 	for idx, _ := range prob {
 		prob[idx] = make([]string, len(pods))
@@ -100,6 +103,13 @@ func (pr *ProxyRuntime) AddService(service *object.Service) error {
 		}
 	}
 
+	if service.Status == nil {
+		service.Status = &object.ServiceStatus{
+			Endpoints: []net.IP{},
+			Ingress:   []object.PodIngress{},
+		}
+	}
+
 	// Write back endpoints
 	for _, pod := range pods {
 		service.Status.Endpoints = append(service.Status.Endpoints, pod.Status.IP)
@@ -111,6 +121,7 @@ func (pr *ProxyRuntime) AddService(service *object.Service) error {
 		return err
 	}
 
+	log.Printf("[INFO]: Service %v's IP Table have been configured\n", service.UID)
 	return nil
 }
 
