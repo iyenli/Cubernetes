@@ -41,13 +41,16 @@ Worker1作为master, Worker2作为slave. 假设Worker1 的IP为192.168.1.9, Work
 ./build/cubectl get pods
 ```
 
-至此，`curl ip:8085`可以看到Nginx主页的HTML界面。尚未测试*带命令的容器，容器内的localhost访问*。
+至此，`curl ip:8085`可以看到Nginx主页的HTML界面。尚未测试*带命令的容器，容器内的localhost访问*。测试Service:
 
-```
+```shell
+./build/cubectl apply -f ./example/yaml/test-pod2.yaml 
 ./build/cubectl apply -f ./example/yaml/service.yaml 
 ```
 
+`iptables -t nat -L`, 与K8s保持一致。
 
+<img src="https://s2.loli.net/2022/05/13/XCQvMTdOr5eyZPV.png" alt="image-20220513215801877" style="zoom: 50%;" />
 
 
 
