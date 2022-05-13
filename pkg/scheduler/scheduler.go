@@ -71,7 +71,7 @@ func (sr *ScheduleRuntime) Run() {
 		case watchobj.EVENT_DELETE:
 			log.Println("[Info]: Delete pod, do nothing")
 		default:
-			log.Panic("Unsupported type in watch pod.")
+			log.Panic("Unsupported types in watch pod.")
 		}
 	}
 

@@ -58,7 +58,7 @@ func (rsc *replicaSetController) Run() {
 		case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
 			rsc.rsInformer.InformReplicaSet(rsEvent.ReplicaSet, rsEvent.EType)
 		default:
-			log.Fatal("[FATAL] Unknown event type: " + rsEvent.EType)
+			log.Fatal("[FATAL] Unknown event types: " + rsEvent.EType)
 		}
 	}
 }
@@ -86,7 +86,7 @@ func (rsc *replicaSetController) syncLoop() {
 				log.Printf("handle Pod %s killed\n", podEvent.Pod.Name)
 				rsc.handlePodKilled(&pod)
 			default:
-				log.Fatal("[FATAL] Unknown podInformer event type: " + podEvent.Type)
+				log.Fatal("[FATAL] Unknown podInformer event types: " + podEvent.Type)
 			}
 			rsc.biglock.Unlock()
 		case rsEvent := <-rsEventChan:
@@ -103,7 +103,7 @@ func (rsc *replicaSetController) syncLoop() {
 				log.Printf("handle ReplicaSet %s remove\n", rsEvent.ReplicaSet.Name)
 				rsc.handleReplicaSetRemove(&replicaSet)
 			default:
-				log.Fatal("[FATAL] Unknown rsInformer event type: " + rsEvent.Type)
+				log.Fatal("[FATAL] Unknown rsInformer event types: " + rsEvent.Type)
 			}
 			rsc.biglock.Unlock()
 		default:

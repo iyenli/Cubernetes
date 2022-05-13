@@ -20,7 +20,7 @@ func main() {
 
 	go func() {
 		defer wg.Done()
-		go heartbeat.ListenHeartbeat()
+		heartbeat.ListenHeartbeat()
 	}()
 	go func() {
 		defer wg.Done()
@@ -30,6 +30,6 @@ func main() {
 	time.Sleep(time.Second)
 	restful.ClusterIPAllocator = servicenetwork.NewClusterIPAllocator()
 
-	log.Println("Cluster IP Allocator init, api server running...")
+	log.Println("[INFO]: Cluster IP Allocator init, api server running...")
 	wg.Wait()
 }

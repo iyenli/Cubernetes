@@ -83,7 +83,7 @@ type ResourceRequirements struct {
 
 type Volume struct {
 	Name string `json:"name" yaml:"name"`
-	// Volume only support HostPath type
+	// Volume only support HostPath types
 	HostPath string `json:"hostPath" yaml:"hostPath"`
 }
 
@@ -128,7 +128,8 @@ type ServicePort struct {
 }
 
 type ServiceStatus struct {
-	Ingress []PodIngress `json:"ingress,omitempty" yaml:"ingress,omitempty"`
+	Endpoints []net.IP     `json:"endpoints,omitempty" yaml:"endpoints,omitempty"`
+	Ingress   []PodIngress `json:"ingress,omitempty" yaml:"ingress,omitempty"`
 }
 
 type PodIngress struct {
@@ -180,7 +181,7 @@ const (
 )
 
 type NodeSpec struct {
-	Type     NodeType     `json:"type" yaml:"type"`
+	Type     NodeType     `json:"types" yaml:"types"`
 	Capacity NodeCapacity `json:"capacity,omitempty" yaml:"capacity,omitempty"`
 	Info     NodeInfo     `json:"info,omitempty" yaml:"info,omitempty"`
 }

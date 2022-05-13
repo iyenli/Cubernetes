@@ -43,7 +43,7 @@ func (cm *ControllerManager) Run() {
 		case watchobj.EVENT_DELETE, watchobj.EVENT_PUT:
 			cm.PodInformer.InformPod(pod, podEvent.EType)
 		default:
-			log.Panic("Unsupported type in watch pod.")
+			log.Panic("Unsupported types in watch pod.")
 		}
 	}
 

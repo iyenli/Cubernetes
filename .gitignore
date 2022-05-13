@@ -22,3 +22,6 @@
 # temp etcd database & log for test
 /default.etcd
 /.test_log
+
+# running data
+/cubernetes

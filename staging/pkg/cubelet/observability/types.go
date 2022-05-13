@@ -1,6 +1,6 @@
 package observability
 
-//type Metrics struct {
+//types Metrics struct {
 //	metrics map[string]*prometheus.Desc
 //	mutex   sync.Mutex
 //}

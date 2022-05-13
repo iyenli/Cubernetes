@@ -104,6 +104,7 @@ func SelectServices(ctx *gin.Context) {
 		if err != nil {
 			return false
 		}
+
 		for key, val := range selectors {
 			v := service.Labels[key]
 			if v != val {

@@ -41,6 +41,7 @@ func NewCubelet() *Cubelet {
 func (cl *Cubelet) InitCubelet(NodeUID string) {
 	log.Println("Starting node, Node UID is ", NodeUID)
 	cubeconfig.NodeUID = NodeUID
+	cl.NodeID = NodeUID
 }
 
 func (cl *Cubelet) Run() {
@@ -68,12 +69,11 @@ func (cl *Cubelet) Run() {
 
 	for podEvent := range ch {
 		if podEvent.Pod.Status == nil {
-			log.Println("[INFO] Pod Catch, but status is nil so Cubelet don't handle")
+			log.Println("[INFO] Pod caught, but status is nil so Cubelet doesn't handle it")
 			continue
 		}
 		if podEvent.Pod.Status.PodUID == cubeconfig.NodeUID {
-			log.Println("[INFO] my pod Catch, type is ", podEvent.EType)
-
+			log.Println("[INFO] my pod Catch, types is ", podEvent.EType)
 			switch podEvent.EType {
 			case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
 				err := cl.informer.InformPod(podEvent.Pod, podEvent.EType)
@@ -81,7 +81,7 @@ func (cl *Cubelet) Run() {
 					return
 				}
 			default:
-				log.Panic("Unsupported type in watch pod.")
+				log.Panic("Unsupported types in watch pod.")
 			}
 		} else {
 			log.Printf("[INFO] Pod Catch, but not my pod, pod UUID = %v, my UUID = %v", podEvent.Pod.Status.PodUID, cubeconfig.NodeUID)
@@ -95,7 +95,7 @@ func (cl *Cubelet) syncLoop() {
 	informEvent := cl.informer.WatchPodEvent()
 
 	for podEvent := range informEvent {
-		log.Printf("Main loop working, type is %v, pod id is %v", podEvent.Type, podEvent.Pod.UID)
+		log.Printf("Main loop working, types is %v, pod id is %v", podEvent.Type, podEvent.Pod.UID)
 		pod := podEvent.Pod
 		eType := podEvent.Type
 		cl.biglock.Lock()

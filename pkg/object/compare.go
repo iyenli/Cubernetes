@@ -145,3 +145,61 @@ func MatchLabelSelector(selector map[string]string, labels map[string]string) bo
 	}
 	return true
 }
+
+// ComputePodNetworkChange Just check label and ip
+func ComputePodNetworkChange(new *Pod, old *Pod) bool {
+	for k, oldV := range old.ObjectMeta.Labels {
+		newV, ok := new.ObjectMeta.Labels[k]
+		if !ok || newV != oldV {
+			return true
+		}
+	}
+
+	if !new.Status.IP.Equal(old.Status.IP) {
+		return true
+	}
+
+	return false
+}
+
+// ComputeServiceCriticalChange if true, we have to reset iptables related to this service
+func ComputeServiceCriticalChange(new *Service, old *Service) bool {
+	// Selector: affect pods selected
+	if len(new.Spec.Selector) != len(old.Spec.Selector) {
+		return true
+	}
+	for k, oldV := range old.Spec.Selector {
+		newV, ok := new.Spec.Selector[k]
+		if !ok || oldV != newV {
+			return true
+		}
+	}
+
+	// port affect iptables directly
+	if len(new.Spec.Ports) != len(old.Spec.Ports) {
+		return true
+	}
+	for _, oldPort := range old.Spec.Ports {
+		isSame := false
+		for _, newPort := range new.Spec.Ports {
+			if oldPort.Protocol == newPort.Protocol &&
+				oldPort.Port == newPort.Port &&
+				oldPort.TargetPort == newPort.TargetPort {
+				isSame = true
+				break
+			}
+		}
+		if !isSame {
+			return true
+		}
+	}
+
+	// cluster ip affect iptables directly
+	if new.Spec.ClusterIP != old.Spec.ClusterIP {
+		return true
+	}
+
+	// We don't care endpoints, because every proxy judges pods independently
+	// TODO: is ingress critical?
+	return false
+}

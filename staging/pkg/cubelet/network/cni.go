@@ -1,6 +1,6 @@
 /*
 	CNI Interface:
-	type CNI interface {
+	types CNI interface {
 		AddNetworkList(net *NetworkConfigList, rt *RuntimeConf) (types.Result, error)
 		DelNetworkList(net *NetworkConfigList, rt *RuntimeConf) error
 
