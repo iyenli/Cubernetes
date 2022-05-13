@@ -26,7 +26,7 @@ const CubeVersion = "v1.0"
 
 const (
 	//MetaDir  = "/var/log/cubernetes/"
-	MetaDir  = "./cubernetes/"
+	MetaDir  = "/var/log/cubernetes/"
 	MetaFile = MetaDir + "meta"
 )
 

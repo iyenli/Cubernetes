@@ -4,7 +4,7 @@ metadata:
   name: test-service
 spec:
   selector:
-    app: test-pod
+    app: nginx
   ports:
     - name: http
       protocol: TCP

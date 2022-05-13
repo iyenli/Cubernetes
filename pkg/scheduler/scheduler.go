@@ -50,9 +50,10 @@ func (sr *ScheduleRuntime) Run() {
 	for podEvent := range ch {
 		switch podEvent.EType {
 		case watchobj.EVENT_PUT:
-			if podEvent.Pod.Status == nil || podEvent.Pod.Status.PodUID == "" {
-				if podEvent.Pod.Status == nil {
-					podEvent.Pod.Status = &object.PodStatus{
+			pod := podEvent.Pod
+			if pod.Status == nil || pod.Status.PodUID == "" {
+				if pod.Status == nil {
+					pod.Status = &object.PodStatus{
 						ActualResourceUsage: &object.ResourceUsage{},
 					}
 				}
@@ -62,7 +63,7 @@ func (sr *ScheduleRuntime) Run() {
 					log.Println("Error happened when scheduling")
 				}
 
-				err = sr.SendScheduleInfoBack(&podEvent.Pod, &podInfo)
+				err = sr.SendScheduleInfoBack(&pod, &podInfo)
 				if err != nil {
 					log.Println("Error happened when sending scheduler result")
 				}

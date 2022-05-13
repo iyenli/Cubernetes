@@ -80,6 +80,7 @@ func (m *cubeRuntimeManager) SyncPod(pod *object.Pod, podStatus *cubecontainer.P
 
 		ip, err := weaveplugins.AddPodToNetwork(podSandboxID)
 		if err != nil || ip == nil {
+			log.Printf("[Error]: add pod to weave network failed")
 			return err
 		}
 		log.Printf("IP Allocated: %v", ip.String())
@@ -103,6 +104,12 @@ func (m *cubeRuntimeManager) SyncPod(pod *object.Pod, podStatus *cubecontainer.P
 		log.Printf("fail to get pod status %s: %v\n", pod.UID, err)
 		return err
 	}
+
+	apiPodStatus.IP = podStatus.PodNetWork.IP
+	if pod.Status != nil {
+		apiPodStatus.PodUID = pod.Status.PodUID
+	}
+
 	_, err = crudobj.UpdatePodStatus(pod.UID, *apiPodStatus)
 	if err != nil {
 		log.Printf("fail to update Pod %s status to apiserver\n", pod.Name)
