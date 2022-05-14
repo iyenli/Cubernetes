@@ -21,6 +21,6 @@ func ClearData() error {
 		return err
 	}
 
-	log.Println("Clear ETCD KVs number: ", string(output))
+	log.Printf("Clear ETCD KVs number: %v", string(output))
 	return nil
 }

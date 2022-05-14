@@ -13,6 +13,17 @@ import (
 	"sync/atomic"
 )
 
+var cancelFuncs []func()
+
+func StopAll() {
+	for _, cancel := range cancelFuncs {
+		if cancel != nil {
+			cancel()
+		}
+	}
+	cancelFuncs = cancelFuncs[0:0]
+}
+
 func watching(reader *bufio.Reader, closeChan func(), handler func(ObjEvent)) {
 	defer closeChan()
 	for {
@@ -70,10 +81,13 @@ func WatchObj(path string) (chan ObjEvent, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	return ch, func() {
+
+	cancel := func() {
 		closeChan()
 		stop()
-	}, nil
+	}
+	cancelFuncs = append(cancelFuncs, cancel)
+	return ch, cancel, nil
 }
 
 func createPodWatch(url string) (chan PodEvent, context.CancelFunc, error) {
@@ -214,7 +228,11 @@ func createNodeWatch(url string) (chan NodeEvent, context.CancelFunc, error) {
 
 func WatchPod(UID string) (chan PodEvent, func(), error) {
 	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/watch/pod/" + UID
-	return createPodWatch(url)
+	ch, cancel, err := createPodWatch(url)
+	if err != nil && cancel != nil {
+		cancelFuncs = append(cancelFuncs, cancel)
+	}
+	return ch, cancel, err
 }
 
 // WatchPods
@@ -222,12 +240,20 @@ func WatchPod(UID string) (chan PodEvent, func(), error) {
 // if you call cancel() or connection failed, channel will be closed
 func WatchPods() (chan PodEvent, func(), error) {
 	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/watch/pods"
-	return createPodWatch(url)
+	ch, cancel, err := createPodWatch(url)
+	if err != nil && cancel != nil {
+		cancelFuncs = append(cancelFuncs, cancel)
+	}
+	return ch, cancel, err
 }
 
 func WatchService(UID string) (chan ServiceEvent, func(), error) {
 	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/watch/service/" + UID
-	return createServiceWatch(url)
+	ch, cancel, err := createServiceWatch(url)
+	if err != nil && cancel != nil {
+		cancelFuncs = append(cancelFuncs, cancel)
+	}
+	return ch, cancel, err
 }
 
 // WatchServices
@@ -235,12 +261,20 @@ func WatchService(UID string) (chan ServiceEvent, func(), error) {
 // if you call cancel() or connection failed, channel will be closed
 func WatchServices() (chan ServiceEvent, func(), error) {
 	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/watch/services"
-	return createServiceWatch(url)
+	ch, cancel, err := createServiceWatch(url)
+	if err != nil && cancel != nil {
+		cancelFuncs = append(cancelFuncs, cancel)
+	}
+	return ch, cancel, err
 }
 
 func WatchReplicaSet(UID string) (chan ReplicaSetEvent, func(), error) {
 	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/watch/replicaSet/" + UID
-	return createReplicaSetWatch(url)
+	ch, cancel, err := createReplicaSetWatch(url)
+	if err != nil && cancel != nil {
+		cancelFuncs = append(cancelFuncs, cancel)
+	}
+	return ch, cancel, err
 }
 
 // WatchReplicaSets
@@ -248,12 +282,20 @@ func WatchReplicaSet(UID string) (chan ReplicaSetEvent, func(), error) {
 // if you call cancel() or connection failed, channel will be closed
 func WatchReplicaSets() (chan ReplicaSetEvent, func(), error) {
 	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/watch/replicaSets"
-	return createReplicaSetWatch(url)
+	ch, cancel, err := createReplicaSetWatch(url)
+	if err != nil && cancel != nil {
+		cancelFuncs = append(cancelFuncs, cancel)
+	}
+	return ch, cancel, err
 }
 
 func WatchNode(UID string) (chan NodeEvent, func(), error) {
 	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/watch/node/" + UID
-	return createNodeWatch(url)
+	ch, cancel, err := createNodeWatch(url)
+	if err != nil && cancel != nil {
+		cancelFuncs = append(cancelFuncs, cancel)
+	}
+	return ch, cancel, err
 }
 
 // WatchNodes
@@ -261,5 +303,9 @@ func WatchNode(UID string) (chan NodeEvent, func(), error) {
 // if you call cancel() or connection failed, channel will be closed
 func WatchNodes() (chan NodeEvent, func(), error) {
 	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/watch/nodes"
-	return createNodeWatch(url)
+	ch, cancel, err := createNodeWatch(url)
+	if err != nil && cancel != nil {
+		cancelFuncs = append(cancelFuncs, cancel)
+	}
+	return ch, cancel, err
 }

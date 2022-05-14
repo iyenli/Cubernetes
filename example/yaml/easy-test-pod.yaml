@@ -1,0 +1,21 @@
+# If you're not testing load balance, use test-replicaset.yaml
+# sudo apt-get install nginx
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-pod2
+  labels:
+    app: nginx
+spec:
+  containers:
+    - name: test-pod
+      image: nginx
+      ports:
+        - hostPort: 8085
+          containerPort: 80
+      volumeMounts:
+        - name: conf
+          mountPath: /etc/nginx/nginx.conf
+  volumes:
+    - name: conf
+      hostPath: /etc/nginx/nginx.conf

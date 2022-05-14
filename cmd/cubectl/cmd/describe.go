@@ -7,8 +7,9 @@ package cmd
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
 	"fmt"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	"log"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -28,28 +29,52 @@ for example:
 			return
 		}
 		UID := args[1]
-		switch args[0] {
-		case "pod", "Pod":
+		switch strings.ToLower(args[0]) {
+		case "pod":
 			pod, err := crudobj.GetPod(UID)
 			if err != nil {
-				log.Fatal("[FATAL] fail to get pod")
+				log.Fatal("[FATAL] fail to get Pod")
 				return
 			}
 			str, err := yaml.Marshal(pod)
 			if err != nil {
-				log.Fatal("[FATAL] fail to marshall pod")
+				log.Fatal("[FATAL] fail to marshall Pod")
 				return
 			}
 			fmt.Print(string(str))
-		case "service", "Service", "svc":
+		case "service", "svc":
 			svc, err := crudobj.GetService(UID)
 			if err != nil {
-				log.Fatal("[FATAL] fail to get service")
+				log.Fatal("[FATAL] fail to get Service")
 				return
 			}
 			str, err := yaml.Marshal(svc)
 			if err != nil {
-				log.Fatal("[FATAL] fail to marshall service")
+				log.Fatal("[FATAL] fail to marshall Service")
+				return
+			}
+			fmt.Print(string(str))
+		case "replicaset", "rs":
+			rs, err := crudobj.GetReplicaSet(UID)
+			if err != nil {
+				log.Fatal("[FATAL] fail to get ReplicaSet")
+				return
+			}
+			str, err := yaml.Marshal(rs)
+			if err != nil {
+				log.Fatal("[FATAL] fail to marshall ReplicaSet")
+				return
+			}
+			fmt.Print(string(str))
+		case "node":
+			node, err := crudobj.GetNode(UID)
+			if err != nil {
+				log.Fatal("[FATAL] fail to get Node")
+				return
+			}
+			str, err := yaml.Marshal(node)
+			if err != nil {
+				log.Fatal("[FATAL] fail to marshall Node")
 				return
 			}
 			fmt.Print(string(str))

@@ -1,6 +1,7 @@
 package main
 
 import (
+	cubeconfig "Cubernetes/config"
 	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/object"
 	"encoding/json"
@@ -10,7 +11,7 @@ import (
 func main() {
 	var pod object.Pod
 	pod.APIVersion = "1"
-	pod.Kind = "pod"
+	pod.Kind = cubeconfig.KindPod
 	pod.Name = "hello4"
 
 	pod.Labels = make(map[string]string)

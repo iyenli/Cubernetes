@@ -50,28 +50,29 @@ func (sr *ScheduleRuntime) Run() {
 	for podEvent := range ch {
 		switch podEvent.EType {
 		case watchobj.EVENT_PUT:
-			if podEvent.Pod.Status == nil || podEvent.Pod.Status.PodUID == "" {
-				if podEvent.Pod.Status == nil {
-					podEvent.Pod.Status = &object.PodStatus{
+			pod := podEvent.Pod
+			if pod.Status == nil || pod.Status.NodeUID == "" {
+				if pod.Status == nil {
+					pod.Status = &object.PodStatus{
 						ActualResourceUsage: &object.ResourceUsage{},
 					}
 				}
 
 				podInfo, err := sr.Implement.Schedule()
 				if err != nil {
-					log.Println("Error happened when scheduling")
+					log.Println("[Error]: when scheduling, error:", err.Error())
 				}
 
-				err = sr.SendScheduleInfoBack(&podEvent.Pod, &podInfo)
+				err = sr.SendScheduleInfoBack(&pod, &podInfo)
 				if err != nil {
-					log.Println("Error happened when sending scheduler result")
+					log.Println("[Error]: when sending scheduler result,", err.Error())
 				}
 			}
 
 		case watchobj.EVENT_DELETE:
 			log.Println("[Info]: Delete pod, do nothing")
 		default:
-			log.Panic("Unsupported type in watch pod.")
+			log.Panic("[Fatal]: Unsupported types in watch pod.")
 		}
 	}
 
@@ -79,16 +80,16 @@ func (sr *ScheduleRuntime) Run() {
 }
 
 func (sr *ScheduleRuntime) SendScheduleInfoBack(podToSchedule *object.Pod, info *types.PodInfo) error {
-	podToSchedule.Status.PodUID = info.NodeUUID
+	podToSchedule.Status.NodeUID = info.NodeUUID
+	podToSchedule.Status.Phase = object.PodBound
 
 	_, err := crudobj.UpdatePod(*podToSchedule)
-	log.Println("[INFO]: Schedule pod ", podToSchedule.UID, "To node ", info.NodeUUID)
-
 	if err != nil {
-		log.Println("Update pod failed")
+		log.Println("[INFO]: Update pod failed")
 		return err
 	}
 
+	log.Println("[INFO]: Schedule pod ", podToSchedule.UID, "To node ", info.NodeUUID)
 	return nil
 }
 

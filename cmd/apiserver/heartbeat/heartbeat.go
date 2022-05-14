@@ -83,7 +83,7 @@ func handle(conn *net.Conn) {
 			return
 		}
 		log.Printf("Updating Node UID=%s, ready=%v into etcd\n", node.UID, false)
-		err = etcdrw.PutObj("/apis/node/"+node.UID, nodeStr)
+		err = etcdrw.PutObj("/apis/node/"+node.UID, string(buf))
 		if err != nil {
 			log.Printf("Fail to put Node UID=%s into etcd, err: %v\n", node.UID, err)
 		}

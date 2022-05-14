@@ -5,6 +5,7 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	cubeconfig "Cubernetes/config"
 	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/object"
 	"github.com/spf13/cobra"
@@ -39,7 +40,7 @@ for example:
 			return
 		}
 		switch t.Kind {
-		case "Pod":
+		case cubeconfig.KindPod:
 			var pod object.Pod
 			err = yaml.Unmarshal(file, &pod)
 			if err != nil {
@@ -53,7 +54,7 @@ for example:
 			}
 			log.Printf("Pod UID=%s created\n", newPod.UID)
 
-		case "Service":
+		case cubeconfig.KindService:
 			var service object.Service
 			err = yaml.Unmarshal(file, &service)
 			if err != nil {
@@ -66,11 +67,12 @@ for example:
 				return
 			}
 			log.Printf("Service UID=%s created\n", newService.UID)
-		case "ReplicaSet":
+
+		case cubeconfig.KindReplicaset:
 			var rs object.ReplicaSet
 			err = yaml.Unmarshal(file, &rs)
 			if err != nil {
-				log.Fatal("[FATAL] fail to parse ReplicaSet")
+				log.Fatal("[FATAL] fail to parse ReplicaSet", err)
 				return
 			}
 			newRs, err := crudobj.CreateReplicaSet(rs)
@@ -79,6 +81,7 @@ for example:
 				return
 			}
 			log.Printf("ReplicaSet UID=%s created\n", newRs.UID)
+
 		default:
 			log.Fatal("[FATAL] Unknown kind: " + t.Kind)
 		}

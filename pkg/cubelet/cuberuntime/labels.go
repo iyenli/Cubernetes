@@ -7,7 +7,7 @@ const (
 	PodNameSpaceLabel  = "cubernetes.pod.namespace"
 	PodUIDLabel        = "cubernetes.pod.uid"
 	ContainerNameLabel = "cubernetes.container.name"
-	ContainerTypeLabel = "cubernetes.container.type"
+	ContainerTypeLabel = "cubernetes.container.types"
 
 	ContainerTypeContainer = "container"
 	ContainerTypeSandbox   = "sandbox"

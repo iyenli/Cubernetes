@@ -1,5 +1,5 @@
 /*
-Copyright © 2022 NAME HERE <EMAIL ADDRESS>
+Copyright © 3022 NAME HERE <EMAIL ADDRESS>
 
 */
 package cmd
@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"log"
+	"strings"
 )
 
 // getCmd represents the get command
@@ -25,37 +26,79 @@ for example:
 			log.Fatal("[FATAL] lack arguments")
 			return
 		}
-		switch args[0] {
-		case "pods", "pod", "2Pods", "Pod":
+		switch strings.ToLower(args[0]) {
+		case "pod", "pods":
 			pods, err := crudobj.GetPods()
 			if err != nil {
-				log.Fatal("[FATAL] fail to get pods")
+				log.Fatal("[FATAL] fail to get Pods")
 				return
 			}
 			if len(pods) == 0 {
-				fmt.Println("No pods found")
+				fmt.Println("No Pods Found")
 				return
 			}
-			fmt.Printf("%d pods found\n", len(pods))
+			fmt.Printf("%d Pods Found\n", len(pods))
 			fmt.Printf("%-30s\t%-s\n", "Name", "UID")
 			for _, pod := range pods {
 				fmt.Printf("%-30s\t%-s\n", pod.Name, pod.UID)
 			}
 
-		case "service", "services", "Service", "Services", "svc", "svcs":
+		case "service", "services", "svc", "svcs":
 			svcs, err := crudobj.GetServices()
 			if err != nil {
-				log.Fatal("[FATAL] fail to get pods")
+				log.Fatal("[FATAL] fail to get Services")
 				return
 			}
 			if len(svcs) == 0 {
-				fmt.Println("No services found")
+				fmt.Println("No Services Found")
 				return
 			}
-			fmt.Printf("%d services found\n", len(svcs))
+			fmt.Printf("%d Services Found\n", len(svcs))
 			fmt.Printf("%-30s\t%-s\n", "Name", "UID")
 			for _, svc := range svcs {
 				fmt.Printf("%-30s\t%-s\n", svc.Name, svc.UID)
+			}
+		case "replicaset", "replicasets", "rs", "rss":
+			rss, err := crudobj.GetReplicaSets()
+			if err != nil {
+				log.Fatal("[FATAL] fail to get ReplicaSets")
+				return
+			}
+			if len(rss) == 0 {
+				fmt.Println("No ReplicaSets Found")
+				return
+			}
+			fmt.Printf("%d ReplicaSets Found\n", len(rss))
+			fmt.Printf("%-30s\t%-40s\t(%-v/%-v)\n", "Name", "UID", "running", "expected")
+			for _, rs := range rss {
+				var running int32
+				if rs.Status != nil {
+					running = rs.Status.RunningReplicas
+				} else {
+					running = 0
+				}
+				fmt.Printf("%-30s\t%-40s\t(%-v/%-v)\n", rs.Name, rs.UID, running, rs.Spec.Replicas)
+			}
+		case "node", "nodes":
+			nodes, err := crudobj.GetNodes()
+			if err != nil {
+				log.Fatal("[FATAL] fail to get nodes")
+				return
+			}
+			if len(nodes) == 0 {
+				fmt.Println("No Nodes Found")
+				return
+			}
+			fmt.Printf("%d Nodes found\n", len(nodes))
+			fmt.Printf("%-30s\t%-40s\t%-v\n", "Name", "UID", "Ready")
+			for _, node := range nodes {
+				var ready bool
+				if node.Status != nil {
+					ready = node.Status.Condition.Ready
+				} else {
+					ready = false
+				}
+				fmt.Printf("%-30s\t%-40s\t%-v\n", node.Name, node.UID, ready)
 			}
 		default:
 			log.Fatal("[FATAL] Unknown kind: " + args[0])

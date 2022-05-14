@@ -85,7 +85,7 @@ func TestChainDelete(t *testing.T) {
 }
 
 func TestRelease(t *testing.T) {
-	rt, err := proxyruntime.InitIPTables()
+	rt, err := proxyruntime.InitProxyRuntime()
 	assert.NoError(t, err)
 
 	err = rt.ReleaseIPTables()
@@ -108,7 +108,7 @@ iptables pkg test end
 */
 
 func TestInitIPTables(t *testing.T) {
-	rt, err := proxyruntime.InitIPTables()
+	rt, err := proxyruntime.InitProxyRuntime()
 	assert.NoError(t, err)
 
 	// Check IP Tables and test release!
@@ -119,7 +119,7 @@ func TestInitIPTables(t *testing.T) {
 }
 
 func TestAddService(t *testing.T) {
-	rt, err := proxyruntime.InitIPTables()
+	rt, err := proxyruntime.InitProxyRuntime()
 	assert.NoError(t, err)
 	assert.NotNil(t, rt)
 
@@ -144,7 +144,7 @@ func TestAddService(t *testing.T) {
 }
 
 func TestDeleteService(t *testing.T) {
-	rt, err := proxyruntime.InitIPTables()
+	rt, err := proxyruntime.InitProxyRuntime()
 	assert.NoError(t, err)
 
 	err = rt.DeleteService(&service)

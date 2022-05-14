@@ -1,7 +1,6 @@
 package cubelet
 
 import (
-	cubeconfig "Cubernetes/config"
 	"Cubernetes/pkg/apiserver/crudobj"
 	watchobj "Cubernetes/pkg/apiserver/watchobj"
 	"Cubernetes/pkg/cubelet/container"
@@ -10,12 +9,15 @@ import (
 	informertypes "Cubernetes/pkg/cubelet/informer/types"
 	"Cubernetes/pkg/object"
 	"log"
+	"net"
 	"sync"
 	"time"
 )
 
 type Cubelet struct {
-	NodeID   string
+	NodeID string
+	// in weave container, this ip is host ip
+	WeaveIP  net.IP
 	informer informer.PodInformer
 	runtime  cuberuntime.CubeRuntime
 	biglock  sync.Mutex
@@ -38,9 +40,10 @@ func NewCubelet() *Cubelet {
 	}
 }
 
-func (cl *Cubelet) InitCubelet(NodeUID string) {
-	log.Println("Starting node, Node UID is ", NodeUID)
-	cubeconfig.NodeUID = NodeUID
+func (cl *Cubelet) InitCubelet(NodeUID string, ip net.IP) {
+	log.Printf("Starting node, Node UID is %v, Node weave IP is %v", NodeUID, ip.String())
+	cl.NodeID = NodeUID
+	cl.WeaveIP = ip
 }
 
 func (cl *Cubelet) Run() {
@@ -67,13 +70,12 @@ func (cl *Cubelet) Run() {
 	go cl.syncLoop()
 
 	for podEvent := range ch {
-		if podEvent.Pod.Status == nil {
-			log.Println("[INFO] Pod Catch, but status is nil so Cubelet don't handle")
+		if podEvent.Pod.Status == nil && podEvent.EType != watchobj.EVENT_DELETE {
+			log.Println("[INFO] Pod caught, but status is nil so Cubelet doesn't handle it")
 			continue
 		}
-		if podEvent.Pod.Status.PodUID == cubeconfig.NodeUID {
-			log.Println("[INFO] my pod Catch, type is ", podEvent.EType)
-
+		if podEvent.EType == watchobj.EVENT_DELETE || podEvent.Pod.Status.NodeUID == cl.NodeID {
+			log.Println("[INFO]: my pod caught, types is", podEvent.EType)
 			switch podEvent.EType {
 			case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
 				err := cl.informer.InformPod(podEvent.Pod, podEvent.EType)
@@ -81,10 +83,11 @@ func (cl *Cubelet) Run() {
 					return
 				}
 			default:
-				log.Panic("Unsupported type in watch pod.")
+				log.Panic("Unsupported types in watch pod.")
 			}
 		} else {
-			log.Printf("[INFO] Pod Catch, but not my pod, pod UUID = %v, my UUID = %v", podEvent.Pod.Status.PodUID, cubeconfig.NodeUID)
+			log.Printf("[INFO]: pod caught, but not my pod, pod UUID = %v, my UUID = %v",
+				podEvent.Pod.Status.NodeUID, cl.NodeID)
 		}
 	}
 
@@ -95,7 +98,7 @@ func (cl *Cubelet) syncLoop() {
 	informEvent := cl.informer.WatchPodEvent()
 
 	for podEvent := range informEvent {
-		log.Printf("Main loop working, type is %v, pod id is %v", podEvent.Type, podEvent.Pod.UID)
+		log.Printf("Main loop working, types is %v, pod id is %v", podEvent.Type, podEvent.Pod.UID)
 		pod := podEvent.Pod
 		eType := podEvent.Type
 		cl.biglock.Lock()
@@ -135,25 +138,42 @@ func (cl *Cubelet) updatePodsRoutine() {
 	// collect all pod in podCache
 	pods := cl.informer.ListPods()
 
-	// parallelly push all pod status to apiserver
+	// parallel push all pod status to apiserver
 	wg := sync.WaitGroup{}
 	wg.Add(len(pods))
 
 	for _, pod := range pods {
-		go func(p object.Pod) {
+		ip := pod.Status.IP
+		nodeUID := pod.Status.NodeUID
+		log.Printf("[INFO]: Ready to update pod, ip is %v, nodeID is %v",
+			ip.String(), nodeUID)
+
+		if ip == nil {
+			log.Printf("[INFO]: Not updating pod(%v) status before IP allocating\n", pod.UID)
+			wg.Done()
+			continue
+		}
+
+		go func(p object.Pod, ip net.IP, uid string) {
 			defer wg.Done()
 			podStatus, err := cl.runtime.InspectPod(&p)
 			if err != nil {
 				log.Printf("fail to get pod status %s: %v\n", p.Name, err)
 				podStatus = &object.PodStatus{Phase: object.PodUnknown}
 			}
+
+			podStatus.IP = ip
+			podStatus.NodeUID = nodeUID
+			log.Printf("[INFO]: updating pod status, ip is %v, status is %v",
+				podStatus.IP.String(), podStatus.Phase)
+
 			rp, err := crudobj.UpdatePodStatus(p.UID, *podStatus)
 			if err != nil {
 				log.Printf("fail to push pod status %s: %v\n", p.UID, err)
 			} else {
-				log.Printf("push pod status %s: %s\n", rp.Name, podStatus.Phase)
+				log.Printf("[INFO]: push pod status %s: %s\n", rp.Name, podStatus.Phase)
 			}
-		}(pod)
+		}(pod, ip, nodeUID)
 	}
 
 	wg.Wait()

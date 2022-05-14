@@ -20,10 +20,10 @@ func main() {
 		nodenetwork.SetMasterIP(os.Args[3])
 	}
 
-	network.InitNodeNetwork(os.Args)
+	ip := network.InitNodeNetwork(os.Args)
 	network.InitNodeHeartbeat()
 
 	cubeletInstance := cubelet.NewCubelet()
-	cubeletInstance.InitCubelet(os.Args[1])
+	cubeletInstance.InitCubelet(os.Args[1], ip)
 	cubeletInstance.Run()
 }

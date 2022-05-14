@@ -5,6 +5,7 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	cubeconfig "Cubernetes/config"
 	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/object"
 	"gopkg.in/yaml.v3"
@@ -40,7 +41,7 @@ for example:
 			return
 		}
 		switch t.Kind {
-		case "Pod":
+		case cubeconfig.KindPod:
 			var pod object.Pod
 			err = yaml.Unmarshal(file, &pod)
 			if err != nil {
@@ -54,7 +55,7 @@ for example:
 			}
 			log.Printf("Pod UID=%s created\n", newPod.UID)
 
-		case "Service":
+		case cubeconfig.KindService:
 			var service object.Service
 			err = yaml.Unmarshal(file, &service)
 			if err != nil {
@@ -68,7 +69,7 @@ for example:
 			}
 			log.Printf("Service UID=%s created\n", newService.UID)
 
-		case "ReplicaSet":
+		case cubeconfig.KindReplicaset:
 			var rs object.ReplicaSet
 			err = yaml.Unmarshal(file, &rs)
 			if err != nil {

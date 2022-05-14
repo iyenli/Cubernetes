@@ -5,7 +5,6 @@ import (
 	"Cubernetes/pkg/object"
 	"encoding/json"
 	"log"
-	"net"
 	"strconv"
 )
 
@@ -85,7 +84,7 @@ func CreateService(service object.Service) (object.Service, error) {
 	return newService, nil
 }
 
-func UpdateService(service object.Pod) (object.Pod, error) {
+func UpdateService(service object.Service) (object.Service, error) {
 	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/service/" + service.UID
 
 	body, err := putRequest(url, service)
@@ -94,7 +93,7 @@ func UpdateService(service object.Pod) (object.Pod, error) {
 		return service, err
 	}
 
-	var newService object.Pod
+	var newService object.Service
 	err = json.Unmarshal(body, &newService)
 	if err != nil {
 		log.Println("fail to parse Service")
@@ -113,10 +112,5 @@ func DeleteService(UID string) error {
 		return err
 	}
 
-	return nil
-}
-
-// AddEndpointToService TODO: Update service by endpoint IP
-func AddEndpointToService(service *object.Service, EndPointIP net.IP) error {
 	return nil
 }

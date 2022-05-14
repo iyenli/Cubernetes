@@ -1,0 +1,30 @@
+# If you're not testing load balance, use easy-test-pod.yaml
+# This yaml need to install nginx and use config under ./example/html
+# sudo apt-get install nginx
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-pod1
+  labels:
+    app: nginx
+spec:
+  containers:
+    - name: test-pod
+      image: nginx
+      ports:
+        - hostPort: 8086
+          containerPort: 80
+      volumeMounts:
+        - name: conf
+          mountPath: /etc/nginx/nginx.conf
+        - name: page
+          mountPath: /var/www/html/index.nginx-debian.html
+        - name: site
+          mountPath: /etc/nginx/sites-enabled/default
+  volumes:
+    - name: conf
+      hostPath: /etc/nginx/nginx.conf
+    - name: page
+      hostPath: /var/www/html/nginx2.html
+    - name: site
+      hostPath: /etc/nginx/sites-enabled/default

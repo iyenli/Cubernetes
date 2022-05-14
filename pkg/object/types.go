@@ -52,7 +52,7 @@ type PodStatus struct {
 	IP                  net.IP         `json:"IP" yaml:"IP"`
 	StartTime           time.Time      `json:"startTime,omitempty" yaml:"startTime,omitempty"`
 	Phase               PodPhase       `json:"phase,omitempty" yaml:"phase,omitempty"`
-	PodUID              string         `json:"pod-uid,omitempty" yaml:"pod-uid,omitempty"`
+	NodeUID             string         `json:"pod-uid,omitempty" yaml:"pod-uid,omitempty"`
 	ActualResourceUsage *ResourceUsage `json:"actualResourceUsage,omitempty" yaml:"actualResourceUsage,omitempty"`
 	LastUpdateTime      time.Time      `json:"lastUpdateTime" yaml:"lastUpdateTime"`
 }
@@ -83,7 +83,7 @@ type ResourceRequirements struct {
 
 type Volume struct {
 	Name string `json:"name" yaml:"name"`
-	// Volume only support HostPath type
+	// Volume only support HostPath types
 	HostPath string `json:"hostPath" yaml:"hostPath"`
 }
 
@@ -124,11 +124,12 @@ const (
 type ServicePort struct {
 	Protocol   Protocol `json:"protocol,omitempty" yaml:"protocol,omitempty"`
 	Port       int32    `json:"port,omitempty" yaml:"port,omitempty"`
-	TargetPort int32    `json:"target,omitempty" yaml:"target,omitempty"`
+	TargetPort int32    `json:"targetPort,omitempty" yaml:"targetPort,omitempty"`
 }
 
 type ServiceStatus struct {
-	Ingress []PodIngress `json:"ingress,omitempty" yaml:"ingress,omitempty"`
+	Endpoints []net.IP     `json:"endpoints,omitempty" yaml:"endpoints,omitempty"`
+	Ingress   []PodIngress `json:"ingress,omitempty" yaml:"ingress,omitempty"`
 }
 
 type PodIngress struct {
@@ -180,7 +181,7 @@ const (
 )
 
 type NodeSpec struct {
-	Type     NodeType     `json:"type" yaml:"type"`
+	Type     NodeType     `json:"types" yaml:"types"`
 	Capacity NodeCapacity `json:"capacity,omitempty" yaml:"capacity,omitempty"`
 	Info     NodeInfo     `json:"info,omitempty" yaml:"info,omitempty"`
 }
@@ -197,10 +198,10 @@ type NodeAddresses struct {
 }
 
 type NodeCondition struct {
-	OutOfDisk      bool `json:"outOfDisk,omitempty" yaml:"outOfDisk,omitempty"`
-	Ready          bool `json:"ready,omitempty" yaml:"ready,omitempty"`
-	MemoryPressure bool `json:"memoryPressure,omitempty" yaml:"memoryPressure,omitempty"`
-	DiskPressure   bool `json:"diskPressure,omitempty" yaml:"diskPressure,omitempty"`
+	OutOfDisk      bool `json:"outOfDisk" yaml:"outOfDisk"`
+	Ready          bool `json:"ready" yaml:"ready"`
+	MemoryPressure bool `json:"memoryPressure" yaml:"memoryPressure"`
+	DiskPressure   bool `json:"diskPressure" yaml:"diskPressure"`
 }
 
 type NodeCapacity struct {
@@ -213,4 +214,48 @@ type NodeInfo struct {
 	CubeVersion   string `json:"cubeVersion,omitempty" yaml:"cubeVersion,omitempty"`
 	KernelVersion string `json:"kernelVersion,omitempty" yaml:"kernelVersion,omitempty"`
 	DeviceName    string `json:"deviceName,omitempty" yaml:"deviceName,omitempty"`
+}
+
+type AutoScaler struct {
+	TypeMeta   `json:",inline" yaml:",inline"`
+	ObjectMeta `json:"metadata" yaml:"metadata"`
+}
+
+type AutoScalerSpec struct {
+	// Target audience for scale, should always be Pod
+	Workload string `json:"workload" yaml:"workload"`
+	// lower limit for the number of pods that can be set by the autoscaler, default 1.
+	MinReplicas int `json:"minReplicas" yaml:"minReplicas"`
+
+	// upper limit for the number of pods that can be set by the autoscaler.
+	// It cannot be smaller than MinReplicas.
+	MaxReplicas int `json:"maxReplicas" yaml:"maxReplicas"`
+
+	// target average CPU utilization & Memory bytes over all the pods.
+	// nil if not specified.
+	TargetUtilization Utilization `json:"targetUtilization" yaml:"targetUtilization"`
+}
+
+type AutoScalerStatus struct {
+	LastScaleTime     time.Time   `json:"lastScale,omitempty" yaml:"lastScale,omitempty"`
+	LastUpdateTime    time.Time   `json:"lastUpdateTime" yaml:"lastUpdateTime"`
+	ReplicaSetUID     string      `json:"replicaSetUID" yaml:"replicaSetUID"`
+	DesiredReplicas   int         `json:"desiredReplicas" yaml:"desiredReplicas"`
+	ActualReplicas    int         `json:"actualReplicas" yaml:"actualReplicas"`
+	ActualUtilization Utilization `json:"actualUtilization" yaml:"actualUtilization"`
+}
+
+type Utilization struct {
+	CPU    *CpuUtilization    `json:"cpu,omitempty" yaml:"cpu,omitempty"`
+	Memory *MemoryUtilization `json:"memory,omitempty" yaml:"memory,omitempty"`
+}
+
+type CpuUtilization struct {
+	MinPercentage float64 `json:"minPercentage" yaml:"minPercentage"`
+	MaxPercentage float64 `json:"maxPercentage" yaml:"maxPercentage"`
+}
+
+type MemoryUtilization struct {
+	MinBytes int64 `json:"minBytes" yaml:"minBytes"`
+	MaxBytes int64 `json:"maxBytes" yaml:"maxBytes"`
 }

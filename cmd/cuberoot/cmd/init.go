@@ -52,14 +52,14 @@ example:
 			log.Fatalf("[FATAL] illegal ip address: %v", node.Status.Addresses.InternalIP)
 		}
 
-		log.Println("Starting etcd & apiserver processes, this may take 10s")
+		log.Println("Starting etcd & apiserver processes, this may take 4s")
 
 		err = utils.PreStartMaster()
 		if err != nil {
 			log.Fatal("[FATAL] fail to pre-start master processes, err: ", err)
 		}
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(4 * time.Second)
 
 		log.Println("Registering as master...")
 		err = utils.RegisterAsMaster(node)
@@ -75,7 +75,7 @@ example:
 			log.Fatal("[Fatal]: Meta file should have existed")
 		}
 
-		log.Println("Starting Master, UID = ", meta.Node.UID)
+		log.Printf("Starting Master, UID = %v, It may takes 15s...", meta.Node.UID)
 		err = utils.StartMaster(node.Status.Addresses.InternalIP, meta.Node.UID)
 		if err != nil {
 			log.Fatal("[FATAL] fail to start master processes, err: ", err)

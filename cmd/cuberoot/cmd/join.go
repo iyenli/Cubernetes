@@ -77,6 +77,7 @@ example:
 			log.Fatal("[Fatal]: Meta file should have existed")
 		}
 
+		log.Printf("Starting Slave, UID = %v, It may takes 15s...", meta.Node.UID)
 		err = utils.StartSlave(node.Status.Addresses.InternalIP, masterIP, meta.Node.UID)
 		if err != nil {
 			log.Fatal("[FATAL] fail to start slave processes, err: ", err)
