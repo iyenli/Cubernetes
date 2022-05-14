@@ -1,7 +1,6 @@
 package cubelet
 
 import (
-	cubeconfig "Cubernetes/config"
 	"Cubernetes/pkg/apiserver/crudobj"
 	watchobj "Cubernetes/pkg/apiserver/watchobj"
 	"Cubernetes/pkg/cubelet/container"
@@ -16,7 +15,9 @@ import (
 )
 
 type Cubelet struct {
-	NodeID   string
+	NodeID string
+	// in weave container, this ip is host ip
+	WeaveIP  net.IP
 	informer informer.PodInformer
 	runtime  cuberuntime.CubeRuntime
 	biglock  sync.Mutex
@@ -39,10 +40,10 @@ func NewCubelet() *Cubelet {
 	}
 }
 
-func (cl *Cubelet) InitCubelet(NodeUID string) {
-	log.Println("Starting node, Node UID is", NodeUID)
-	cubeconfig.NodeUID = NodeUID
+func (cl *Cubelet) InitCubelet(NodeUID string, ip net.IP) {
+	log.Printf("Starting node, Node UID is %v, Node weave IP is %v", NodeUID, ip.String())
 	cl.NodeID = NodeUID
+	cl.WeaveIP = ip
 }
 
 func (cl *Cubelet) Run() {
@@ -73,7 +74,7 @@ func (cl *Cubelet) Run() {
 			log.Println("[INFO] Pod caught, but status is nil so Cubelet doesn't handle it")
 			continue
 		}
-		if podEvent.Pod.Status.PodUID == cubeconfig.NodeUID {
+		if podEvent.Pod.Status.NodeUID == cl.NodeID {
 			log.Println("[INFO] my pod Catch, types is", podEvent.EType)
 			switch podEvent.EType {
 			case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
@@ -85,7 +86,8 @@ func (cl *Cubelet) Run() {
 				log.Panic("Unsupported types in watch pod.")
 			}
 		} else {
-			log.Printf("[INFO] Pod Catch, but not my pod, pod UUID = %v, my UUID = %v", podEvent.Pod.Status.PodUID, cubeconfig.NodeUID)
+			log.Printf("[INFO] Pod Catch, but not my pod, pod UUID = %v, my UUID = %v",
+				podEvent.Pod.Status.NodeUID, cl.NodeID)
 		}
 	}
 
@@ -142,8 +144,8 @@ func (cl *Cubelet) updatePodsRoutine() {
 
 	for _, pod := range pods {
 		ip := pod.Status.IP
-		nodeUID := pod.Status.PodUID
-		
+		nodeUID := pod.Status.NodeUID
+
 		go func(p object.Pod, ip net.IP, uid string) {
 			defer wg.Done()
 			podStatus, err := cl.runtime.InspectPod(&p)
@@ -153,7 +155,7 @@ func (cl *Cubelet) updatePodsRoutine() {
 			}
 
 			podStatus.IP = ip
-			podStatus.PodUID = nodeUID
+			podStatus.NodeUID = nodeUID
 
 			rp, err := crudobj.UpdatePodStatus(p.UID, *podStatus)
 			if err != nil {

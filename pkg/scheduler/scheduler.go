@@ -51,7 +51,7 @@ func (sr *ScheduleRuntime) Run() {
 		switch podEvent.EType {
 		case watchobj.EVENT_PUT:
 			pod := podEvent.Pod
-			if pod.Status == nil || pod.Status.PodUID == "" {
+			if pod.Status == nil || pod.Status.NodeUID == "" {
 				if pod.Status == nil {
 					pod.Status = &object.PodStatus{
 						ActualResourceUsage: &object.ResourceUsage{},
@@ -65,7 +65,7 @@ func (sr *ScheduleRuntime) Run() {
 
 				err = sr.SendScheduleInfoBack(&pod, &podInfo)
 				if err != nil {
-					log.Println("Error happened when sending scheduler result")
+					log.Println("[Error] when sending scheduler result,", err.Error())
 				}
 			}
 
@@ -80,7 +80,7 @@ func (sr *ScheduleRuntime) Run() {
 }
 
 func (sr *ScheduleRuntime) SendScheduleInfoBack(podToSchedule *object.Pod, info *types.PodInfo) error {
-	podToSchedule.Status.PodUID = info.NodeUUID
+	podToSchedule.Status.NodeUID = info.NodeUUID
 
 	_, err := crudobj.UpdatePod(*podToSchedule)
 	log.Println("[INFO]: Schedule pod ", podToSchedule.UID, "To node ", info.NodeUUID)

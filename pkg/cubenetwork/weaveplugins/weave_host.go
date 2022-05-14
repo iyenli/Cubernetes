@@ -69,7 +69,7 @@ func InitWeave() error {
 	log.Println("Init weave node...")
 	// stop weave if weave is running
 	cmd := osexec.Command(path, option.Stop)
-	err = cmd.Run() // Could failed here
+	err = cmd.Run() // Could fail here
 
 	cmd = osexec.Command(path, option.Launch)
 	output, err := cmd.CombinedOutput()

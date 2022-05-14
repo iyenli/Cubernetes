@@ -106,10 +106,13 @@ func (m *cubeRuntimeManager) SyncPod(pod *object.Pod, podStatus *cubecontainer.P
 	}
 
 	apiPodStatus.IP = podStatus.PodNetWork.IP
+	apiPodStatus.StartTime = time.Now()
 	if pod.Status != nil {
-		apiPodStatus.PodUID = pod.Status.PodUID
+		apiPodStatus.NodeUID = pod.Status.NodeUID
 	}
 
+	log.Printf("[INFO]: Write pod status into apiserver, IP is %v, Node UID is %v",
+		apiPodStatus.IP.String(), apiPodStatus.NodeUID)
 	_, err = crudobj.UpdatePodStatus(pod.UID, *apiPodStatus)
 	if err != nil {
 		log.Printf("fail to update Pod %s status to apiserver\n", pod.Name)

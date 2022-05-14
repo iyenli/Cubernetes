@@ -10,7 +10,7 @@ func InitNodeNetwork(args []string) {
 	if len(args) == 2 {
 		err = weaveplugins.InitWeave()
 	} else if len(args) == 3 {
-		err = weaveplugins.AddNode()
+		//err = weaveplugins.AddNode()
 	} else {
 		panic("Error: too much or little args when start cubelet;")
 	}

@@ -1,6 +1,7 @@
 package cubeproxy
 
 import (
+	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/apiserver/watchobj"
 	"Cubernetes/pkg/cubeproxy/informer/types"
 	"Cubernetes/pkg/cubeproxy/proxyruntime"
@@ -33,10 +34,9 @@ func NewCubeProxy() *Cubeproxy {
 
 func (cp *Cubeproxy) Run() {
 	if cp.Runtime == nil {
-		log.Fatal("[Fatal]: Seg fault")
+		log.Fatal("[Fatal]: Runtime not initialized before running")
 	}
 
-	// TODO: Easy helper of cleaning iptables when exit unexpectedly
 	defer func(runtime *proxyruntime.ProxyRuntime) {
 		log.Printf("Release IP Tables...")
 		err := runtime.ReleaseIPTables()
@@ -44,6 +44,20 @@ func (cp *Cubeproxy) Run() {
 			log.Panicln("[Panic]: Error when release proxy Runtime")
 		}
 	}(cp.Runtime)
+
+	// before watch service, add exist service to iptables
+	pods, err := crudobj.GetPods()
+	if err != nil {
+		log.Fatalln("[Fatal]: get pods failed when init cubeproxy")
+	}
+	err = cp.Runtime.PodInformer.InitInformer(pods)
+	if err != nil {
+		log.Fatalln("[Fatal]: Init pod informer failed")
+	}
+	err = cp.Runtime.AddAllExistService()
+	if err != nil {
+		log.Fatalln("[Fatal]Add exist services failed")
+	}
 
 	ch, cancel, err := watchobj.WatchServices()
 	if err != nil {

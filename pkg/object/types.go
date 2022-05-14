@@ -52,7 +52,7 @@ type PodStatus struct {
 	IP                  net.IP         `json:"IP" yaml:"IP"`
 	StartTime           time.Time      `json:"startTime,omitempty" yaml:"startTime,omitempty"`
 	Phase               PodPhase       `json:"phase,omitempty" yaml:"phase,omitempty"`
-	PodUID              string         `json:"pod-uid,omitempty" yaml:"pod-uid,omitempty"`
+	NodeUID             string         `json:"pod-uid,omitempty" yaml:"pod-uid,omitempty"`
 	ActualResourceUsage *ResourceUsage `json:"actualResourceUsage,omitempty" yaml:"actualResourceUsage,omitempty"`
 	LastUpdateTime      time.Time      `json:"lastUpdateTime" yaml:"lastUpdateTime"`
 }

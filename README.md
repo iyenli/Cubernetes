@@ -52,7 +52,11 @@ Worker1作为master, Worker2作为slave. 假设Worker1 的IP为192.168.1.9, Work
 
 <img src="https://s2.loli.net/2022/05/13/XCQvMTdOr5eyZPV.png" alt="image-20220513215801877" style="zoom: 50%;" />
 
+然后`./build/cubectl describe svc uid`得到Cluster IP后，你可以通过它访问：
 
+<img src="C:/Users/11796/AppData/Roaming/Typora/typora-user-images/image-20220514103639327.png" alt="image-20220514103639327" style="zoom:67%;" />
+
+至此，无论是docker内/外都可以正常访问Service了。
 
 
 

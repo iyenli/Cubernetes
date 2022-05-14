@@ -8,6 +8,7 @@ import (
 )
 
 type PodInformer interface {
+	InitInformer(pods []object.Pod) error
 	WatchPodEvent() <-chan types.PodEvent
 	InformPod(newPod object.Pod, eType watchobj.EventType) error
 	ListPods() []object.Pod
@@ -24,6 +25,14 @@ func NewPodInformer() PodInformer {
 		podChannel: make(chan types.PodEvent),
 		podCache:   make(map[string]object.Pod),
 	}
+}
+
+func (i *ProxyPodInformer) InitInformer(pods []object.Pod) error {
+	for _, pod := range pods {
+		i.podCache[pod.UID] = pod
+	}
+
+	return nil
 }
 
 func (i *ProxyPodInformer) WatchPodEvent() <-chan types.PodEvent {

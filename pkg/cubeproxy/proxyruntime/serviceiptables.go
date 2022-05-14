@@ -1,8 +1,6 @@
 package proxyruntime
 
 import (
-	"Cubernetes/pkg/apiserver/crudobj"
-	"Cubernetes/pkg/cubeproxy/informer"
 	"Cubernetes/pkg/object"
 	"fmt"
 	"github.com/google/uuid"
@@ -49,7 +47,7 @@ Routing decision                                                  |
                                XXXXXXXXXXXXXXXXXX
 */
 
-func (pr *ProxyRuntime) MapPortToPods(service *object.Service, pods []object.Pod, port *object.ServicePort, idx int) error {
+func (pr *ProxyRuntime) MapPortToPods(service *object.Service, podIPs []string, port *object.ServicePort, idx int) error {
 	// Chain name under 29 chars
 	serviceUID := fmt.Sprintf("CUBE-SVC-%v", uuid.New().String()[:15])
 
@@ -73,7 +71,7 @@ func (pr *ProxyRuntime) MapPortToPods(service *object.Service, pods []object.Pod
 	pr.ServiceChainMap[service.UID].serviceChainUid[idx] = serviceUID
 
 	// Then create NUM(pod) chain
-	for idx_, pod := range pods {
+	for idx_, pod := range podIPs {
 		podChainUID := fmt.Sprintf("CUBE-SVC-POD-%v", uuid.New().String()[:15])
 
 		err = pr.Ipt.NewChain(NatTable, podChainUID)
@@ -82,9 +80,9 @@ func (pr *ProxyRuntime) MapPortToPods(service *object.Service, pods []object.Pod
 			return err
 		}
 
-		// if 3 pods, the probability is 0.33/0.50/1.00, so...
-		if idx_ < len(pods)-1 {
-			probability := float64(1) / float64(len(pods)-idx_)
+		// if 3 podIPs, the probability is 0.33/0.50/1.00, so...
+		if idx_ < len(podIPs)-1 {
+			probability := float64(1) / float64(len(podIPs)-idx_)
 			err = pr.Ipt.Append(NatTable, serviceUID,
 				"-j", podChainUID,
 				"-m", STATISTIC,
@@ -109,7 +107,7 @@ func (pr *ProxyRuntime) MapPortToPods(service *object.Service, pods []object.Pod
 		err = pr.Ipt.Insert(NatTable, podChainUID, 1,
 			"-j", DnatOP,
 			"-p", string(port.Protocol),
-			"--to-destination", fmt.Sprintf("%v:%v", pod.Status.IP.String(),
+			"--to-destination", fmt.Sprintf("%v:%v", pod,
 				strconv.FormatInt(int64(port.TargetPort), 10)),
 		)
 
@@ -117,83 +115,10 @@ func (pr *ProxyRuntime) MapPortToPods(service *object.Service, pods []object.Pod
 			log.Println("Create chain failed")
 			return err
 		}
-		pr.ServiceChainMap[service.UID].probabilityChainUid[idx][idx_] = podChainUID
 
-		err = crudobj.AddEndpointToService(service, pod.Status.IP)
-		if err != nil {
-			log.Println("Update endpoint IP to API Server failed")
-			return err
-		}
+		pr.ServiceChainMap[service.UID].probabilityChainUid[idx][idx_] = podChainUID
 	}
 	return nil
-}
-
-func InitProxyRuntime() (*ProxyRuntime, error) {
-	pr := &ProxyRuntime{
-		Ipt:             nil,
-		ServiceChainMap: make(map[string]ServiceChainElement),
-		ServiceInformer: informer.NewServiceInformer(),
-		PodInformer:     informer.NewPodInformer(),
-	}
-
-	err := pr.InitObject()
-	if err != nil {
-		log.Panicln("Init object failed")
-		return nil, err
-	}
-
-	/* check env */
-	flag, err := pr.Ipt.ChainExists(FilterTable, DockerChain)
-	if !flag {
-		log.Printf("Start docker first")
-		//return nil, err
-	}
-	flag, err = pr.Ipt.ChainExists(NatTable, DockerChain)
-	if !flag {
-		log.Printf("Start docker first")
-		//return nil, err
-	}
-	/* Check env ends */
-
-	// Clear all service chain:
-	for exist, err := pr.Ipt.Exists(NatTable, PreRouting, "-j", ServiceChain); err != nil && exist; {
-		err := pr.Ipt.Delete(NatTable, PreRouting, "-j", ServiceChain)
-		if err != nil {
-			return nil, err
-		}
-	}
-	for exist, err := pr.Ipt.Exists(NatTable, OutputChain, "-j", ServiceChain); err != nil && exist; {
-		err := pr.Ipt.Delete(NatTable, OutputChain, "-j", ServiceChain)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// create SERVICE CHAIN, and add to PRE-ROUTING/OUTPUT Chain
-	// Ref: https://gitee.com/k9-s/Cubernetes/wikis/IPT
-	if exists, _ := pr.Ipt.ChainExists(NatTable, ServiceChain); !exists {
-		err = pr.Ipt.NewChain(NatTable, ServiceChain)
-		if err != nil {
-			log.Panicln("[Panic]: Creating chain failed")
-			return nil, err
-		}
-	}
-
-	err = pr.Ipt.Insert(NatTable, PreRouting,
-		1, "-j", ServiceChain)
-	if err != nil {
-		log.Panicln("[Panic]: Add chain failed")
-		return nil, err
-	}
-
-	err = pr.Ipt.Insert(NatTable, OutputChain, 1,
-		"-j", ServiceChain)
-	if err != nil {
-		log.Panicln("[Panic]: Add chain failed")
-		return nil, err
-	}
-
-	return pr, nil
 }
 
 // ReleaseIPTables Delete all chains in service

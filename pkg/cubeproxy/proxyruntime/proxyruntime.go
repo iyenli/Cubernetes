@@ -73,11 +73,13 @@ func (pr *ProxyRuntime) AddService(service *object.Service) error {
 	// if pod's ip not filled in, discard it
 	var pods []object.Pod
 	for idx, pod := range alternativePods {
-		if pod.Status.IP != nil {
-			log.Printf("[INFO]: Pod %v can't act as endpoint because no IP allocated", pod.UID)
+		if pod.Status != nil && pod.Status.IP != nil {
 			pods = append(pods, alternativePods[idx])
+		} else {
+			log.Printf("[INFO]: Pod %v can't act as endpoint because no IP allocated", pod.UID)
 		}
 	}
+
 	if len(pods) == 0 {
 		log.Println("[INFO] No pod to add to service", service.UID)
 		return nil
@@ -95,8 +97,13 @@ func (pr *ProxyRuntime) AddService(service *object.Service) error {
 		numberOfPods:        len(pods),
 	}
 
+	podIPs := make([]string, len(pods))
+	for idx, pod := range pods {
+		podIPs[idx] = pod.Status.IP.String()
+	}
+
 	for idx, port := range service.Spec.Ports {
-		err := pr.MapPortToPods(service, pods, &port, idx)
+		err := pr.MapPortToPods(service, podIPs, &port, idx)
 		if err != nil {
 			log.Println("[error]: map port to pods failed")
 			return err

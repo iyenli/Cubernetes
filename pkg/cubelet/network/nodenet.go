@@ -9,7 +9,7 @@ import (
 	"net"
 )
 
-func InitNodeNetwork(args []string) {
+func InitNodeNetwork(args []string) net.IP {
 	var err error
 	if len(args) == 3 {
 		// master
@@ -23,8 +23,16 @@ func InitNodeNetwork(args []string) {
 
 	if err != nil {
 		log.Panicf("Init weave network failed, err: %v", err.Error())
-		return
+		return nil
 	}
+
+	ip, err := weaveplugins.ExposeHost()
+	if err != nil {
+		log.Panicf("Expose host failed, err: %v", err.Error())
+		return nil
+	}
+
+	return ip
 }
 
 func InitNodeHeartbeat() {

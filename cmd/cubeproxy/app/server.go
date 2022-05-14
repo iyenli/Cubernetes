@@ -7,7 +7,6 @@ const (
 )
 
 func NewCubeletCommand() *cobra.Command {
-
 	return &cobra.Command{
 		Use: componentCubeproxy,
 		// TODO: parse cubelet command

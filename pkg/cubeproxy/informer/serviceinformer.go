@@ -8,6 +8,7 @@ import (
 )
 
 type ServiceInformer interface {
+	InitInformer(services []object.Service) error
 	WatchServiceEvent() <-chan types.ServiceEvent
 	InformService(newService object.Service, eType watchobj.EventType) error
 	ListServices() []object.Service
@@ -24,6 +25,14 @@ func NewServiceInformer() ServiceInformer {
 		ServiceChannel: make(chan types.ServiceEvent),
 		ServiceCache:   make(map[string]object.Service),
 	}
+}
+
+func (i *ProxyServiceInformer) InitInformer(services []object.Service) error {
+	for _, service := range services {
+		i.ServiceCache[service.UID] = service
+	}
+
+	return nil
 }
 
 func (i *ProxyServiceInformer) WatchServiceEvent() <-chan types.ServiceEvent {

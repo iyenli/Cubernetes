@@ -5,7 +5,6 @@ import (
 	"Cubernetes/pkg/object"
 	"encoding/json"
 	"log"
-	"net"
 	"strconv"
 )
 
@@ -113,10 +112,5 @@ func DeleteService(UID string) error {
 		return err
 	}
 
-	return nil
-}
-
-// AddEndpointToService TODO: Update service by endpoint IP
-func AddEndpointToService(service *object.Service, EndPointIP net.IP) error {
 	return nil
 }
