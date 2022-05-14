@@ -7,6 +7,7 @@ import (
 	"Cubernetes/pkg/utils/localstorage"
 	"log"
 	"net"
+	"time"
 )
 
 func InitNodeNetwork(args []string) net.IP {
@@ -26,12 +27,15 @@ func InitNodeNetwork(args []string) net.IP {
 		return nil
 	}
 
+	// wait for weave starting
+	time.Sleep(12 * time.Second)
 	ip, err := weaveplugins.ExposeHost()
 	if err != nil {
 		log.Panicf("Expose host failed, err: %v", err.Error())
 		return nil
 	}
 
+	log.Println("[INFO] weave IP Allocated:", ip.String())
 	return ip
 }
 

@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	osexec "os/exec"
+	"strings"
 )
 
 type Host struct {
@@ -21,16 +22,20 @@ func ExposeHost() (net.IP, error) {
 	}
 
 	cmd := osexec.Command(path, "expose")
-	output, err := cmd.CombinedOutput()
+	combinedOutput, err := cmd.CombinedOutput()
 	if err != nil {
+		log.Println("[INFO]: weave expose failed")
 		return nil, err
 	}
 
+	output := strings.Trim(string(combinedOutput), "\n")
 	ip := net.ParseIP(string(output))
 	if ip == nil {
+		log.Println("[INFO]: Parse host weave ip failed")
 		return nil, err
 	}
 
+	log.Println("[INFO]: Allocate Host IP here, IP is", ip.String())
 	return ip, nil
 }
 

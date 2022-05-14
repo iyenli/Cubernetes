@@ -28,9 +28,9 @@ Worker1作为master, Worker2作为slave. 假设Worker1 的IP为192.168.1.9, Work
 停止Cubernetes集群的工作，可以：
 
 ```shell
-./build/cuberoot stop
 # 如果想重新启动配置Node
 ./build/cuberoot reset
+./build/cuberoot stop
 ```
 
 <img src="https://s2.loli.net/2022/05/12/Uy61jQ9cpbK2ZR4.png" alt="image-20220512094310090" style="zoom: 80%;" />
@@ -56,7 +56,7 @@ Worker1作为master, Worker2作为slave. 假设Worker1 的IP为192.168.1.9, Work
 
 <img src="C:/Users/11796/AppData/Roaming/Typora/typora-user-images/image-20220514103639327.png" alt="image-20220514103639327" style="zoom:67%;" />
 
-至此，无论是docker内/外都可以正常访问Service了。
+至此，无论是docker内/外都可以正常访问Service了。而且多机上也能很好的支持。
 
 
 

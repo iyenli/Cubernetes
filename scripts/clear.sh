@@ -6,3 +6,5 @@ docker rm $(docker ps -a -q)
 
 # Warning! This may cut down your connection between you and your host:)
 iptables -t nat -F
+weave reset
+weave stop
