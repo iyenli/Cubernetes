@@ -75,7 +75,7 @@ func (cl *Cubelet) Run() {
 			continue
 		}
 		if podEvent.Pod.Status.NodeUID == cl.NodeID {
-			log.Println("[INFO] my pod caught, types is", podEvent.EType)
+			log.Println("[INFO]: my pod caught, types is", podEvent.EType)
 			switch podEvent.EType {
 			case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
 				err := cl.informer.InformPod(podEvent.Pod, podEvent.EType)
@@ -86,7 +86,7 @@ func (cl *Cubelet) Run() {
 				log.Panic("Unsupported types in watch pod.")
 			}
 		} else {
-			log.Printf("[INFO] Pod Catch, but not my pod, pod UUID = %v, my UUID = %v",
+			log.Printf("[INFO]: pod caught, but not my pod, pod UUID = %v, my UUID = %v",
 				podEvent.Pod.Status.NodeUID, cl.NodeID)
 		}
 	}

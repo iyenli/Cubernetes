@@ -1,3 +1,6 @@
+# If you're not testing load balance, use easy-test-rs.yaml
+# This yaml need to install nginx and use config under ./example/html
+# sudo apt-get install nginx
 apiVersion: v1
 kind: ReplicaSet
 metadata:

@@ -73,7 +73,7 @@ func (pr *ProxyRuntime) AddService(service *object.Service) error {
 	// if pod's ip not filled in, discard it
 	var pods []object.Pod
 	for idx, pod := range alternativePods {
-		if pod.Status != nil && pod.Status.IP != nil {
+		if pod.Status != nil && pod.Status.IP != nil && pod.Status.Phase == object.PodRunning {
 			pods = append(pods, alternativePods[idx])
 		} else {
 			log.Printf("[INFO]: Pod %v can't act as endpoint because no IP allocated", pod.UID)

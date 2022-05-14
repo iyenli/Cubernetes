@@ -1,5 +1,7 @@
 package object
 
+import "log"
+
 func ComputeObjectMetaChange(new *ObjectMeta, old *ObjectMeta) bool {
 	if new.UID != old.UID {
 		panic("Compute 2 pod change with different uid")
@@ -159,6 +161,12 @@ func ComputePodNetworkChange(new *Pod, old *Pod) bool {
 		return true
 	}
 
+	if old.Status.Phase == PodRunning && new.Status.Phase != PodRunning ||
+		new.Status.Phase == PodRunning && old.Status.Phase != PodRunning {
+		log.Println("Some pod crashed or restarted, reset service")
+		return true
+	}
+	
 	return false
 }
 

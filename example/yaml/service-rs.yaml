@@ -1,3 +1,5 @@
+# load balance to rs
+# sudo apt-get install nginx
 apiVersion: v1
 kind: Service
 metadata:
