@@ -6,7 +6,7 @@ Course project for SE3356.
 
 ## Quick start
 
-在开始之前，您需要安装ETCD, 放到合适的目录下(Suggest: `/usr/local/bin`).
+在开始之前，您需要安装ETCD, 放到合适的目录下(Suggest: `/usr/local/bin`). 建议安装Nginx以获取默认的配置作为Volume.
 
 Worker1作为master, Worker2作为slave. 假设Worker1 的IP为192.168.1.9, Worker2的IP为192.168.1.5. 首次启动, 位于 ./Cubernetes目录下。
 
@@ -43,7 +43,7 @@ bash ./scripts/clear.sh
 至此，`curl ip:8085`可以看到Nginx主页的HTML界面。尚未测试*带命令的容器，容器内的localhost访问*。测试Service:
 
 ```shell
-./build/cubectl apply -f ./example/yaml/test-pod2.yaml 
+./build/cubectl apply -f ./example/yaml/test-pod-2.yaml 
 ./build/cubectl apply -f ./example/yaml/service.yaml 
 ```
 
