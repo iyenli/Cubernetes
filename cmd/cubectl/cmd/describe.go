@@ -78,6 +78,18 @@ for example:
 				return
 			}
 			fmt.Print(string(str))
+		case "dns":
+			dns, err := crudobj.GetDns(UID)
+			if err != nil {
+				log.Fatal("[FATAL] fail to get Dns")
+				return
+			}
+			str, err := yaml.Marshal(dns)
+			if err != nil {
+				log.Fatal("[FATAL] fail to marshall Dns")
+				return
+			}
+			fmt.Print(string(str))
 		default:
 			log.Fatal("[FATAL] Unknown kind: " + args[0])
 		}

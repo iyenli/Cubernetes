@@ -38,7 +38,9 @@ for example:
 			log.Fatal("[FATAL] fail to unmarshal config file")
 			return
 		}
+
 		switch t.Kind {
+
 		case object.KindPod:
 			var pod object.Pod
 			err = yaml.Unmarshal(file, &pod)
@@ -80,6 +82,20 @@ for example:
 				return
 			}
 			log.Printf("ReplicaSet UID=%s created\n", newRs.UID)
+
+		case object.KindDns:
+			var dns object.Dns
+			err = yaml.Unmarshal(file, &dns)
+			if err != nil {
+				log.Fatal("[FATAL] fail to parse Dns", err)
+				return
+			}
+			newDns, err := crudobj.CreateDns(dns)
+			if err != nil {
+				log.Fatal("[FATAL] fail to create new Dns")
+				return
+			}
+			log.Printf("Dns UID=%s created\n", newDns.UID)
 
 		default:
 			log.Fatal("[FATAL] Unknown kind: " + t.Kind)

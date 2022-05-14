@@ -27,6 +27,7 @@ for example:
 			return
 		}
 		switch strings.ToLower(args[0]) {
+
 		case "pod", "pods":
 			pods, err := crudobj.GetPods()
 			if err != nil {
@@ -58,6 +59,7 @@ for example:
 			for _, svc := range svcs {
 				fmt.Printf("%-30s\t%-s\n", svc.Name, svc.UID)
 			}
+
 		case "replicaset", "replicasets", "rs", "rss":
 			rss, err := crudobj.GetReplicaSets()
 			if err != nil {
@@ -79,6 +81,7 @@ for example:
 				}
 				fmt.Printf("%-30s\t%-40s\t(%-v/%-v)\n", rs.Name, rs.UID, running, rs.Spec.Replicas)
 			}
+
 		case "node", "nodes":
 			nodes, err := crudobj.GetNodes()
 			if err != nil {
@@ -100,6 +103,23 @@ for example:
 				}
 				fmt.Printf("%-30s\t%-40s\t%-v\n", node.Name, node.UID, ready)
 			}
+
+		case "dns", "dnses":
+			dnses, err := crudobj.GetDnses()
+			if err != nil {
+				log.Fatal("[FATAL] fail to get Dnses")
+				return
+			}
+			if len(dnses) == 0 {
+				fmt.Println("No Dnses Found")
+				return
+			}
+			fmt.Printf("%d Dnses Found\n", len(dnses))
+			fmt.Printf("%-30s\t%-s\n", "Name", "UID")
+			for _, dns := range dnses {
+				fmt.Printf("%-30s\t%-s\n", dns.Name, dns.UID)
+			}
+
 		default:
 			log.Fatal("[FATAL] Unknown kind: " + args[0])
 		}

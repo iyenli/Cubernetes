@@ -5,7 +5,7 @@ const (
 	KindService    = "Service"
 	KindReplicaset = "ReplicaSet"
 	KindNode       = "Node"
-	KindDNS        = "Dns"
+	KindDns        = "Dns"
 )
 
 type TypeMeta struct {

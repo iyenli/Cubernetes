@@ -49,6 +49,13 @@ for example:
 			} else {
 				fmt.Printf("ReplicaSet UID=%s deleted\n", args[1])
 			}
+		case "dns":
+			err := crudobj.DeleteDns(args[1])
+			if err != nil {
+				log.Fatal("[FATAL] fail to delete Dns")
+			} else {
+				fmt.Printf("Dns UID=%s deleted\n", args[1])
+			}
 		default:
 			log.Fatal("[FATAL] Unknown kind: " + args[0])
 		}
