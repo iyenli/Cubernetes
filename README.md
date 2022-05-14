@@ -1,14 +1,12 @@
 # Cubernetes
 Course project for SE3356.
 
-> 注意，在现在，运行Cuberoot的Shell不能被关闭。
->
-> 测试时可以用Script下的clear.sh清理残留的docker容器。[风险提示]
+> - 在首次启动，需要下载weave, 可能需要20-30秒。尽量不要在这时候apply api object:)
+> - 测试时可以用Script下的clear.sh清理残留的docker容器。[风险提示: Docker和IPtables会被清空]
 
 ## Quick start
 
-在开始之前，可能的前置工作：
-- 安装Nginx和ETCD
+在开始之前，您需要安装Nginx和ETCD, 放到合适的目录下(Suggest: `/usr/local/bin`)
 
 Worker1作为master, Worker2作为slave. 假设Worker1 的IP为192.168.1.9, Worker2的IP为192.168.1.5. 首次启动, 位于 ./Cubernetes目录下。
 
