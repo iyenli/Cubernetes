@@ -250,8 +250,8 @@ func (c *dockerClient) CloseConnection() {
 }
 
 func pullMessageFilter(status string) bool {
-	return strings.HasPrefix(status, "Pulling from") || 
-		strings.HasPrefix(status, "Download complete") || 
-		strings.HasPrefix(status, "Pull complete") 
-		
+	return strings.HasPrefix(status, "Pulling from") ||
+		strings.HasPrefix(status, "Download complete") ||
+		strings.HasPrefix(status, "Pull complete")
+
 }

@@ -23,12 +23,13 @@ type ReplicaSetController interface {
 
 type replicaSetController struct {
 	podInformer informer.PodInformer
-	rsInformer  ReplicaSetInformer
+	rsInformer  informer.ReplicaSetInformer
 	biglock     sync.Mutex
 }
 
-func NewReplicaSetController(podInformer informer.PodInformer) (ReplicaSetController, error) {
-	rsInformer, _ := NewReplicaSetInformer()
+func NewReplicaSetController(
+	podInformer informer.PodInformer, 
+	rsInformer informer.ReplicaSetInformer) (ReplicaSetController, error) {
 	return &replicaSetController{
 		podInformer: podInformer,
 		rsInformer:  rsInformer,
@@ -68,7 +69,7 @@ func (rsc *replicaSetController) syncLoop() {
 	defer rsc.podInformer.CloseChan(podEventChan)
 
 	rsEventChan := rsc.rsInformer.WatchRSEvent()
-	defer rsc.rsInformer.CloseChan()
+	defer rsc.rsInformer.CloseChan(rsEventChan)
 
 	for {
 		select {
@@ -93,13 +94,13 @@ func (rsc *replicaSetController) syncLoop() {
 			rsc.biglock.Lock()
 			replicaSet := rsEvent.ReplicaSet
 			switch rsEvent.Type {
-			case rsCreate:
+			case types.RsCreate:
 				log.Printf("handle ReplicaSet %s create\n", rsEvent.ReplicaSet.Name)
 				rsc.handleReplicaSetCreate(&replicaSet)
-			case rsUpdate:
+			case types.RsUpdate:
 				log.Printf("handle ReplicaSet %s update\n", rsEvent.ReplicaSet.Name)
 				rsc.handleReplicaSetUpdate(&replicaSet)
-			case rsRemove:
+			case types.RsRemove:
 				log.Printf("handle ReplicaSet %s remove\n", rsEvent.ReplicaSet.Name)
 				rsc.handleReplicaSetRemove(&replicaSet)
 			default:
