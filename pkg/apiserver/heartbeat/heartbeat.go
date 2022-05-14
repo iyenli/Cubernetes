@@ -2,6 +2,7 @@ package heartbeat
 
 import (
 	cubeconfig "Cubernetes/config"
+	"Cubernetes/pkg/apiserver/watchobj"
 	"Cubernetes/pkg/object"
 	"bufio"
 	"encoding/json"
@@ -31,7 +32,8 @@ func closeConn() {
 	if connected {
 		_ = conn.Close()
 		connected = false
-		log.Println("Heartbeat connection closed")
+		log.Println("Heartbeat connection closed, stop all watching")
+		watchobj.StopAll()
 	}
 	connLock.Unlock()
 }
