@@ -24,6 +24,9 @@ var watchList = []Handler{
 
 	{http.MethodPost, "/apis/watch/node/:uid", watchNode},
 	{http.MethodPost, "/apis/watch/nodes", watchNodes},
+
+	{http.MethodPost, "/apis/watch/dns/:uid", watchDns},
+	{http.MethodPost, "/apis/watch/dnses", watchDnses},
 }
 
 func handleEvent(ctx *gin.Context, e *clientv3.Event) {
@@ -111,4 +114,12 @@ func watchNode(ctx *gin.Context) {
 
 func watchNodes(ctx *gin.Context) {
 	postWatch(ctx, "/apis/node/", true)
+}
+
+func watchDns(ctx *gin.Context) {
+	postWatch(ctx, "/apis/dns/"+ctx.Param("uid"), false)
+}
+
+func watchDnses(ctx *gin.Context) {
+	postWatch(ctx, "/apis/dns/", true)
 }

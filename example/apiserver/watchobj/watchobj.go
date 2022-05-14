@@ -1,7 +1,6 @@
 package main
 
 import (
-	cubeconfig "Cubernetes/config"
 	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/apiserver/watchobj"
 	"Cubernetes/pkg/object"
@@ -14,7 +13,7 @@ func test() {
 	for {
 		var pod object.Pod
 		pod.APIVersion = "1"
-		pod.Kind = cubeconfig.KindPod
+		pod.Kind = object.KindPod
 		pod.Name = "hello233"
 
 		pod, err := crudobj.CreatePod(pod)

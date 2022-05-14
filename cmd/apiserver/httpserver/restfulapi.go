@@ -34,4 +34,11 @@ var restfulList = []Handler{
 	{http.MethodPut, "/apis/node/:uid", restful.PutNode},
 	{http.MethodDelete, "/apis/node/:uid", restful.DelNode},
 	{http.MethodPost, "/apis/select/nodes", restful.SelectNodes},
+
+	{http.MethodGet, "/apis/dns/:uid", restful.GetDns},
+	{http.MethodGet, "/apis/dnses", restful.GetDnses},
+	{http.MethodPost, "/apis/dns", restful.PostDns},
+	{http.MethodPut, "/apis/dns/:uid", restful.PutDns},
+	{http.MethodDelete, "/apis/dns/:uid", restful.DelDns},
+	{http.MethodPost, "/apis/select/dnses", restful.SelectDnses},
 }

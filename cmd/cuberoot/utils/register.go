@@ -21,7 +21,7 @@ func autoFillNode(node *object.Node) {
 
 func RegisterAsMaster(node object.Node) error {
 	node.Spec.Type = object.Master
-	node.Kind = cubeconfig.KindNode
+	node.Kind = object.KindNode
 	autoFillNode(&node)
 
 	node, err := crudobj.CreateNode(node)
@@ -42,7 +42,7 @@ func RegisterAsMaster(node object.Node) error {
 
 func RegisterAsSlave(node object.Node, masterIP string) error {
 	node.Spec.Type = object.Slave
-	node.Kind = cubeconfig.KindNode
+	node.Kind = object.KindNode
 	autoFillNode(&node)
 
 	node, err := crudobj.CreateNode(node)

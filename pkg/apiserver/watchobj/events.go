@@ -45,3 +45,10 @@ type NodeEvent struct {
 	// Node will only have its UID
 	Node object.Node
 }
+
+type DnsEvent struct {
+	EType EventType
+	// if EType == EVENT_DELETE,
+	// Dns will only have its UID
+	Dns object.Dns
+}
