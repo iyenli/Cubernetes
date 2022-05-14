@@ -33,21 +33,21 @@ for example:
 			if err != nil {
 				log.Fatal("[FATAL] fail to delete Pod")
 			} else {
-				fmt.Printf("Pod UID=%s deleted", args[1])
+				fmt.Printf("Pod UID=%s deleted\n", args[1])
 			}
 		case "service", "svc":
 			err := crudobj.DeleteService(args[1])
 			if err != nil {
 				log.Fatal("[FATAL] fail to delete Service")
 			} else {
-				fmt.Printf("Service UID=%s deleted", args[1])
+				fmt.Printf("Service UID=%s deleted\n", args[1])
 			}
 		case "replicaset", "rs":
 			err := crudobj.DeleteReplicaSet(args[1])
 			if err != nil {
 				log.Fatal("[FATAL] fail to delete ReplicaSet")
 			} else {
-				fmt.Printf("ReplicaSet UID=%s deleted", args[1])
+				fmt.Printf("ReplicaSet UID=%s deleted\n", args[1])
 			}
 		default:
 			log.Fatal("[FATAL] Unknown kind: " + args[0])

@@ -70,11 +70,11 @@ func (cl *Cubelet) Run() {
 	go cl.syncLoop()
 
 	for podEvent := range ch {
-		if podEvent.Pod.Status == nil {
+		if podEvent.Pod.Status == nil && podEvent.EType != watchobj.EVENT_DELETE {
 			log.Println("[INFO] Pod caught, but status is nil so Cubelet doesn't handle it")
 			continue
 		}
-		if podEvent.Pod.Status.NodeUID == cl.NodeID {
+		if podEvent.EType == watchobj.EVENT_DELETE || podEvent.Pod.Status.NodeUID == cl.NodeID {
 			log.Println("[INFO]: my pod caught, types is", podEvent.EType)
 			switch podEvent.EType {
 			case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:

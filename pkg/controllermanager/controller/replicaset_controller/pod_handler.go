@@ -61,7 +61,7 @@ func (rsc *replicaSetController) handlePodKilled(pod *object.Pod) error {
 			rs.Status.PodUIDsRunning =
 				append(rs.Status.PodUIDsRunning[:idx], rs.Status.PodUIDsRunning[idx+1:]...)
 		} else {
-			log.Printf("[FATAL] unexpected pod %s killed but not in running\n", pod.Name)
+			log.Printf("pod %s killed but not in running\n", pod.Name)
 		}
 
 		if _, err := crudobj.UpdateReplicaSet(rs); err != nil {

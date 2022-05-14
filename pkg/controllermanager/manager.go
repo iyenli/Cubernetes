@@ -37,7 +37,7 @@ func (cm *ControllerManager) Run() {
 	for podEvent := range ch {
 		pod := podEvent.Pod
 		// pod status not ready to handle by controller_manager
-		if pod.Status == nil || phase.NotHandle(pod.Status.Phase) {
+		if (pod.Status == nil || phase.NotHandle(pod.Status.Phase)) && podEvent.EType != watchobj.EVENT_DELETE {
 			continue
 		}
 		switch podEvent.EType {

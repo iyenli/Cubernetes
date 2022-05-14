@@ -74,9 +74,10 @@ func (i *cmPodInformer) InformPod(newPod object.Pod, eType watchobj.EventType) e
 				})
 			} else if !newRunning && oldRunning {
 				// pod not running anymore: kill
+				delete(i.podCache, newPod.UID)
 				i.informAll(types.PodEvent{
 					Type: types.PodKilled,
-					Pod:  newPod,
+					Pod:  oldPod,
 				})
 			} // do nothing when both dead
 		}
