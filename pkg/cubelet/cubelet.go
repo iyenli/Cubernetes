@@ -75,7 +75,7 @@ func (cl *Cubelet) Run() {
 			continue
 		}
 		if podEvent.Pod.Status.NodeUID == cl.NodeID {
-			log.Println("[INFO] my pod Catch, types is", podEvent.EType)
+			log.Println("[INFO] my pod caught, types is", podEvent.EType)
 			switch podEvent.EType {
 			case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
 				err := cl.informer.InformPod(podEvent.Pod, podEvent.EType)
@@ -145,6 +145,14 @@ func (cl *Cubelet) updatePodsRoutine() {
 	for _, pod := range pods {
 		ip := pod.Status.IP
 		nodeUID := pod.Status.NodeUID
+		log.Printf("[INFO]: Ready to update pod, ip is %v, nodeID is %v",
+			ip.String(), nodeUID)
+
+		if ip == nil {
+			log.Printf("[INFO]: Not updating pod(%v) status before IP allocating\n", pod.UID)
+			wg.Done()
+			continue
+		}
 
 		go func(p object.Pod, ip net.IP, uid string) {
 			defer wg.Done()
@@ -156,12 +164,14 @@ func (cl *Cubelet) updatePodsRoutine() {
 
 			podStatus.IP = ip
 			podStatus.NodeUID = nodeUID
+			log.Printf("[INFO]: updating pod status, ip is %v, status is %v",
+				podStatus.IP.String(), podStatus.Phase)
 
 			rp, err := crudobj.UpdatePodStatus(p.UID, *podStatus)
 			if err != nil {
 				log.Printf("fail to push pod status %s: %v\n", p.UID, err)
 			} else {
-				log.Printf("push pod status %s: %s\n", rp.Name, podStatus.Phase)
+				log.Printf("[INFO]: push pod status %s: %s\n", rp.Name, podStatus.Phase)
 			}
 		}(pod, ip, nodeUID)
 	}

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-service
+spec:
+  selector:
+    rs: rs-nginx
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80

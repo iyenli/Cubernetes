@@ -31,6 +31,7 @@ Worker1作为master, Worker2作为slave. 假设Worker1 的IP为192.168.1.9, Work
 # 如果想重新启动配置Node
 ./build/cuberoot reset
 ./build/cuberoot stop
+bash ./scripts/clear.sh
 ```
 
 <img src="https://s2.loli.net/2022/05/12/Uy61jQ9cpbK2ZR4.png" alt="image-20220512094310090" style="zoom: 80%;" />
@@ -56,7 +57,19 @@ Worker1作为master, Worker2作为slave. 假设Worker1 的IP为192.168.1.9, Work
 
 <img src="C:/Users/11796/AppData/Roaming/Typora/typora-user-images/image-20220514103639327.png" alt="image-20220514103639327" style="zoom:67%;" />
 
-至此，无论是docker内/外都可以正常访问Service了。而且多机上也能很好的支持。
+至此，无论是docker内/外都可以正常访问Service了。而且多机上也能很好的支持。测试rs:
+
+```shell
+./build/cubectl apply -f ./example/yaml/test-replicaset.yaml
+# 检查可用的副本数
+./build/cubectl get rs
+# 由RS中的Pod为Service提供服务
+./build/cubectl apply -f ./example/yaml/service-rs.yaml
+```
+
+如果想测试负载均衡，可以修改Nginx config. 将`example/html`下的`nginx.conf`copy到运行环境的`/etc/nginx/nginx.conf`. 再将两个HTML文件copy到`/var/www/html/`下。启动`test-pod(2).yaml`，并启动`service.yaml`. 然后访问Cluster IP，就可以发现是哪个Pod提供的服务。
+
+
 
 
 

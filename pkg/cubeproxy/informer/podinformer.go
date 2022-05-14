@@ -72,7 +72,7 @@ func (i *ProxyPodInformer) InformPod(newPod object.Pod, eType watchobj.EventType
 	if eType == watchobj.EVENT_PUT {
 		// Just handle pod whose ip has been allocated
 		if newPod.Status == nil || newPod.Status.IP == nil {
-			log.Println("Pod without ip, just ignore")
+			log.Printf("Pod %v without ip, just ignore", newPod.UID)
 			return nil
 		}
 

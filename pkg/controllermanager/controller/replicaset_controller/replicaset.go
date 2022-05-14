@@ -24,7 +24,7 @@ func (rsc *replicaSetController) handleReplicaSetCreate(rs *object.ReplicaSet) e
 		if pod, err := crudobj.CreatePod(*newPod); err != nil {
 			log.Printf("fail to create pod %s to API Server: %v\n", newPod.Name, err)
 		} else {
-			log.Printf("ReplicaSet %s add pod: %s (%s)\n", rs.Name, pod.Name, pod.UID)
+			log.Printf("ReplicaSet %s add pod: %s(%s)\n", rs.Name, pod.Name, pod.UID)
 			podsToRun = append(podsToRun, pod.UID)
 		}
 	}

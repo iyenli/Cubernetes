@@ -145,14 +145,14 @@ func (cp *Cubeproxy) syncPod() {
 	informEvent := cp.Runtime.PodInformer.WatchPodEvent()
 
 	for podEvent := range informEvent {
-		log.Printf("Main loop working, types is %v,service id is %v", podEvent, &podEvent.Pod.UID)
+		log.Printf("Main loop working, type is %v, pod id is %v", podEvent.Type, &podEvent.Pod.UID)
 		pod := podEvent.Pod
 		eType := podEvent.Type
 		cp.lock.Lock()
 
 		switch eType {
 		case types.PodCreate, types.PodRemove, types.PodUpdate:
-			log.Printf("from podEvent: create service %s\n", pod.UID)
+			log.Printf("from podEvent: create pod %s\n", pod.UID)
 			err := cp.Runtime.ModifyPod(&(pod))
 			if err != nil {
 				log.Fatalln("[Fatal]: error when modify pod")
