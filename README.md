@@ -50,7 +50,7 @@ Worker1作为master, Worker2作为slave. 假设Worker1 的IP为192.168.1.9, Work
 
 `iptables -t nat -L`, 与K8s保持一致。
 
-<img src="https://s2.loli.net/2022/05/13/XCQvMTdOr5eyZPV.png" alt="image-20220513215801877" style="zoom: 50%;" />
+![image-20220514131850160](https://s2.loli.net/2022/05/14/iprcM7wYNFL1moR.png)
 
 然后`./build/cubectl describe svc uid`得到Cluster IP后，你可以通过它访问：
 

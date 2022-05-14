@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"os"
+	"strings"
 	"time"
 
 	dockertypes "github.com/docker/docker/api/types"
 	dockerapi "github.com/docker/docker/client"
+	dockermessage "github.com/docker/docker/pkg/jsonmessage"
 )
 
 type DockerRuntime interface {
@@ -171,10 +172,25 @@ func (c *dockerClient) PullImage(imageName string) error {
 		log.Printf("fail to pull image %s : %v\n", imageName, err)
 		return err
 	}
-
-	io.Copy(os.Stdout, out)
-
 	defer out.Close()
+
+	decoder := json.NewDecoder(out)
+	for {
+		var msg dockermessage.JSONMessage
+		err := decoder.Decode(&msg)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		if msg.Error != nil {
+			return msg.Error
+		}
+		if pullMessageFilter(msg.Status) {
+			log.Println(msg.Status)
+		}
+	}
 	return nil
 }
 
@@ -231,4 +247,11 @@ func (c *dockerClient) RemoveImage(imageName string) error {
 
 func (c *dockerClient) CloseConnection() {
 	c.client.Close()
+}
+
+func pullMessageFilter(status string) bool {
+	return strings.HasPrefix(status, "Pulling from") || 
+		strings.HasPrefix(status, "Download complete") || 
+		strings.HasPrefix(status, "Pull complete") 
+		
 }

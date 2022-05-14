@@ -2,11 +2,9 @@ module Cubernetes
 
 go 1.18
 
-require k8s.io/cri-api v0.23.5
-
 require (
 	github.com/containerd/go-cni v1.1.4
-	github.com/docker/docker v20.10.14+incompatible
+	github.com/docker/docker v20.10.15+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/gin-gonic/gin v1.7.7
 	github.com/google/uuid v1.3.0
@@ -14,11 +12,14 @@ require (
 	github.com/stretchr/testify v1.7.1
 	go.etcd.io/etcd/api/v3 v3.5.4
 	go.etcd.io/etcd/client/v3 v3.5.4
-	google.golang.org/grpc v1.43.0
+	google.golang.org/grpc v1.43.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
 
+require gopkg.in/yaml.v2 v2.4.0
+
 require (
+	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Microsoft/go-winio v0.5.1 // indirect
 	github.com/containernetworking/cni v1.0.1 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
@@ -30,6 +31,7 @@ require (
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
@@ -48,15 +50,15 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.17.0 // indirect
 	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
+	gotest.tools/v3 v3.0.3 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
 require (
-	github.com/containerd/containerd v1.6.3 // indirect
 	github.com/coreos/go-iptables v0.6.0
 	github.com/docker/distribution v2.8.1+incompatible // indirect
 	github.com/go-playground/validator/v10 v10.10.1 // indirect
-	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
