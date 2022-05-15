@@ -2,6 +2,8 @@ package object
 
 import "time"
 
+const ReplicaSetEtcdPrefix = "/apis/replicaSet/"
+
 type ReplicaSet struct {
 	TypeMeta   `json:",inline" yaml:",inline"`
 	ObjectMeta `json:"metadata" yaml:"metadata"`

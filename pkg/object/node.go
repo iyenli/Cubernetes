@@ -1,5 +1,7 @@
 package object
 
+const NodeEtcdPrefix = "/apis/node/"
+
 type Node struct {
 	TypeMeta   `json:",inline" yaml:",inline"`
 	ObjectMeta `json:"metadata" yaml:"metadata"`

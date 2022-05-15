@@ -10,11 +10,11 @@ import (
 )
 
 func GetReplicaSet(ctx *gin.Context) {
-	getObj(ctx, "/apis/replicaSet/"+ctx.Param("uid"))
+	getObj(ctx, object.ReplicaSetEtcdPrefix+ctx.Param("uid"))
 }
 
 func GetReplicaSets(ctx *gin.Context) {
-	getObjs(ctx, "/apis/replicaSet/")
+	getObjs(ctx, object.ReplicaSetEtcdPrefix)
 }
 
 func PostReplicaSet(ctx *gin.Context) {
@@ -30,7 +30,7 @@ func PostReplicaSet(ctx *gin.Context) {
 	}
 	rs.UID = uuid.New().String()
 	buf, _ := json.Marshal(rs)
-	err = etcdrw.PutObj("/apis/replicaSet/"+rs.UID, string(buf))
+	err = etcdrw.PutObj(object.ReplicaSetEtcdPrefix+rs.UID, string(buf))
 	if err != nil {
 		serverError(ctx)
 		return
@@ -51,7 +51,7 @@ func PutReplicaSet(ctx *gin.Context) {
 		return
 	}
 
-	oldBuf, err := etcdrw.GetObj("/apis/replicaSet/" + newRs.UID)
+	oldBuf, err := etcdrw.GetObj(object.ReplicaSetEtcdPrefix + newRs.UID)
 	if err != nil {
 		serverError(ctx)
 		return
@@ -62,7 +62,7 @@ func PutReplicaSet(ctx *gin.Context) {
 	}
 
 	newBuf, _ := json.Marshal(newRs)
-	err = etcdrw.PutObj("/apis/replicaSet/"+newRs.UID, string(newBuf))
+	err = etcdrw.PutObj(object.ReplicaSetEtcdPrefix+newRs.UID, string(newBuf))
 	if err != nil {
 		serverError(ctx)
 		return
@@ -73,7 +73,7 @@ func PutReplicaSet(ctx *gin.Context) {
 }
 
 func DelReplicaSet(ctx *gin.Context) {
-	delObj(ctx, "/apis/replicaSet/"+ctx.Param("uid"))
+	delObj(ctx, object.ReplicaSetEtcdPrefix+ctx.Param("uid"))
 }
 
 func SelectReplicaSets(ctx *gin.Context) {
@@ -85,11 +85,11 @@ func SelectReplicaSets(ctx *gin.Context) {
 	}
 
 	if len(selectors) == 0 {
-		getObjs(ctx, "/apis/replicaSet/")
+		getObjs(ctx, object.ReplicaSetEtcdPrefix)
 		return
 	}
 
-	selectObjs(ctx, "/apis/replicaSet/", func(str []byte) bool {
+	selectObjs(ctx, object.ReplicaSetEtcdPrefix, func(str []byte) bool {
 		var rs object.ReplicaSet
 		err = json.Unmarshal(str, &rs)
 		if err != nil {

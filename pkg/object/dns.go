@@ -1,5 +1,7 @@
 package object
 
+const DnsEtcdPrefix = "/apis/dns/"
+
 type Dns struct {
 	TypeMeta   `json:",inline" yaml:",inline"`
 	ObjectMeta `json:"metadata" yaml:"metadata"`

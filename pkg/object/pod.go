@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const PodEtcdPrefix = "/apis/pod/"
+
 type Pod struct {
 	TypeMeta   `json:",inline" yaml:",inline"`
 	ObjectMeta `json:"metadata" yaml:"metadata"`

@@ -2,6 +2,8 @@ package object
 
 import "net"
 
+const ServiceEtcdPrefix = "/apis/service/"
+
 type Service struct {
 	TypeMeta   `json:",inline" yaml:",inline"`
 	ObjectMeta `json:"metadata" yaml:"metadata"`
