@@ -27,7 +27,7 @@ func NewCubeProxy() *Cubeproxy {
 		lock:    sync.Mutex{},
 	}
 
-	log.Println("Cubeproxy created")
+	log.Println("[INFO]: Cubeproxy created")
 	return cp
 }
 
