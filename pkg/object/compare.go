@@ -166,7 +166,7 @@ func ComputePodNetworkChange(new *Pod, old *Pod) bool {
 		log.Println("Some pod crashed or restarted, reset service")
 		return true
 	}
-	
+
 	return false
 }
 
@@ -209,5 +209,27 @@ func ComputeServiceCriticalChange(new *Service, old *Service) bool {
 
 	// We don't care endpoints, because every proxy judges pods independently
 	// TODO: is ingress critical?
+	return false
+}
+
+func ComputeDNSCriticalChange(new *Dns, old *Dns) bool {
+	if new.Spec.Host != old.Spec.Host {
+		return true
+	}
+	if len(new.Spec.Paths) != len(old.Spec.Paths) {
+		return true
+	}
+
+	for key, val := range new.Spec.Paths {
+		if tmp, exist := old.Spec.Paths[key]; exist {
+			if tmp.ServicePort != val.ServicePort ||
+				tmp.ServiceUID != val.ServiceUID {
+				return true
+			}
+		} else {
+			return true
+		}
+	}
+
 	return false
 }

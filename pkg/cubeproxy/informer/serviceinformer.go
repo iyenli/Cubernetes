@@ -65,14 +65,14 @@ func (i *ProxyServiceInformer) InformService(newService object.Service, eType wa
 				Service: newService,
 			}
 		} else {
-			log.Printf("Service %s not exist, delete do nothing\n", newService.UID)
+			log.Printf("[INFO]: Service %s not exist, delete do nothing\n", newService.UID)
 		}
 	}
 
 	if eType == watchobj.EVENT_PUT {
 		// Just handle Service whose cluster ip is not empty
 		if newService.Spec.ClusterIP == "" {
-			log.Println("Service without cluster ip, just ignore")
+			log.Println("[INFO]: Service without cluster ip, just ignore")
 			return nil
 		}
 
@@ -85,12 +85,12 @@ func (i *ProxyServiceInformer) InformService(newService object.Service, eType wa
 		} else {
 			// compute Service change: IP / Label
 			if object.ComputeServiceCriticalChange(&newService, &oldService) {
-				log.Println("Service changed, Service ID is:", newService.UID)
+				log.Println("[INFO]: Service changed, Service ID is:", newService.UID)
 				i.ServiceChannel <- types.ServiceEvent{
 					Type:    types.ServiceUpdate,
 					Service: newService}
 			} else {
-				log.Println("Service not changed, Service ID is:", newService.Name)
+				log.Println("[INFO]: Service not changed, Service ID is:", newService.Name)
 			}
 		}
 	}

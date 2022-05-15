@@ -65,17 +65,14 @@ func (i *ProxyPodInformer) InformPod(newPod object.Pod, eType watchobj.EventType
 				Pod:  newPod,
 			}
 		} else {
-			log.Printf("pod %s not exist, delete do nothing\n", newPod.UID)
+			log.Printf("[INFO]: pod %s not exist, delete do nothing\n", newPod.UID)
 		}
-	}
-
-	if eType == watchobj.EVENT_PUT {
+	} else {
 		// Just handle pod whose ip has been allocated
 		if newPod.Status == nil || newPod.Status.IP == nil {
 			log.Printf("Pod %v without ip, just ignore", newPod.UID)
 			return nil
 		}
-
 		// else cached and judge type
 		i.podCache[newPod.UID] = newPod
 		if !exist {
@@ -86,12 +83,12 @@ func (i *ProxyPodInformer) InformPod(newPod object.Pod, eType watchobj.EventType
 		} else {
 			// compute pod change: IP / Label
 			if object.ComputePodNetworkChange(&newPod, &oldPod) {
-				log.Println("pod changed, pod ID is:", newPod.UID)
+				log.Println("[INFO]: pod changed, pod ID is:", newPod.UID)
 				i.podChannel <- types.PodEvent{
 					Type: types.PodUpdate,
 					Pod:  newPod}
 			} else {
-				log.Println("pod not changed, pod ID is:", newPod.Name)
+				log.Println("[INFO]: pod not changed, pod ID is:", newPod.Name)
 			}
 		}
 	}

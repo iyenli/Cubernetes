@@ -2,44 +2,12 @@ package proxyruntime
 
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
-	"Cubernetes/pkg/cubeproxy/informer"
 	"Cubernetes/pkg/object"
 	"errors"
-	"github.com/coreos/go-iptables/iptables"
 	"log"
 	"net"
 	"strconv"
 )
-
-const (
-	FilterTable  = "filter"
-	NatTable     = "nat"
-	InputChain   = "INPUT"
-	OutputChain  = "OUTPUT"
-	DockerChain  = "DOCKER"
-	ServiceChain = "SERVICE"
-	// SnatOP SNAT use
-	SnatOP      = "SNAT"
-	PostRouting = "POSTROUTING"
-
-	// DnatOP DNAT use
-	DnatOP     = "DNAT"
-	PreRouting = "PREROUTING"
-
-	// RANDOM Load balancer policy
-	RANDOM      = "random"
-	RR          = "nth"
-	STATISTIC   = "statistic"
-	TestPurpose = false
-)
-
-type ProxyRuntime struct {
-	Ipt             *iptables.IPTables
-	PodInformer     informer.PodInformer
-	ServiceInformer informer.ServiceInformer
-
-	ServiceChainMap map[string]ServiceChainElement
-}
 
 func (pr *ProxyRuntime) AddService(service *object.Service) error {
 	// Check and set default value of service

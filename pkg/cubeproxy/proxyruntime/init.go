@@ -72,6 +72,16 @@ func InitProxyRuntime() (*ProxyRuntime, error) {
 		return nil, err
 	}
 
+	// Delete nginx config folder
+	// For now, try what if not restart all nginx docker?
+	//if _, err := os.Stat(options.NginxFile); err == nil {
+	//	err := os.RemoveAll(options.NginxFile)
+	//	if err != nil {
+	//		log.Println("[Error]: clear nginx file failed")
+	//		return pr, nil
+	//	}
+	//}
+
 	return pr, nil
 }
 

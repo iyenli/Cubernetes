@@ -12,8 +12,7 @@ import (
 type Cubeproxy struct {
 	//Runtime CubeproxyRuntime
 	Runtime *proxyruntime.ProxyRuntime
-
-	lock sync.Mutex
+	lock    sync.Mutex
 }
 
 func NewCubeProxy() *Cubeproxy {
@@ -61,7 +60,7 @@ func (cp *Cubeproxy) Run() {
 
 	ch, cancel, err := watchobj.WatchServices()
 	if err != nil {
-		log.Println("Error occurs when watching services")
+		log.Println("[Error]: Error occurs when watching services")
 		return
 	}
 	defer cancel()
@@ -100,7 +99,7 @@ func (cp *Cubeproxy) syncService() {
 	informEvent := cp.Runtime.ServiceInformer.WatchServiceEvent()
 
 	for serviceEvent := range informEvent {
-		log.Printf("[INFO]: Main loop working, types is %v,service id is %v", serviceEvent.Type, serviceEvent.Service.UID)
+		log.Printf("[INFO]: [INFO]: Main loop working, types is %v,service id is %v", serviceEvent.Type, serviceEvent.Service.UID)
 		service := serviceEvent.Service
 		eType := serviceEvent.Type
 		cp.lock.Lock()
@@ -145,7 +144,7 @@ func (cp *Cubeproxy) syncPod() {
 	informEvent := cp.Runtime.PodInformer.WatchPodEvent()
 
 	for podEvent := range informEvent {
-		log.Printf("Main loop working, type is %v, pod id is %v", podEvent.Type, &podEvent.Pod.UID)
+		log.Printf("[INFO]: Main loop working, type is %v, pod id is %v", podEvent.Type, &podEvent.Pod.UID)
 		pod := podEvent.Pod
 		eType := podEvent.Type
 		cp.lock.Lock()
@@ -164,10 +163,33 @@ func (cp *Cubeproxy) syncPod() {
 	}
 }
 
+func (cp *Cubeproxy) syncDNS() {
+	informEvent := cp.Runtime.DNSInformer.WatchDNSEvent()
+
+	for podEvent := range informEvent {
+		log.Printf("[INFO]: Main loop working, type is %v, DNS id is %v", podEvent.Type, &podEvent.DNS.UID)
+		dns := podEvent.DNS
+		eType := podEvent.Type
+		cp.lock.Lock()
+
+		switch eType {
+		case types.DNSCreate, types.DNSRemove, types.DNSUpdate:
+			log.Printf("DnsID %s\n", dns.UID)
+			err := cp.Runtime.ModifyDNS(&(dns))
+			if err != nil {
+				log.Fatalln("[Fatal]: error when modify DNS")
+				return
+			}
+		}
+
+		cp.lock.Unlock()
+	}
+}
+
 func (cp *Cubeproxy) WatchPodsChange() error {
 	ch, cancel, err := watchobj.WatchPods()
 	if err != nil {
-		log.Println("Error occurs when watching pods")
+		log.Println("[Error]: Error occurs when watching pods")
 		return err
 	}
 	defer cancel()
@@ -177,11 +199,36 @@ func (cp *Cubeproxy) WatchPodsChange() error {
 		case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
 			err := cp.Runtime.PodInformer.InformPod(podEvent.Pod, podEvent.EType)
 			if err != nil {
-				log.Println("Error when inform pod: ", podEvent.Pod.UID)
+				log.Println("[Error]: Error when inform pod: ", podEvent.Pod.UID)
 				return err
 			}
 		default:
 			log.Panic("Unsupported types in watch pod")
+		}
+	}
+
+	log.Fatalln("Unreachable here")
+	return nil
+}
+
+func (cp *Cubeproxy) WatchDNSChange() error {
+	ch, cancel, err := watchobj.WatchDnses()
+	if err != nil {
+		log.Println("[Error]: Error occurs when watching DNSes")
+		return err
+	}
+	defer cancel()
+
+	for dnsEvent := range ch {
+		switch dnsEvent.EType {
+		case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
+			err := cp.Runtime.DNSInformer.InformDNS(dnsEvent.Dns, dnsEvent.EType)
+			if err != nil {
+				log.Println("[Error]: Error when inform DNS: ", dnsEvent.Dns.UID)
+				return err
+			}
+		default:
+			log.Panic("Unsupported types in watch dns")
 		}
 	}
 
