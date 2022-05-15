@@ -6,6 +6,7 @@ const (
 	KindReplicaset = "ReplicaSet"
 	KindNode       = "Node"
 	KindDns        = "Dns"
+	KindAutoScaler = "AutoScaler"
 )
 
 type TypeMeta struct {

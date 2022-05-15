@@ -7,6 +7,8 @@ const AutoScalerEtcdPrefix = "/apis/autoScaler/"
 type AutoScaler struct {
 	TypeMeta   `json:",inline" yaml:",inline"`
 	ObjectMeta `json:"metadata" yaml:"metadata"`
+	Spec       AutoScalerSpec    `json:"spec" yaml:"spec"`
+	Status     *AutoScalerStatus `json:"status,omitempty" yaml:"status,omitempty"`
 }
 
 type AutoScalerSpec struct {

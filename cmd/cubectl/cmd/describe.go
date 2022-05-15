@@ -90,6 +90,18 @@ for example:
 				return
 			}
 			fmt.Print(string(str))
+		case "autoscaler":
+			as, err := crudobj.GetAutoScaler(UID)
+			if err != nil {
+				log.Fatal("[FATAL] fail to get AutoScaler")
+				return
+			}
+			str, err := yaml.Marshal(as)
+			if err != nil {
+				log.Fatal("[FATAL] fail to marshall AutoScaler")
+				return
+			}
+			fmt.Print(string(str))
 		default:
 			log.Fatal("[FATAL] Unknown kind: " + args[0])
 		}

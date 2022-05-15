@@ -115,9 +115,25 @@ for example:
 				return
 			}
 			fmt.Printf("%d Dnses Found\n", len(dnses))
-			fmt.Printf("%-30s\t%-s\n", "Name", "UID")
+			fmt.Printf("%-30s\t%-40s\t%-30s\t%-s\n", "Name", "UID", "Host", "PathCnt")
 			for _, dns := range dnses {
-				fmt.Printf("%-30s\t%-s\n", dns.Name, dns.UID)
+				fmt.Printf("%-30s\t%-40s\t%-30s\t%-v\n", dns.Name, dns.UID, dns.Spec.Host, len(dns.Spec.Paths))
+			}
+
+		case "autoscaler", "autoscalers":
+			autoScalers, err := crudobj.GetAutoScalers()
+			if err != nil {
+				log.Fatal("[FATAL] fail to get AutoScalers")
+				return
+			}
+			if len(autoScalers) == 0 {
+				fmt.Println("No AutoScalers Found")
+				return
+			}
+			fmt.Printf("%d AutoScalers Found\n", len(autoScalers))
+			fmt.Printf("%-30s\t%-40s\t(%-v ~ %-v)\n", "Name", "UID", "min", "max")
+			for _, as := range autoScalers {
+				fmt.Printf("%-30s\t%-40s\t(%-v ~ %-v)\n", as.Name, as.UID, as.Spec.MinReplicas, as.Spec.MaxReplicas)
 			}
 
 		default:

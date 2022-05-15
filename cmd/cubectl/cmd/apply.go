@@ -97,6 +97,20 @@ for example:
 			}
 			log.Printf("Dns UID=%s created\n", newDns.UID)
 
+		case object.KindAutoScaler:
+			var as object.AutoScaler
+			err = yaml.Unmarshal(file, &as)
+			if err != nil {
+				log.Fatal("[FATAL] fail to parse AutoScaler", err)
+				return
+			}
+			newAs, err := crudobj.CreateAutoScaler(as)
+			if err != nil {
+				log.Fatal("[FATAL] fail to create new AutoScaler")
+				return
+			}
+			log.Printf("AutoScaler UID=%s created\n", newAs.UID)
+
 		default:
 			log.Fatal("[FATAL] Unknown kind: " + t.Kind)
 		}

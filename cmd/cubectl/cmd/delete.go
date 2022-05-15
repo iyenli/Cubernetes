@@ -56,6 +56,13 @@ for example:
 			} else {
 				fmt.Printf("Dns UID=%s deleted\n", args[1])
 			}
+		case "autoscaler":
+			err := crudobj.DeleteAutoScaler(args[1])
+			if err != nil {
+				log.Fatal("[FATAL] fail to delete AutoScaler")
+			} else {
+				fmt.Printf("AutoScaler UID=%s deleted\n", args[1])
+			}
 		default:
 			log.Fatal("[FATAL] Unknown kind: " + args[0])
 		}
