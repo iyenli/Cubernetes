@@ -8,4 +8,7 @@ const (
 	Suffix        = ".conf"
 
 	DefaultFile = "default"
+
+	DockerNamePrefix = "C8-DNS-Nginx-"
+	DockerName       = "Nginx"
 )

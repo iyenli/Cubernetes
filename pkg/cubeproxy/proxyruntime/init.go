@@ -2,34 +2,46 @@ package proxyruntime
 
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
+	"Cubernetes/pkg/cubelet/dockershim"
 	"Cubernetes/pkg/cubeproxy/informer"
 	"Cubernetes/pkg/object"
+	"github.com/coreos/go-iptables/iptables"
 	"log"
 )
 
 func InitProxyRuntime() (*ProxyRuntime, error) {
-	pr := &ProxyRuntime{
-		Ipt:             nil,
-		ServiceChainMap: make(map[string]ServiceChainElement),
-		ServiceInformer: informer.NewServiceInformer(),
-		PodInformer:     informer.NewPodInformer(),
+	dockerInstance, err := dockershim.NewDockerRuntime()
+	if err != nil {
+		log.Println("[Error]: Init docker runtime error")
 	}
 
-	err := pr.InitObject()
+	pr := &ProxyRuntime{
+		Ipt:            nil,
+		DockerInstance: dockerInstance,
+
+		ServiceInformer: informer.NewServiceInformer(),
+		PodInformer:     informer.NewPodInformer(),
+		DNSInformer:     informer.NewDNSInformer(),
+
+		ServiceChainMap: make(map[string]ServiceChainElement),
+		DNSMap:          make(map[string]DNSElement),
+	}
+
+	err = pr.InitObject()
 	if err != nil {
-		log.Panicln("Init object failed")
+		log.Panicln("[Warn]: Init object failed")
 		return nil, err
 	}
 
 	/* check env */
 	flag, err := pr.Ipt.ChainExists(FilterTable, DockerChain)
 	if !flag {
-		log.Printf("Start docker first")
+		log.Printf("[Warn]: Start docker first")
 		//return nil, err
 	}
 	flag, err = pr.Ipt.ChainExists(NatTable, DockerChain)
 	if !flag {
-		log.Printf("Start docker first")
+		log.Printf("[Warn]: Start docker first")
 		//return nil, err
 	}
 	/* Check env ends */
@@ -142,5 +154,26 @@ func (pr *ProxyRuntime) AddExistService(service *object.Service) error {
 			return err
 		}
 	}
+	return nil
+}
+
+// InitObject private function! Just for test
+func (pr *ProxyRuntime) InitObject() (err error) {
+	pr.Ipt, err = iptables.New(iptables.Timeout(3))
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	return
+}
+
+func (pr *ProxyRuntime) ClearAllService() error {
+	for _, service := range pr.ServiceInformer.ListServices() {
+		err := pr.DeleteService(&service)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

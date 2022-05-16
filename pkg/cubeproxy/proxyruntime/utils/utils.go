@@ -1,33 +1,15 @@
-package proxyruntime
+package utils
 
 import (
 	"Cubernetes/pkg/object"
 	"errors"
-	"github.com/coreos/go-iptables/iptables"
 	"log"
 	"net"
 )
 
-func (pr *ProxyRuntime) ClearAllService() error {
-	for _, service := range pr.ServiceInformer.ListServices() {
-		err := pr.DeleteService(&service)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// InitObject private function! Just for test
-func (pr *ProxyRuntime) InitObject() (err error) {
-	pr.Ipt, err = iptables.New(iptables.Timeout(3))
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-	return
-}
+var (
+	HostnameError = errors.New("illegal hostname")
+)
 
 // CheckService
 // 1. Check if service is legal
@@ -48,4 +30,18 @@ func CheckService(service *object.Service) error {
 	}
 
 	return nil
+}
+
+func CheckDNSHostName(host string) (string, error) {
+	if len(host) == 0 {
+		return "", HostnameError
+	}
+
+	if host[0] == '/' {
+		host = host[1:]
+	}
+	if host[len(host)-1] == '/' {
+		host = host[:len(host)-1]
+	}
+	return host, nil
 }

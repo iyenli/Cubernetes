@@ -28,7 +28,7 @@ func CreateNginxConfig(host string, paths []string, serviceIPs []string, ports [
 
 	log.Println("[INFO]: New DNS object created, nginx config file is:")
 	log.Println(config)
-	log.Printf("[INFO]: The file will be stored at '/etc/cubernetes/cubeproxy/nginx/%v/site-enabled/conf'\n", host)
+	log.Printf("[INFO]: The file will be stored at '/etc/cubernetes/cubeproxy/nginx/%v/site-enabled/'\n", host)
 
 	err := PrepareNginxFile(host, &config)
 	if err != nil {

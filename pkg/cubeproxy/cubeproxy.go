@@ -16,10 +16,10 @@ type Cubeproxy struct {
 }
 
 func NewCubeProxy() *Cubeproxy {
-	log.Printf("creating cubeproxy\n")
+	log.Printf("[INFO]: creating cubeproxy\n")
 	runtime, err := proxyruntime.InitProxyRuntime()
 	if err != nil {
-		log.Printf("Create cube proxy runtime error: %v", err.Error())
+		log.Printf("[Fatal]: Create cube proxy runtime error: %v", err.Error())
 	}
 
 	cp := &Cubeproxy{
@@ -37,7 +37,7 @@ func (cp *Cubeproxy) Run() {
 	}
 
 	defer func(runtime *proxyruntime.ProxyRuntime) {
-		log.Printf("Release IP Tables...")
+		log.Printf("[INFO]: Release IP Tables...")
 		err := runtime.ReleaseIPTables()
 		if err != nil {
 			log.Panicln("[Panic]: Error when release proxy Runtime")
@@ -84,15 +84,15 @@ func (cp *Cubeproxy) Run() {
 		case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
 			err := cp.Runtime.ServiceInformer.InformService(serviceEvent.Service, serviceEvent.EType)
 			if err != nil {
-				log.Panic("Inform service failed")
+				log.Panic("[Fatal]: Inform service failed")
 				return
 			}
 		default:
-			log.Panic("Unsupported types in watching service.")
+			log.Panic("[Fatal]: Unsupported types in watching service.")
 		}
 	}
 
-	log.Fatalln("Unreachable here")
+	log.Fatalln("[Fatal]: Unreachable here")
 }
 
 func (cp *Cubeproxy) syncService() {
@@ -106,7 +106,7 @@ func (cp *Cubeproxy) syncService() {
 
 		switch eType {
 		case types.ServiceCreate:
-			log.Printf("from serviceEvent: create service %s\n", service.UID)
+			log.Printf("[INFO]: create service %s\n", service.UID)
 			err := cp.Runtime.AddService(&service)
 			if err != nil {
 				log.Printf("[Error]: Add service error: %v", err.Error())
@@ -114,24 +114,24 @@ func (cp *Cubeproxy) syncService() {
 			}
 		case types.ServiceUpdate:
 			// critical update: simply delete and rebuild
-			log.Printf("from serviceEvent: update service %s\n", service.UID)
+			log.Printf("[INFO]: update service %s\n", service.UID)
 			err := cp.Runtime.DeleteService(&service)
 			if err != nil {
-				log.Printf("Delete service error: %v", err.Error())
+				log.Printf("[Fatal]: Delete service error: %v", err.Error())
 				return
 			}
 
 			err = cp.Runtime.AddService(&service)
 			if err != nil {
-				log.Printf("Add service error: %v", err.Error())
+				log.Printf("[Fatal]: Add service error: %v", err.Error())
 				return
 			}
 
 		case types.ServiceRemove:
-			log.Printf("serviceEvent: delete service %s\n", service.UID)
+			log.Printf("[INFO]: delete service %s\n", service.UID)
 			err := cp.Runtime.DeleteService(&service)
 			if err != nil {
-				log.Printf("Delete service error: %v", err.Error())
+				log.Printf("[Fatal]: Delete service error: %v", err.Error())
 				return
 			}
 		}
@@ -151,7 +151,7 @@ func (cp *Cubeproxy) syncPod() {
 
 		switch eType {
 		case types.PodCreate, types.PodRemove, types.PodUpdate:
-			log.Printf("from podEvent: create pod %s\n", pod.UID)
+			log.Printf("[INFO]: create pod %s\n", pod.UID)
 			err := cp.Runtime.ModifyPod(&(pod))
 			if err != nil {
 				log.Fatalln("[Fatal]: error when modify pod")
@@ -173,9 +173,25 @@ func (cp *Cubeproxy) syncDNS() {
 		cp.lock.Lock()
 
 		switch eType {
-		case types.DNSCreate, types.DNSRemove, types.DNSUpdate:
-			log.Printf("DnsID %s\n", dns.UID)
-			err := cp.Runtime.ModifyDNS(&(dns))
+		case types.DNSCreate:
+			log.Printf("[INFO] DNS Created, DnsID %s\n", dns.UID)
+			err := cp.Runtime.AddDNS(&dns)
+			if err != nil {
+				log.Fatalln("[Fatal]: error when create DNS")
+				return
+			}
+
+		case types.DNSRemove:
+			log.Printf("[INFO] DNS Removed, DnsID %s\n", dns.UID)
+			err := cp.Runtime.DeleteDNS(&dns)
+			if err != nil {
+				log.Fatalln("[Fatal]: error when remove DNS")
+				return
+			}
+
+		case types.DNSUpdate:
+			log.Printf("[INFO] DNS Update, DnsID %s\n", dns.UID)
+			err := cp.Runtime.AddDNS(&dns)
 			if err != nil {
 				log.Fatalln("[Fatal]: error when modify DNS")
 				return
@@ -203,11 +219,11 @@ func (cp *Cubeproxy) WatchPodsChange() error {
 				return err
 			}
 		default:
-			log.Panic("Unsupported types in watch pod")
+			log.Panic("[Fatal]: Unsupported types in watch pod")
 		}
 	}
 
-	log.Fatalln("Unreachable here")
+	log.Fatalln("[Fatal]: Unreachable here")
 	return nil
 }
 
@@ -224,14 +240,14 @@ func (cp *Cubeproxy) WatchDNSChange() error {
 		case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
 			err := cp.Runtime.DNSInformer.InformDNS(dnsEvent.Dns, dnsEvent.EType)
 			if err != nil {
-				log.Println("[Error]: Error when inform DNS: ", dnsEvent.Dns.UID)
+				log.Println("[Error]: Error when inform DNS:", dnsEvent.Dns.UID)
 				return err
 			}
 		default:
-			log.Panic("Unsupported types in watch dns")
+			log.Panic("[Fatal]: Unsupported types in watch dns")
 		}
 	}
 
-	log.Fatalln("Unreachable here")
+	log.Fatalln("[Fatal]: Unreachable here")
 	return nil
 }

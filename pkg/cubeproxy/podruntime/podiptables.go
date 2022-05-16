@@ -1,6 +1,7 @@
-package proxyruntime
+package podruntime
 
 import (
+	"Cubernetes/pkg/cubeproxy/proxyruntime"
 	"Cubernetes/pkg/object"
 	"fmt"
 	"github.com/coreos/go-iptables/iptables"
@@ -42,11 +43,11 @@ func ReleasePodChain() error {
 func (ptr *PodTablesRuntime) AddPod(pod *object.Pod, dockerIP net.IP) error {
 	for _, container := range pod.Spec.Containers {
 		for _, port := range container.Ports {
-			err := ptr.ipt.Append(NatTable, PreRouting,
+			err := ptr.ipt.Append(proxyruntime.NatTable, proxyruntime.PreRouting,
 				"-d", pod.Status.IP.String(),
 				"-p", port.Protocol,
 				"--dport", strconv.FormatInt(int64(port.HostPort), 10),
-				"-j", DnatOP,
+				"-j", proxyruntime.DnatOP,
 				"--to-destination", fmt.Sprintf("%v:%v", dockerIP.String(), strconv.FormatInt(int64(port.ContainerPort), 10)))
 
 			if err != nil {
@@ -64,11 +65,11 @@ func (ptr *PodTablesRuntime) DeletePod(pod *object.Pod, dockerIP net.IP) error {
 	for _, container := range pod.Spec.Containers {
 		for _, port := range container.Ports {
 
-			err := ptr.ipt.DeleteIfExists(NatTable, PreRouting,
+			err := ptr.ipt.DeleteIfExists(proxyruntime.NatTable, proxyruntime.PreRouting,
 				"-d", pod.Status.IP.String(),
 				"-p", port.Protocol,
 				"--dport", strconv.FormatInt(int64(port.HostPort), 10),
-				"-j", DnatOP,
+				"-j", proxyruntime.DnatOP,
 				"--to-destination", fmt.Sprintf("%v:%v", dockerIP.String(), strconv.FormatInt(int64(port.ContainerPort), 10)))
 
 			if err != nil {

@@ -172,7 +172,12 @@ func (c *dockerClient) PullImage(imageName string) error {
 		log.Printf("fail to pull image %s : %v\n", imageName, err)
 		return err
 	}
-	defer out.Close()
+	defer func(out io.ReadCloser) {
+		err := out.Close()
+		if err != nil {
+			log.Println("[Error]: close reader failed")
+		}
+	}(out)
 
 	decoder := json.NewDecoder(out)
 	for {

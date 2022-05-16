@@ -2,6 +2,7 @@ package proxyruntime
 
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
+	"Cubernetes/pkg/cubeproxy/proxyruntime/utils"
 	"Cubernetes/pkg/object"
 	"errors"
 	"log"
@@ -11,7 +12,7 @@ import (
 
 func (pr *ProxyRuntime) AddService(service *object.Service) error {
 	// Check and set default value of service
-	err := CheckService(service)
+	err := utils.CheckService(service)
 	if err != nil {
 		log.Println("Service checking failed, please check service yaml")
 		return err
