@@ -1,6 +1,7 @@
 package restful
 
 import (
+	"Cubernetes/cmd/apiserver/httpserver/utils"
 	"Cubernetes/pkg/cubenetwork/servicenetwork"
 	"Cubernetes/pkg/object"
 	"Cubernetes/pkg/utils/etcdrw"
@@ -24,24 +25,24 @@ func PostService(ctx *gin.Context) {
 	service := object.Service{}
 	err := ctx.BindJSON(&service)
 	if err != nil {
-		parseFail(ctx)
+		utils.ParseFail(ctx)
 		return
 	}
 	if service.Name == "" {
-		badRequest(ctx)
+		utils.BadRequest(ctx)
 		return
 	}
 	service.UID = uuid.New().String()
 	service, err = ClusterIPAllocator.AllocateClusterIP(&service)
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
 
 	buf, _ := json.Marshal(service)
 	err = etcdrw.PutObj(object.ServiceEtcdPrefix+service.UID, string(buf))
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
 	ctx.JSON(http.StatusOK, service)
@@ -51,29 +52,29 @@ func PutService(ctx *gin.Context) {
 	newService := object.Service{}
 	err := ctx.BindJSON(&newService)
 	if err != nil {
-		parseFail(ctx)
+		utils.ParseFail(ctx)
 		return
 	}
 
 	if newService.UID != ctx.Param("uid") {
-		badRequest(ctx)
+		utils.BadRequest(ctx)
 		return
 	}
 
 	oldBuf, err := etcdrw.GetObj(object.ServiceEtcdPrefix + newService.UID)
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
 	if oldBuf == nil {
-		notFound(ctx)
+		utils.NotFound(ctx)
 		return
 	}
 
 	newBuf, _ := json.Marshal(newService)
 	err = etcdrw.PutObj(object.ServiceEtcdPrefix+newService.UID, string(newBuf))
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
 
@@ -89,7 +90,7 @@ func SelectServices(ctx *gin.Context) {
 	var selectors map[string]string
 	err := ctx.BindJSON(&selectors)
 	if err != nil {
-		parseFail(ctx)
+		utils.ParseFail(ctx)
 		return
 	}
 

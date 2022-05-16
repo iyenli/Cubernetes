@@ -7,6 +7,7 @@ const (
 	KindNode       = "Node"
 	KindDns        = "Dns"
 	KindAutoScaler = "AutoScaler"
+	KindGpuJob     = "GpuJob"
 )
 
 type TypeMeta struct {

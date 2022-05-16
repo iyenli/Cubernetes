@@ -1,6 +1,7 @@
 package restful
 
 import (
+	"Cubernetes/cmd/apiserver/httpserver/utils"
 	"Cubernetes/pkg/object"
 	"Cubernetes/pkg/utils/etcdrw"
 	"encoding/json"
@@ -21,18 +22,18 @@ func PostAutoScaler(ctx *gin.Context) {
 	as := object.AutoScaler{}
 	err := ctx.BindJSON(&as)
 	if err != nil {
-		parseFail(ctx)
+		utils.ParseFail(ctx)
 		return
 	}
 	if as.Name == "" {
-		badRequest(ctx)
+		utils.BadRequest(ctx)
 		return
 	}
 	as.UID = uuid.New().String()
 	buf, _ := json.Marshal(as)
 	err = etcdrw.PutObj(object.AutoScalerEtcdPrefix+as.UID, string(buf))
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
 	ctx.JSON(http.StatusOK, as)
@@ -42,29 +43,29 @@ func PutAutoScaler(ctx *gin.Context) {
 	newAs := object.AutoScaler{}
 	err := ctx.BindJSON(&newAs)
 	if err != nil {
-		parseFail(ctx)
+		utils.ParseFail(ctx)
 		return
 	}
 
 	if newAs.UID != ctx.Param("uid") {
-		badRequest(ctx)
+		utils.BadRequest(ctx)
 		return
 	}
 
 	oldBuf, err := etcdrw.GetObj(object.AutoScalerEtcdPrefix + newAs.UID)
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
 	if oldBuf == nil {
-		notFound(ctx)
+		utils.NotFound(ctx)
 		return
 	}
 
 	newBuf, _ := json.Marshal(newAs)
 	err = etcdrw.PutObj(object.AutoScalerEtcdPrefix+newAs.UID, string(newBuf))
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
 
@@ -80,7 +81,7 @@ func SelectAutoScalers(ctx *gin.Context) {
 	var selectors map[string]string
 	err := ctx.BindJSON(&selectors)
 	if err != nil {
-		parseFail(ctx)
+		utils.ParseFail(ctx)
 		return
 	}
 

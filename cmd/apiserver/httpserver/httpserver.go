@@ -19,6 +19,7 @@ func Run() {
 	router := gin.Default()
 
 	handlerList := append(restfulList, watchList...)
+	handlerList = append(handlerList, fileList...)
 
 	for _, handler := range handlerList {
 		switch handler.Method {
