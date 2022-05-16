@@ -70,7 +70,7 @@ for example:
 			}
 			log.Printf("Service UID=%s created\n", newService.UID)
 
-		case object.KindReplicaset:
+		case object.KindReplicaSet:
 			var rs object.ReplicaSet
 			err = yaml.Unmarshal(file, &rs)
 			if err != nil {

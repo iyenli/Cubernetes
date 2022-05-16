@@ -3,7 +3,7 @@ package object
 const (
 	KindPod        = "Pod"
 	KindService    = "Service"
-	KindReplicaset = "ReplicaSet"
+	KindReplicaSet = "ReplicaSet"
 	KindNode       = "Node"
 	KindDns        = "Dns"
 	KindAutoScaler = "AutoScaler"
