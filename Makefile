@@ -5,7 +5,7 @@ all: ${targets}
 
 .PHONY:clean
 clean:
-	rm $(addprefix ${build_path}/, ${targets})
+	rm -f $(addprefix ${build_path}/, ${targets})
 
 cubectl: cmd/cubectl/cubectl.go
 	@go build -o ${build_path}/cubectl cmd/cubectl/cubectl.go
