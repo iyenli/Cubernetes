@@ -28,7 +28,7 @@ type replicaSetController struct {
 }
 
 func NewReplicaSetController(
-	podInformer informer.PodInformer, 
+	podInformer informer.PodInformer,
 	rsInformer informer.ReplicaSetInformer) (ReplicaSetController, error) {
 	return &replicaSetController{
 		podInformer: podInformer,

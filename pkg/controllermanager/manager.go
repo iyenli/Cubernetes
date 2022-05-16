@@ -2,6 +2,7 @@ package controllermanager
 
 import (
 	"Cubernetes/pkg/apiserver/watchobj"
+	"Cubernetes/pkg/controllermanager/controller/autoscaler_controller"
 	"Cubernetes/pkg/controllermanager/controller/replicaset_controller"
 	"Cubernetes/pkg/controllermanager/informer"
 	"Cubernetes/pkg/controllermanager/phase"
@@ -10,6 +11,7 @@ import (
 
 type ControllerManager struct {
 	RSController replicaset_controller.ReplicaSetController
+	ASController autoscaler_controller.AutoScalerController
 	PodInformer  informer.PodInformer
 	// other controller here
 }
@@ -17,9 +19,12 @@ type ControllerManager struct {
 func NewControllerManager() ControllerManager {
 	podInformer, _ := informer.NewPodInformer()
 	rsInformer, _ := informer.NewReplicaSetInformer()
+	asInformer, _ := informer.NewAutoScalerInformer()
 	rsController, _ := replicaset_controller.NewReplicaSetController(podInformer, rsInformer)
+	asController, _ := autoscaler_controller.NewAutoScalerController(podInformer, rsInformer, asInformer)
 	return ControllerManager{
 		RSController: rsController,
+		ASController: asController,
 		PodInformer:  podInformer,
 	}
 }
@@ -33,6 +38,7 @@ func (cm *ControllerManager) Run() {
 
 	// watch ReplicaSet from API Server
 	go cm.RSController.Run()
+	go cm.ASController.Run()
 
 	for podEvent := range ch {
 		pod := podEvent.Pod
