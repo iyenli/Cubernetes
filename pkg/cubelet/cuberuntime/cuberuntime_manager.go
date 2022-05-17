@@ -45,8 +45,6 @@ func (m *cubeRuntimeManager) SyncPod(pod *object.Pod, podStatus *cubecontainer.P
 	// Compute sandbox and container changes.
 	podContainerChanges := m.computePodActions(pod, podStatus)
 
-	log.Printf("\ncreate sandbox: %t\ncreate container: %v\n\n", podContainerChanges.CreateSandbox, podContainerChanges.ContainersToStart)
-
 	removeContainer := true
 	// Kill the pod if sandbox changed
 	if podContainerChanges.KillPod {
@@ -313,6 +311,11 @@ func (c *cubeRuntimeManager) getPodStatusByUID(UID string) (*cubecontainer.PodSt
 	sandboxStatuses, err := c.getSandboxStatusesByPodUID(UID)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(containerStatuses) == 0 && len(sandboxStatuses) == 0 {
+		// both empty: pod not exists
+		return &cubecontainer.PodStatus{}, nil
 	}
 
 	podName := ""

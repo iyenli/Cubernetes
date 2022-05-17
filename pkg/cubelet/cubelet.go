@@ -2,7 +2,6 @@ package cubelet
 
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
-	watchobj "Cubernetes/pkg/apiserver/watchobj"
 	"Cubernetes/pkg/cubelet/container"
 	cuberuntime "Cubernetes/pkg/cubelet/cuberuntime"
 	"Cubernetes/pkg/cubelet/informer"
@@ -44,18 +43,11 @@ func (cl *Cubelet) InitCubelet(NodeUID string, ip net.IP) {
 	log.Printf("Starting node, Node UID is %v, Node weave IP is %v", NodeUID, ip.String())
 	cl.NodeID = NodeUID
 	cl.WeaveIP = ip
+	cl.informer.SetNodeUID(NodeUID)
 }
 
 func (cl *Cubelet) Run() {
 	defer cl.runtime.Close()
-	defer cl.informer.CloseChan()
-
-	ch, cancel, err := watchobj.WatchPods()
-	if err != nil {
-		log.Panic("Error occurs when watching pods")
-	}
-
-	defer cancel()
 
 	// push pod status to apiserver every 10 sec
 	// simply using for loop to achieve block timer
@@ -69,27 +61,7 @@ func (cl *Cubelet) Run() {
 	// deal with pod event
 	go cl.syncLoop()
 
-	for podEvent := range ch {
-		if podEvent.Pod.Status == nil && podEvent.EType != watchobj.EVENT_DELETE {
-			log.Println("[INFO] Pod caught, but status is nil so Cubelet doesn't handle it")
-			continue
-		}
-		if podEvent.EType == watchobj.EVENT_DELETE || podEvent.Pod.Status.NodeUID == cl.NodeID {
-			log.Println("[INFO]: my pod caught, types is", podEvent.EType)
-			switch podEvent.EType {
-			case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
-				err := cl.informer.InformPod(podEvent.Pod, podEvent.EType)
-				if err != nil {
-					return
-				}
-			default:
-				log.Panic("Unsupported types in watch pod.")
-			}
-		} else {
-			log.Printf("[INFO]: pod caught, but not my pod, pod UUID = %v, my UUID = %v",
-				podEvent.Pod.Status.NodeUID, cl.NodeID)
-		}
-	}
+	cl.informer.ListAndWatchPodsWithRetry()
 
 	log.Fatalln("Unreachable here")
 }
