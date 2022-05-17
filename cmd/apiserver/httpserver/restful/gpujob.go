@@ -2,12 +2,15 @@ package restful
 
 import (
 	"Cubernetes/cmd/apiserver/httpserver/utils"
+	cubeconfig "Cubernetes/config"
 	"Cubernetes/pkg/object"
 	"Cubernetes/pkg/utils/etcdrw"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"net/http"
+	"os"
+	"path"
 )
 
 func GetGpuJob(ctx *gin.Context) {
@@ -77,7 +80,28 @@ func PutGpuJob(ctx *gin.Context) {
 }
 
 func DelGpuJob(ctx *gin.Context) {
-	delObj(ctx, object.GpuJobEtcdPrefix+ctx.Param("uid"))
+	key := object.GpuJobEtcdPrefix + ctx.Param("uid")
+	oldBuf, err := etcdrw.GetObj(key)
+	if err != nil {
+		utils.ServerError(ctx)
+		return
+	}
+	if oldBuf == nil {
+		utils.NotFound(ctx)
+		return
+	}
+
+	err = etcdrw.DelObj(key)
+	if err != nil {
+		utils.ServerError(ctx)
+		return
+	}
+
+	filename := path.Join(cubeconfig.JobFileDir, ctx.Param("uid"))
+	_ = os.RemoveAll(filename + ".tar.gz")
+	_ = os.RemoveAll(filename + ".out")
+
+	ctx.String(http.StatusOK, "deleted")
 }
 
 func SelectGpuJobs(ctx *gin.Context) {
