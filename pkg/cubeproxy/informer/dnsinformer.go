@@ -5,6 +5,7 @@ import (
 	"Cubernetes/pkg/cubeproxy/informer/types"
 	"Cubernetes/pkg/object"
 	"log"
+	"sync"
 )
 
 type DNSInformer interface {
@@ -18,6 +19,8 @@ type DNSInformer interface {
 type ProxyDNSInformer struct {
 	DNSChannel chan types.DNSEvent
 	DNSCache   map[string]object.Dns
+
+	mtx sync.RWMutex
 }
 
 func NewDNSInformer() DNSInformer {
@@ -44,17 +47,19 @@ func (p *ProxyDNSInformer) CloseChan() {
 }
 
 func (p *ProxyDNSInformer) ListDNS() []object.Dns {
+	p.mtx.RLock()
 	dns := make([]object.Dns, len(p.DNSCache))
 	idx := 0
 	for _, item := range p.DNSCache {
 		dns[idx] = item
 		idx += 1
 	}
-
+	p.mtx.RUnlock()
 	return dns
 }
 
 func (p *ProxyDNSInformer) InformDNS(new object.Dns, eType watchobj.EventType) error {
+	p.mtx.Lock()
 	oldDns, exist := p.DNSCache[new.UID]
 
 	if eType == watchobj.EVENT_DELETE {
@@ -87,6 +92,6 @@ func (p *ProxyDNSInformer) InformDNS(new object.Dns, eType watchobj.EventType) e
 			}
 		}
 	}
-
+	p.mtx.Unlock()
 	return nil
 }

@@ -29,7 +29,7 @@ func (pr *ProxyRuntime) MapPortToPods(service *object.Service, podIPs []string, 
 		return err
 	}
 
-	pr.ServiceChainMap[service.UID].serviceChainUid[idx] = serviceUID
+	pr.ServiceChainMap[service.UID].ServiceChainUid[idx] = serviceUID
 
 	// Then create NUM(pod) chain
 	for idx_, pod := range podIPs {
@@ -77,7 +77,7 @@ func (pr *ProxyRuntime) MapPortToPods(service *object.Service, podIPs []string, 
 			return err
 		}
 
-		pr.ServiceChainMap[service.UID].probabilityChainUid[idx][idx_] = podChainUID
+		pr.ServiceChainMap[service.UID].ProbabilityChainUid[idx][idx_] = podChainUID
 	}
 	return nil
 }

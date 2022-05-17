@@ -11,10 +11,12 @@ import (
 func (pr *ProxyRuntime) AddDNS(dns *object.Dns) error {
 	// preprocess hostname, e.g. example.com is ok
 	// /example.com.xx/ not ok
-	hostname, err := utils.CheckDNSHostName(dns.Spec.Host)
+	err := utils.CheckDNS(dns)
 	if err != nil {
-		log.Fatalln("[Fatal]: DNS host name is not legal")
+		log.Fatalln("[Fatal]: DNS host config is not legal")
+		return err
 	}
+	hostname := dns.Spec.Host
 
 	paths := make([]string, len(dns.Spec.Paths))
 	serviceIP := make([]string, len(dns.Spec.Paths))
@@ -31,8 +33,9 @@ func (pr *ProxyRuntime) AddDNS(dns *object.Dns) error {
 			if service.UID == dst.ServiceUID {
 				if service.Spec.ClusterIP == "" {
 					log.Println("[Error]: Service has no cluster ip")
-					return errors.New("[Error]: Service has no cluster ip")
+					return errors.New("service has no cluster ip")
 				}
+
 				serviceIP[index] = service.Spec.ClusterIP
 				serviceExist = true
 				break
@@ -41,8 +44,10 @@ func (pr *ProxyRuntime) AddDNS(dns *object.Dns) error {
 
 		if !serviceExist {
 			log.Println("[Error]: no corresponding service in dns")
-			return errors.New("no corresponding service in dns")
+			return nil
 		}
+
+		index++
 	}
 
 	log.Printf("[INFO]: Now, DNS %v(hostname is %v) is ready to start nginx docker\n", dns.UID, hostname)
@@ -50,7 +55,7 @@ func (pr *ProxyRuntime) AddDNS(dns *object.Dns) error {
 	containerID, err := pr.StartDNSNginxDocker(hostname, paths, serviceIP, port)
 	if err != nil {
 		log.Println("[Error]: DNS Nginx docker start error")
-		return err
+		return nil
 	}
 
 	log.Printf("[INFO]: DNS %v has been built, containerID is %v", dns.UID, containerID)

@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	HostnameError = errors.New("illegal hostname")
+	DNSConfigError = errors.New("illegal hostname")
 )
 
 // CheckService
@@ -32,16 +32,33 @@ func CheckService(service *object.Service) error {
 	return nil
 }
 
-func CheckDNSHostName(host string) (string, error) {
+func CheckDNS(dns *object.Dns) error {
+	host := dns.Spec.Host
+
 	if len(host) == 0 {
-		return "", HostnameError
+		return DNSConfigError
 	}
 
+	// Hostname be like: xxx.xxx.xxx
 	if host[0] == '/' {
 		host = host[1:]
 	}
 	if host[len(host)-1] == '/' {
 		host = host[:len(host)-1]
 	}
-	return host, nil
+
+	portMap := make(map[int32]bool)
+	pathMap := make(map[string]bool)
+	for path, dst := range dns.Spec.Paths {
+		if _, ok := pathMap[path]; ok {
+			return DNSConfigError
+		}
+		if _, ok := portMap[dst.ServicePort]; ok {
+			return DNSConfigError
+		}
+		portMap[dst.ServicePort] = true
+		pathMap[path] = true
+	}
+
+	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"Cubernetes/pkg/cubeproxy/informer/types"
 	"Cubernetes/pkg/object"
 	"log"
+	"sync"
 )
 
 type PodInformer interface {
@@ -18,6 +19,8 @@ type PodInformer interface {
 type ProxyPodInformer struct {
 	podChannel chan types.PodEvent
 	podCache   map[string]object.Pod
+
+	mtx sync.Mutex
 }
 
 func NewPodInformer() PodInformer {
@@ -55,6 +58,7 @@ func (i *ProxyPodInformer) ListPods() []object.Pod {
 }
 
 func (i *ProxyPodInformer) InformPod(newPod object.Pod, eType watchobj.EventType) error {
+	i.mtx.Lock()
 	oldPod, exist := i.podCache[newPod.UID]
 
 	if eType == watchobj.EVENT_DELETE {
@@ -68,13 +72,17 @@ func (i *ProxyPodInformer) InformPod(newPod object.Pod, eType watchobj.EventType
 			log.Printf("[INFO]: pod %s not exist, delete do nothing\n", newPod.UID)
 		}
 	} else {
+		// FIXME: If a pod lose its ip..
 		// Just handle pod whose ip has been allocated
 		if newPod.Status == nil || newPod.Status.IP == nil {
 			log.Printf("Pod %v without ip, just ignore", newPod.UID)
+			i.mtx.Unlock()
 			return nil
 		}
+
 		// else cached and judge type
 		i.podCache[newPod.UID] = newPod
+
 		if !exist {
 			i.podChannel <- types.PodEvent{
 				Type: types.PodCreate,
@@ -93,5 +101,6 @@ func (i *ProxyPodInformer) InformPod(newPod object.Pod, eType watchobj.EventType
 		}
 	}
 
+	i.mtx.Unlock()
 	return nil
 }

@@ -7,6 +7,7 @@ import (
 	"Cubernetes/pkg/object"
 	"github.com/coreos/go-iptables/iptables"
 	"log"
+	"net"
 )
 
 func InitProxyRuntime() (*ProxyRuntime, error) {
@@ -126,6 +127,28 @@ func (pr *ProxyRuntime) AddAllExistService() error {
 
 // AddExistService Service has correct endpoints, just add iptables mapping:)
 func (pr *ProxyRuntime) AddExistService(service *object.Service) error {
+	if service.Spec.ClusterIP == "" || len(service.Spec.Selector) == 0 {
+		log.Println("[INFO]: Service without cluster ip or selector, ignore")
+		return nil
+	}
+
+	if service.Status == nil {
+		service.Status = &object.ServiceStatus{
+			Endpoints: []net.IP{},
+			Ingress:   []object.PodIngress{},
+		}
+	}
+
+	service.Status.Endpoints = []net.IP{}
+	pods := pr.PodInformer.ListPods()
+	for _, pod := range pods {
+		if object.MatchLabelSelector(service.Spec.Selector, pod.Labels) {
+			if pod.Status != nil && pod.Status.IP != nil {
+				service.Status.Endpoints = append(service.Status.Endpoints, pod.Status.IP)
+			}
+		}
+	}
+
 	if service.Status == nil || len(service.Status.Endpoints) == 0 {
 		log.Println("[INFO]: Adding a service without endpoint, do nothing")
 		return nil
@@ -137,9 +160,9 @@ func (pr *ProxyRuntime) AddExistService(service *object.Service) error {
 	}
 
 	pr.ServiceChainMap[service.UID] = ServiceChainElement{
-		serviceChainUid:     make([]string, len(service.Spec.Ports)),
-		probabilityChainUid: prob,
-		numberOfPods:        len(service.Status.Endpoints),
+		ServiceChainUid:     make([]string, len(service.Spec.Ports)),
+		ProbabilityChainUid: prob,
+		NumberOfPods:        0,
 	}
 
 	podIPs := make([]string, len(service.Status.Endpoints))
@@ -150,9 +173,14 @@ func (pr *ProxyRuntime) AddExistService(service *object.Service) error {
 	for idx, port := range service.Spec.Ports {
 		err := pr.MapPortToPods(service, podIPs, &port, idx)
 		if err != nil {
-			log.Println("[error]: map port to pods failed")
+			log.Println("[error]: map0 port to pods failed")
 			return err
 		}
+	}
+
+	_, err := crudobj.UpdateService(*service)
+	if err != nil {
+		log.Println("[Error]: update service failed")
 	}
 	return nil
 }

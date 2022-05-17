@@ -4,7 +4,6 @@ import (
 	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/cubeproxy/proxyruntime/utils"
 	"Cubernetes/pkg/object"
-	"errors"
 	"log"
 	"net"
 	"strconv"
@@ -14,7 +13,7 @@ func (pr *ProxyRuntime) AddService(service *object.Service) error {
 	// Check and set default value of service
 	err := utils.CheckService(service)
 	if err != nil {
-		log.Println("Service checking failed, please check service yaml")
+		log.Println("[Error]: Service checking failed, please check service yaml")
 		return err
 	}
 
@@ -23,7 +22,7 @@ func (pr *ProxyRuntime) AddService(service *object.Service) error {
 		log.Println("[INFO]: Add existed service, so delete first")
 		err = pr.DeleteService(service)
 		if err != nil {
-			log.Println("Delete service failed")
+			log.Println("[Error]: Delete service failed")
 			return err
 		}
 	}
@@ -35,7 +34,7 @@ func (pr *ProxyRuntime) AddService(service *object.Service) error {
 
 	alternativePods, err := crudobj.SelectPods(service.Spec.Selector)
 	if err != nil {
-		log.Println("Select pods failed")
+		log.Println("[Error]: Select pods failed")
 		return err
 	}
 
@@ -61,9 +60,9 @@ func (pr *ProxyRuntime) AddService(service *object.Service) error {
 	}
 
 	pr.ServiceChainMap[service.UID] = ServiceChainElement{
-		serviceChainUid:     make([]string, len(service.Spec.Ports)),
-		probabilityChainUid: prob,
-		numberOfPods:        len(pods),
+		ServiceChainUid:     make([]string, len(service.Spec.Ports)),
+		ProbabilityChainUid: prob,
+		NumberOfPods:        len(pods),
 	}
 
 	podIPs := make([]string, len(pods))
@@ -104,14 +103,15 @@ func (pr *ProxyRuntime) AddService(service *object.Service) error {
 // DeleteService It would work even if the service not exist
 func (pr *ProxyRuntime) DeleteService(service *object.Service) error {
 	if _, ok := pr.ServiceChainMap[service.UID]; !ok {
-		log.Println("Delete not exist service")
-		return errors.New("delete undef service")
+		log.Println("[Warn]: Delete not exist service, check code again")
+		return nil
+		//return errors.New("delete undef service")
 	}
 
 	// delete every
 	for idx, port := range service.Spec.Ports {
 		err := pr.Ipt.DeleteIfExists(NatTable, ServiceChain,
-			"-j", pr.ServiceChainMap[service.UID].serviceChainUid[idx],
+			"-j", pr.ServiceChainMap[service.UID].ServiceChainUid[idx],
 			"-d", service.Spec.ClusterIP,
 			"-p", string(port.Protocol),
 			"--dport", strconv.FormatInt(int64(port.Port), 10))
@@ -121,14 +121,14 @@ func (pr *ProxyRuntime) DeleteService(service *object.Service) error {
 			return err
 		}
 
-		err = pr.Ipt.ClearAndDeleteChain(NatTable, pr.ServiceChainMap[service.UID].serviceChainUid[idx])
+		err = pr.Ipt.ClearAndDeleteChain(NatTable, pr.ServiceChainMap[service.UID].ServiceChainUid[idx])
 		if err != nil {
 			log.Panicln("Deleting chain failed")
 			return err
 		}
 	}
 
-	for _, servicePort := range pr.ServiceChainMap[service.UID].probabilityChainUid {
+	for _, servicePort := range pr.ServiceChainMap[service.UID].ProbabilityChainUid {
 		for _, dnat := range servicePort {
 			err := pr.Ipt.ClearAndDeleteChain(NatTable, dnat)
 			if err != nil {
@@ -137,6 +137,8 @@ func (pr *ProxyRuntime) DeleteService(service *object.Service) error {
 		}
 	}
 
+	// update endpoint(but not write into etcd)
+	service.Status.Endpoints = []net.IP{}
 	// finally...
 	delete(pr.ServiceChainMap, service.UID)
 	return nil
@@ -149,11 +151,13 @@ func (pr *ProxyRuntime) ModifyPod(pod *object.Pod) error {
 		if object.MatchLabelSelector(service.Spec.Selector, pod.Labels) {
 			err := pr.DeleteService(&service)
 			if err != nil {
+				log.Println("[Error]: error occurs when delete service:", err.Error())
 				return err
 			}
 
 			err = pr.AddService(&service)
 			if err != nil {
+				log.Println("[Error]: error occurs when add service:", err.Error())
 				return err
 			}
 		}

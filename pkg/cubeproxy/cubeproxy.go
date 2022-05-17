@@ -58,16 +58,19 @@ func (cp *Cubeproxy) Run() {
 		log.Fatalln("[Fatal]Add exist services failed")
 	}
 
-	ch, cancel, err := watchobj.WatchServices()
-	if err != nil {
-		log.Println("[Error]: Error occurs when watching services")
-		return
-	}
-	defer cancel()
+	var wg sync.WaitGroup
+	wg.Add(6)
 
 	// sync pod and service
-	go cp.syncService()
-	go cp.syncPod()
+	go func() {
+		cp.syncService()
+	}()
+	go func() {
+		go cp.syncPod()
+	}()
+	go func() {
+		go cp.syncDNS()
+	}()
 
 	// watch pod and service
 	go func() {
@@ -78,20 +81,31 @@ func (cp *Cubeproxy) Run() {
 		}
 	}()
 
-	for serviceEvent := range ch {
-		log.Printf("A service comes, types is %v, id is %v", serviceEvent.EType, serviceEvent.Service.UID)
-		switch serviceEvent.EType {
-		case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
-			err := cp.Runtime.ServiceInformer.InformService(serviceEvent.Service, serviceEvent.EType)
-			if err != nil {
-				log.Panic("[Fatal]: Inform service failed")
-				return
-			}
-		default:
-			log.Panic("[Fatal]: Unsupported types in watching service.")
+	go func() {
+		err := cp.WatchDNSChange()
+		if err != nil {
+			log.Fatalln("[Fatal]: watching dns in cubeproxy failed")
+			return
 		}
-	}
+	}()
 
+	go func() {
+		err := cp.WatchPodsChange()
+		if err != nil {
+			log.Fatalln("[Fatal]: watching pods in cubeproxy failed")
+			return
+		}
+	}()
+
+	go func() {
+		err := cp.WatchServiceChange()
+		if err != nil {
+			log.Fatalln("[Fatal]: watching services in cubeproxy failed")
+			return
+		}
+	}()
+
+	wg.Wait()
 	log.Fatalln("[Fatal]: Unreachable here")
 }
 
@@ -245,6 +259,32 @@ func (cp *Cubeproxy) WatchDNSChange() error {
 			}
 		default:
 			log.Panic("[Fatal]: Unsupported types in watch dns")
+		}
+	}
+
+	log.Fatalln("[Fatal]: Unreachable here")
+	return nil
+}
+
+func (cp *Cubeproxy) WatchServiceChange() error {
+	ch, cancel, err := watchobj.WatchServices()
+	if err != nil {
+		log.Println("[Error]: Error occurs when watching services")
+		return err
+	}
+	defer cancel()
+
+	for serviceEvent := range ch {
+		log.Printf("A service comes, types is %v, id is %v", serviceEvent.EType, serviceEvent.Service.UID)
+		switch serviceEvent.EType {
+		case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
+			err := cp.Runtime.ServiceInformer.InformService(serviceEvent.Service, serviceEvent.EType)
+			if err != nil {
+				log.Panic("[Fatal]: Inform service failed")
+				return err
+			}
+		default:
+			log.Panic("[Fatal]: Unsupported types in watching service.")
 		}
 	}
 

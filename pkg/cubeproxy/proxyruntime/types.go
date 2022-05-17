@@ -64,11 +64,11 @@ const (
 )
 
 type ServiceChainElement struct {
-	probabilityChainUid [][]string
-	serviceChainUid     []string
-	numberOfPods        int
+	ProbabilityChainUid [][]string
+	ServiceChainUid     []string
+	NumberOfPods        int
 
-	relevantDNS []string
+	RelevantDNS []string
 }
 
 type DNSElement struct {

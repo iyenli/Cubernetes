@@ -5,6 +5,7 @@ import (
 	"Cubernetes/pkg/cubeproxy/informer/types"
 	"Cubernetes/pkg/object"
 	"log"
+	"sync"
 )
 
 type ServiceInformer interface {
@@ -18,6 +19,8 @@ type ServiceInformer interface {
 type ProxyServiceInformer struct {
 	ServiceChannel chan types.ServiceEvent
 	ServiceCache   map[string]object.Service
+
+	mtx sync.RWMutex
 }
 
 func NewServiceInformer() ServiceInformer {
@@ -44,17 +47,19 @@ func (i *ProxyServiceInformer) CloseChan() {
 }
 
 func (i *ProxyServiceInformer) ListServices() []object.Service {
+	i.mtx.RLock()
 	Services := make([]object.Service, len(i.ServiceCache))
 	idx := 0
 	for _, Service := range i.ServiceCache {
 		Services[idx] = Service
 		idx += 1
 	}
-
+	i.mtx.RUnlock()
 	return Services
 }
 
 func (i *ProxyServiceInformer) InformService(newService object.Service, eType watchobj.EventType) error {
+	i.mtx.Lock()
 	oldService, exist := i.ServiceCache[newService.UID]
 
 	if eType == watchobj.EVENT_DELETE {
@@ -73,6 +78,7 @@ func (i *ProxyServiceInformer) InformService(newService object.Service, eType wa
 		// Just handle Service whose cluster ip is not empty
 		if newService.Spec.ClusterIP == "" {
 			log.Println("[INFO]: Service without cluster ip, just ignore")
+			i.mtx.Unlock()
 			return nil
 		}
 
@@ -95,5 +101,6 @@ func (i *ProxyServiceInformer) InformService(newService object.Service, eType wa
 		}
 	}
 
+	i.mtx.Unlock()
 	return nil
 }

@@ -150,6 +150,12 @@ func MatchLabelSelector(selector map[string]string, labels map[string]string) bo
 
 // ComputePodNetworkChange Just check label and ip
 func ComputePodNetworkChange(new *Pod, old *Pod) bool {
+	if old.Status == nil && new.Status != nil {
+		return true
+	}
+	if old.Status.IP == nil && new.Status.IP != nil {
+		return true
+	}
 	for k, oldV := range old.ObjectMeta.Labels {
 		newV, ok := new.ObjectMeta.Labels[k]
 		if !ok || newV != oldV {

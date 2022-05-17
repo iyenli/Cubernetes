@@ -1,0 +1,12 @@
+# If you're not testing load balance, use test-replicaset.yaml
+# sudo apt-get install nginx
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-pod-easy1-3
+  labels:
+    app: tomcat
+spec:
+  containers:
+    - name: test-pod-easy1
+      image: tomcat
