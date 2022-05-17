@@ -2,6 +2,7 @@ package cuberuntime
 
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
+	"Cubernetes/pkg/cubelet/cache"
 	cubecontainer "Cubernetes/pkg/cubelet/container"
 	dockershim "Cubernetes/pkg/cubelet/dockershim"
 	"Cubernetes/pkg/cubenetwork/weaveplugins"
@@ -19,8 +20,8 @@ const (
 )
 
 type cubeRuntimeManager struct {
-	runtimeName string
-
+	runtimeName   string
+	cpuStatsCache cache.CpuStatsCache
 	dockerRuntime dockershim.DockerRuntime
 }
 
@@ -337,6 +338,7 @@ func NewCubeRuntimeManager() (CubeRuntime, error) {
 
 	cm := &cubeRuntimeManager{
 		dockerRuntime: dockerRuntime,
+		cpuStatsCache: cache.NewCpuStatsCache(),
 		runtimeName:   containerdRuntimeName,
 	}
 

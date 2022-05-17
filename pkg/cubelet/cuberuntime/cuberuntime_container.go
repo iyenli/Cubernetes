@@ -153,13 +153,15 @@ func (m *cubeRuntimeManager) getContainerStatus(UID string) (*cubecontainer.Cont
 		StartedAt:  started,
 		FinishedAt: finished,
 		ResourceUsage: cubecontainer.ContainerResourceUsage{
-			CPUUsage:    float64(statsJson.CPUStats.CPUUsage.TotalUsage) / 1000000000,
+			CPUUsage:    m.cpuStatsCache.CalculateCpuPercent(UID, statsJson.CPUStats),
 			MemoryUsage: int64(statsJson.MemoryStats.Usage),
 		},
 		ExitCode: exitCode,
 		Image:    containerJson.Config.Image,
 		ImageID:  strings.TrimLeft(containerJson.Image, "sha256:"),
 	}
+
+	log.Printf("[CUBELET] Updating Container Cpu Usage: %f %%\n", status.ResourceUsage.CPUUsage)
 
 	return status, nil
 }
