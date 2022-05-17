@@ -13,7 +13,7 @@ import (
 )
 
 func GetJobFile(JobUID string, filename string) error {
-	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/job/file/" + JobUID
+	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/gpuJob/file/" + JobUID
 	resp, err := http.Get(url)
 
 	if err != nil {
@@ -32,7 +32,7 @@ func GetJobFile(JobUID string, filename string) error {
 		return errors.New("job file not found")
 	}
 
-	err = ioutil.WriteFile(filename, body, 0600)
+	err = ioutil.WriteFile(filename, body, 0777)
 	if err != nil {
 		log.Println("fail to write into file: ", filename)
 		return err
@@ -68,7 +68,7 @@ func PostJobFile(JobUID string, filename string) error {
 		return err
 	}
 
-	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/job/file/" + JobUID
+	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/gpuJob/file/" + JobUID
 	resp, err := http.Post(url, writer.FormDataContentType(), &body)
 
 	if err != nil || resp == nil {
@@ -86,7 +86,7 @@ func PostJobFile(JobUID string, filename string) error {
 }
 
 func GetJobOutput(JobUID string) (string, error) {
-	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/job/output/" + JobUID
+	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/gpuJob/output/" + JobUID
 	resp, err := http.Get(url)
 
 	if err != nil {
@@ -109,7 +109,7 @@ func GetJobOutput(JobUID string) (string, error) {
 }
 
 func PostJobOutput(JobUID string, output string) error {
-	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/job/output/" + JobUID
+	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/gpuJob/output/" + JobUID
 
 	resp, err := http.Post(url, "text/plain", strings.NewReader(output))
 	if err != nil || resp == nil {

@@ -6,20 +6,25 @@ type GpuJob struct {
 	TypeMeta   `json:",inline" yaml:",inline"`
 	ObjectMeta `json:"metadata" yaml:"metadata"`
 	Spec       GpuJobSpec   `json:"spec" yaml:"spec"`
-	Status     GpuJobStatus `json:"status" yaml:"status"`
+	Status     GpuJobStatus `json:"status,omitempty" yaml:"status,omitempty"`
 }
 
 type GpuJobSpec struct {
 	Filename string `json:"filename" yaml:"filename"`
 }
 
-type GpuJobStatus string
+type GpuJobStatus struct {
+	SlurmJobId string      `json:"slurmJobId,omitempty" yaml:"slurmJobId,omitempty"`
+	Phase      GpuJobPhase `json:"phase" yaml:"phase"`
+}
+
+type GpuJobPhase string
 
 const (
-	JobCreating  GpuJobStatus = "Creating"
-	JobCreated   GpuJobStatus = "Created"
-	JobWaiting   GpuJobStatus = "Waiting"
-	JobRunning   GpuJobStatus = "Running"
-	JobSucceeded GpuJobStatus = "Succeeded"
-	JobFailed    GpuJobStatus = "Failed"
+	JobCreating  GpuJobPhase = "Creating"
+	JobCreated   GpuJobPhase = "Created"
+	JobWaiting   GpuJobPhase = "Waiting"
+	JobRunning   GpuJobPhase = "Running"
+	JobSucceeded GpuJobPhase = "Succeeded"
+	JobFailed    GpuJobPhase = "Failed"
 )

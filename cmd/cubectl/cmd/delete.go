@@ -25,7 +25,6 @@ for example:
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 2 {
 			log.Fatal("[FATAL] lack arguments")
-			return
 		}
 		switch strings.ToLower(args[0]) {
 		case "pod":
@@ -62,6 +61,13 @@ for example:
 				log.Fatal("[FATAL] fail to delete AutoScaler")
 			} else {
 				fmt.Printf("AutoScaler UID=%s deleted\n", args[1])
+			}
+		case "job", "gpujob":
+			err := crudobj.DeleteGpuJob(args[1])
+			if err != nil {
+				log.Fatal("[FATAL] fail to delete GpuJob")
+			} else {
+				fmt.Printf("GpuJob UID=%s deleted\n", args[1])
 			}
 		default:
 			log.Fatal("[FATAL] Unknown kind: " + args[0])

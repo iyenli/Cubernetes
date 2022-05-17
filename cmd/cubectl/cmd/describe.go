@@ -6,6 +6,8 @@ package cmd
 
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
+	"Cubernetes/pkg/apiserver/jobfile"
+	"Cubernetes/pkg/object"
 	"fmt"
 	"gopkg.in/yaml.v3"
 	"log"
@@ -26,7 +28,6 @@ for example:
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 2 {
 			log.Fatal("[FATAL] lack arguments")
-			return
 		}
 		UID := args[1]
 		switch strings.ToLower(args[0]) {
@@ -34,74 +35,82 @@ for example:
 			pod, err := crudobj.GetPod(UID)
 			if err != nil {
 				log.Fatal("[FATAL] fail to get Pod")
-				return
 			}
 			str, err := yaml.Marshal(pod)
 			if err != nil {
 				log.Fatal("[FATAL] fail to marshall Pod")
-				return
 			}
 			fmt.Print(string(str))
 		case "service", "svc":
 			svc, err := crudobj.GetService(UID)
 			if err != nil {
 				log.Fatal("[FATAL] fail to get Service")
-				return
 			}
 			str, err := yaml.Marshal(svc)
 			if err != nil {
 				log.Fatal("[FATAL] fail to marshall Service")
-				return
 			}
 			fmt.Print(string(str))
 		case "replicaset", "rs":
 			rs, err := crudobj.GetReplicaSet(UID)
 			if err != nil {
 				log.Fatal("[FATAL] fail to get ReplicaSet")
-				return
 			}
 			str, err := yaml.Marshal(rs)
 			if err != nil {
 				log.Fatal("[FATAL] fail to marshall ReplicaSet")
-				return
 			}
 			fmt.Print(string(str))
 		case "node":
 			node, err := crudobj.GetNode(UID)
 			if err != nil {
 				log.Fatal("[FATAL] fail to get Node")
-				return
 			}
 			str, err := yaml.Marshal(node)
 			if err != nil {
 				log.Fatal("[FATAL] fail to marshall Node")
-				return
 			}
 			fmt.Print(string(str))
 		case "dns":
 			dns, err := crudobj.GetDns(UID)
 			if err != nil {
 				log.Fatal("[FATAL] fail to get Dns")
-				return
 			}
 			str, err := yaml.Marshal(dns)
 			if err != nil {
 				log.Fatal("[FATAL] fail to marshall Dns")
-				return
 			}
 			fmt.Print(string(str))
 		case "autoscaler":
 			as, err := crudobj.GetAutoScaler(UID)
 			if err != nil {
 				log.Fatal("[FATAL] fail to get AutoScaler")
-				return
 			}
 			str, err := yaml.Marshal(as)
 			if err != nil {
 				log.Fatal("[FATAL] fail to marshall AutoScaler")
-				return
 			}
 			fmt.Print(string(str))
+		case "job", "gpujob":
+			job, err := crudobj.GetGpuJob(UID)
+			if err != nil {
+				log.Fatal("[FATAL] fail to get GpuJob")
+			}
+			str, err := yaml.Marshal(job)
+			if err != nil {
+				log.Fatal("[FATAL] fail to marshall GpuJob")
+			}
+
+			res := string(str)
+			if job.Status.Phase == object.JobSucceeded || job.Status.Phase == object.JobFailed {
+				output, err := jobfile.GetJobOutput(UID)
+				if err != nil {
+					log.Println("[Warning] fail to get GpuJob output")
+				} else {
+					res = res + "\n" + output
+				}
+			}
+			fmt.Print(res)
 		default:
 			log.Fatal("[FATAL] Unknown kind: " + args[0])
 		}

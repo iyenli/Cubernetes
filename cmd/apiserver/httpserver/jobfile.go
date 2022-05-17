@@ -11,11 +11,11 @@ import (
 )
 
 var fileList = []Handler{
-	{http.MethodGet, "/apis/job/file/:uid", getJobFile},
-	{http.MethodPost, "/apis/job/file/:uid", postJobFile},
+	{http.MethodGet, "/apis/gpuJob/file/:uid", getJobFile},
+	{http.MethodPost, "/apis/gpuJob/file/:uid", postJobFile},
 
-	{http.MethodGet, "/apis/job/output/:uid", getJobOutput},
-	{http.MethodPost, "/apis/job/output/:uid", postJobOutput},
+	{http.MethodGet, "/apis/gpuJob/output/:uid", getJobOutput},
+	{http.MethodPost, "/apis/gpuJob/output/:uid", postJobOutput},
 }
 
 func getJobFile(ctx *gin.Context) {

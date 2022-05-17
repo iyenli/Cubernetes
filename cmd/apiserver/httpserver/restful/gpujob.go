@@ -29,7 +29,10 @@ func PostGpuJob(ctx *gin.Context) {
 		utils.BadRequest(ctx)
 		return
 	}
+
 	job.UID = uuid.New().String()
+	job.Status.Phase = object.JobCreating
+
 	buf, _ := json.Marshal(job)
 	err = etcdrw.PutObj(object.GpuJobEtcdPrefix+job.UID, string(buf))
 	if err != nil {
@@ -47,7 +50,7 @@ func PutGpuJob(ctx *gin.Context) {
 		return
 	}
 
-	if newJob.UID != ctx.Param("uid") {
+	if newJob.UID != ctx.Param("uid") || newJob.Status.Phase == object.JobCreating {
 		utils.BadRequest(ctx)
 		return
 	}
