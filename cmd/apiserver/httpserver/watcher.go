@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"Cubernetes/pkg/apiserver/watchobj"
+	"Cubernetes/pkg/object"
 	"Cubernetes/pkg/utils/etcdrw"
 	"context"
 	"encoding/json"
@@ -27,6 +28,9 @@ var watchList = []Handler{
 
 	{http.MethodPost, "/apis/watch/dns/:uid", watchDns},
 	{http.MethodPost, "/apis/watch/dnses", watchDnses},
+
+	{http.MethodPost, "/apis/watch/autoScaler/:uid", watchAutoScaler},
+	{http.MethodPost, "/apis/watch/autoScalers", watchAutoScalers},
 }
 
 func handleEvent(ctx *gin.Context, e *clientv3.Event) {
@@ -122,4 +126,12 @@ func watchDns(ctx *gin.Context) {
 
 func watchDnses(ctx *gin.Context) {
 	postWatch(ctx, "/apis/dns/", true)
+}
+
+func watchAutoScaler(ctx *gin.Context) {
+	postWatch(ctx, object.AutoScalerEtcdPrefix+ctx.Param("uid"), false)
+}
+
+func watchAutoScalers(ctx *gin.Context) {
+	postWatch(ctx, object.AutoScalerEtcdPrefix, true)
 }

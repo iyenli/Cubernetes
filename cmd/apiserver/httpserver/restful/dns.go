@@ -10,11 +10,11 @@ import (
 )
 
 func GetDns(ctx *gin.Context) {
-	getObj(ctx, "/apis/dns/"+ctx.Param("uid"))
+	getObj(ctx, object.DnsEtcdPrefix+ctx.Param("uid"))
 }
 
 func GetDnses(ctx *gin.Context) {
-	getObjs(ctx, "/apis/dns/")
+	getObjs(ctx, object.DnsEtcdPrefix)
 }
 
 func PostDns(ctx *gin.Context) {
@@ -30,7 +30,7 @@ func PostDns(ctx *gin.Context) {
 	}
 	dns.UID = uuid.New().String()
 	buf, _ := json.Marshal(dns)
-	err = etcdrw.PutObj("/apis/dns/"+dns.UID, string(buf))
+	err = etcdrw.PutObj(object.DnsEtcdPrefix+dns.UID, string(buf))
 	if err != nil {
 		serverError(ctx)
 		return
@@ -51,7 +51,7 @@ func PutDns(ctx *gin.Context) {
 		return
 	}
 
-	oldBuf, err := etcdrw.GetObj("/apis/dns/" + newDns.UID)
+	oldBuf, err := etcdrw.GetObj(object.DnsEtcdPrefix + newDns.UID)
 	if err != nil {
 		serverError(ctx)
 		return
@@ -62,7 +62,7 @@ func PutDns(ctx *gin.Context) {
 	}
 
 	newBuf, _ := json.Marshal(newDns)
-	err = etcdrw.PutObj("/apis/dns/"+newDns.UID, string(newBuf))
+	err = etcdrw.PutObj(object.DnsEtcdPrefix+newDns.UID, string(newBuf))
 	if err != nil {
 		serverError(ctx)
 		return
@@ -73,7 +73,7 @@ func PutDns(ctx *gin.Context) {
 }
 
 func DelDns(ctx *gin.Context) {
-	delObj(ctx, "/apis/dns/"+ctx.Param("uid"))
+	delObj(ctx, object.DnsEtcdPrefix+ctx.Param("uid"))
 }
 
 func SelectDnses(ctx *gin.Context) {
@@ -85,11 +85,11 @@ func SelectDnses(ctx *gin.Context) {
 	}
 
 	if len(selectors) == 0 {
-		getObjs(ctx, "/apis/dns/")
+		getObjs(ctx, object.DnsEtcdPrefix)
 		return
 	}
 
-	selectObjs(ctx, "/apis/dns/", func(str []byte) bool {
+	selectObjs(ctx, object.DnsEtcdPrefix, func(str []byte) bool {
 		var dns object.Dns
 		err = json.Unmarshal(str, &dns)
 		if err != nil {

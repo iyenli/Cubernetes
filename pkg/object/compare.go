@@ -77,6 +77,43 @@ func ComputeReplicaSetSpecChange(new *ReplicaSetSpec, old *ReplicaSetSpec) bool 
 	return false
 }
 
+func ComputeAutoScalerSpecChange(new *AutoScalerSpec, old *AutoScalerSpec) bool {
+	// Not compare workload: useless
+	if ComputeObjectMetaChange(&new.Template.ObjectMeta, &old.Template.ObjectMeta) {
+		return true
+	}
+
+	if ComputePodSpecChange(&new.Template.Spec, &old.Template.Spec) {
+		return true
+	}
+
+	if new.MaxReplicas != old.MaxReplicas || new.MinReplicas != old.MinReplicas {
+		return true
+	}
+
+	if new.TargetUtilization.CPU != nil {
+		if old.TargetUtilization.CPU == nil ||
+			old.TargetUtilization.CPU.MaxPercentage != new.TargetUtilization.CPU.MaxPercentage ||
+			old.TargetUtilization.CPU.MinPercentage != new.TargetUtilization.CPU.MinPercentage {
+			return true
+		}
+	} else if old.TargetUtilization.CPU != nil {
+		return true
+	}
+
+	if new.TargetUtilization.Memory != nil {
+		if old.TargetUtilization.Memory == nil ||
+			old.TargetUtilization.Memory.MaxBytes != new.TargetUtilization.Memory.MaxBytes ||
+			old.TargetUtilization.Memory.MinBytes != new.TargetUtilization.Memory.MinBytes {
+			return true
+		}
+	} else if old.TargetUtilization.Memory != nil {
+		return true
+	}
+
+	return false
+}
+
 func ComputeContainerSpecChange(new *Container, old *Container) bool {
 	// check basic info
 	if new.Name != old.Name || new.Image != old.Image {

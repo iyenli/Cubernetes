@@ -41,4 +41,11 @@ var restfulList = []Handler{
 	{http.MethodPut, "/apis/dns/:uid", restful.PutDns},
 	{http.MethodDelete, "/apis/dns/:uid", restful.DelDns},
 	{http.MethodPost, "/apis/select/dnses", restful.SelectDnses},
+
+	{http.MethodGet, "/apis/autoScaler/:uid", restful.GetAutoScaler},
+	{http.MethodGet, "/apis/autoScalers", restful.GetAutoScalers},
+	{http.MethodPost, "/apis/autoScaler", restful.PostAutoScaler},
+	{http.MethodPut, "/apis/autoScaler/:uid", restful.PutAutoScaler},
+	{http.MethodDelete, "/apis/autoScaler/:uid", restful.DelAutoScaler},
+	{http.MethodPost, "/apis/select/autoScalers", restful.SelectAutoScalers},
 }

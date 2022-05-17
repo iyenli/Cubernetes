@@ -13,11 +13,11 @@ import (
 var ClusterIPAllocator *servicenetwork.ClusterIPAllocator
 
 func GetService(ctx *gin.Context) {
-	getObj(ctx, "/apis/service/"+ctx.Param("uid"))
+	getObj(ctx, object.ServiceEtcdPrefix+ctx.Param("uid"))
 }
 
 func GetServices(ctx *gin.Context) {
-	getObjs(ctx, "/apis/service/")
+	getObjs(ctx, object.ServiceEtcdPrefix)
 }
 
 func PostService(ctx *gin.Context) {
@@ -39,7 +39,7 @@ func PostService(ctx *gin.Context) {
 	}
 
 	buf, _ := json.Marshal(service)
-	err = etcdrw.PutObj("/apis/service/"+service.UID, string(buf))
+	err = etcdrw.PutObj(object.ServiceEtcdPrefix+service.UID, string(buf))
 	if err != nil {
 		serverError(ctx)
 		return
@@ -60,7 +60,7 @@ func PutService(ctx *gin.Context) {
 		return
 	}
 
-	oldBuf, err := etcdrw.GetObj("/apis/service/" + newService.UID)
+	oldBuf, err := etcdrw.GetObj(object.ServiceEtcdPrefix + newService.UID)
 	if err != nil {
 		serverError(ctx)
 		return
@@ -71,7 +71,7 @@ func PutService(ctx *gin.Context) {
 	}
 
 	newBuf, _ := json.Marshal(newService)
-	err = etcdrw.PutObj("/apis/service/"+newService.UID, string(newBuf))
+	err = etcdrw.PutObj(object.ServiceEtcdPrefix+newService.UID, string(newBuf))
 	if err != nil {
 		serverError(ctx)
 		return
@@ -82,7 +82,7 @@ func PutService(ctx *gin.Context) {
 }
 
 func DelService(ctx *gin.Context) {
-	delObj(ctx, "/apis/service/"+ctx.Param("uid"))
+	delObj(ctx, object.ServiceEtcdPrefix+ctx.Param("uid"))
 }
 
 func SelectServices(ctx *gin.Context) {
@@ -94,11 +94,11 @@ func SelectServices(ctx *gin.Context) {
 	}
 
 	if len(selectors) == 0 {
-		getObjs(ctx, "/apis/service/")
+		getObjs(ctx, object.ServiceEtcdPrefix)
 		return
 	}
 
-	selectObjs(ctx, "/apis/service/", func(str []byte) bool {
+	selectObjs(ctx, object.ServiceEtcdPrefix, func(str []byte) bool {
 		var service object.Service
 		err = json.Unmarshal(str, &service)
 		if err != nil {

@@ -1,8 +1,8 @@
 package informer
 
 import (
-	"Cubernetes/pkg/controllermanager/types"
 	"Cubernetes/pkg/apiserver/watchobj"
+	"Cubernetes/pkg/controllermanager/types"
 	"Cubernetes/pkg/object"
 	"log"
 )
@@ -12,19 +12,20 @@ type ReplicaSetInformer interface {
 	InformReplicaSet(newRs object.ReplicaSet, eType watchobj.EventType) error
 	GetMatchedReplicaSet(pod *object.Pod) []object.ReplicaSet
 	ListReplicaSets() []object.ReplicaSet
+	GetReplicaSet(UID string) (*object.ReplicaSet, bool)
 	CloseChan(<-chan types.RsEvent)
 }
 
 func NewReplicaSetInformer() (ReplicaSetInformer, error) {
 	return &rsInformer{
 		RsEventChans: make([]chan types.RsEvent, 0),
-		rsCache: make(map[string]object.ReplicaSet),
+		rsCache:      make(map[string]object.ReplicaSet),
 	}, nil
 }
 
 type rsInformer struct {
 	RsEventChans []chan types.RsEvent
-	rsCache map[string]object.ReplicaSet
+	rsCache      map[string]object.ReplicaSet
 }
 
 func (i *rsInformer) WatchRSEvent() <-chan types.RsEvent {
@@ -95,6 +96,15 @@ func (i *rsInformer) ListReplicaSets() []object.ReplicaSet {
 	}
 
 	return replicaSets
+}
+
+func (i *rsInformer) GetReplicaSet(UID string) (*object.ReplicaSet, bool) {
+	rs, ok := i.rsCache[UID]
+	if ok {
+		return &rs, true
+	} else {
+		return nil, false
+	}
 }
 
 func (i *rsInformer) CloseChan(ch <-chan types.RsEvent) {

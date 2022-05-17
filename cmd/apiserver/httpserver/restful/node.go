@@ -10,11 +10,11 @@ import (
 )
 
 func GetNode(ctx *gin.Context) {
-	getObj(ctx, "/apis/node/"+ctx.Param("uid"))
+	getObj(ctx, object.NodeEtcdPrefix+ctx.Param("uid"))
 }
 
 func GetNodes(ctx *gin.Context) {
-	getObjs(ctx, "/apis/node/")
+	getObjs(ctx, object.NodeEtcdPrefix)
 }
 
 func PostNode(ctx *gin.Context) {
@@ -31,7 +31,7 @@ func PostNode(ctx *gin.Context) {
 
 	node.UID = uuid.New().String()
 	buf, _ := json.Marshal(node)
-	err = etcdrw.PutObj("/apis/node/"+node.UID, string(buf))
+	err = etcdrw.PutObj(object.NodeEtcdPrefix+node.UID, string(buf))
 	if err != nil {
 		serverError(ctx)
 		return
@@ -52,7 +52,7 @@ func PutNode(ctx *gin.Context) {
 		return
 	}
 
-	oldBuf, err := etcdrw.GetObj("/apis/node/" + newNode.UID)
+	oldBuf, err := etcdrw.GetObj(object.NodeEtcdPrefix + newNode.UID)
 	if err != nil {
 		serverError(ctx)
 		return
@@ -63,7 +63,7 @@ func PutNode(ctx *gin.Context) {
 	}
 
 	newBuf, _ := json.Marshal(newNode)
-	err = etcdrw.PutObj("/apis/node/"+newNode.UID, string(newBuf))
+	err = etcdrw.PutObj(object.NodeEtcdPrefix+newNode.UID, string(newBuf))
 	if err != nil {
 		serverError(ctx)
 		return
@@ -74,7 +74,7 @@ func PutNode(ctx *gin.Context) {
 }
 
 func DelNode(ctx *gin.Context) {
-	delObj(ctx, "/apis/node/"+ctx.Param("uid"))
+	delObj(ctx, object.NodeEtcdPrefix+ctx.Param("uid"))
 }
 
 func SelectNodes(ctx *gin.Context) {
@@ -86,11 +86,11 @@ func SelectNodes(ctx *gin.Context) {
 	}
 
 	if len(selectors) == 0 {
-		getObjs(ctx, "/apis/node/")
+		getObjs(ctx, object.NodeEtcdPrefix)
 		return
 	}
 
-	selectObjs(ctx, "/apis/node/", func(str []byte) bool {
+	selectObjs(ctx, object.NodeEtcdPrefix, func(str []byte) bool {
 		var node object.Node
 		err = json.Unmarshal(str, &node)
 		if err != nil {

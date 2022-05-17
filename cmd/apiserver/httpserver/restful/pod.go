@@ -10,11 +10,11 @@ import (
 )
 
 func GetPod(ctx *gin.Context) {
-	getObj(ctx, "/apis/pod/"+ctx.Param("uid"))
+	getObj(ctx, object.PodEtcdPrefix+ctx.Param("uid"))
 }
 
 func GetPods(ctx *gin.Context) {
-	getObjs(ctx, "/apis/pod/")
+	getObjs(ctx, object.PodEtcdPrefix)
 }
 
 func PostPod(ctx *gin.Context) {
@@ -30,7 +30,7 @@ func PostPod(ctx *gin.Context) {
 	}
 	pod.UID = uuid.New().String()
 	buf, _ := json.Marshal(pod)
-	err = etcdrw.PutObj("/apis/pod/"+pod.UID, string(buf))
+	err = etcdrw.PutObj(object.PodEtcdPrefix+pod.UID, string(buf))
 	if err != nil {
 		serverError(ctx)
 		return
@@ -51,7 +51,7 @@ func PutPod(ctx *gin.Context) {
 		return
 	}
 
-	oldBuf, err := etcdrw.GetObj("/apis/pod/" + newPod.UID)
+	oldBuf, err := etcdrw.GetObj(object.PodEtcdPrefix + newPod.UID)
 	if err != nil {
 		serverError(ctx)
 		return
@@ -62,7 +62,7 @@ func PutPod(ctx *gin.Context) {
 	}
 
 	newBuf, _ := json.Marshal(newPod)
-	err = etcdrw.PutObj("/apis/pod/"+newPod.UID, string(newBuf))
+	err = etcdrw.PutObj(object.PodEtcdPrefix+newPod.UID, string(newBuf))
 	if err != nil {
 		serverError(ctx)
 		return
@@ -73,7 +73,7 @@ func PutPod(ctx *gin.Context) {
 }
 
 func DelPod(ctx *gin.Context) {
-	delObj(ctx, "/apis/pod/"+ctx.Param("uid"))
+	delObj(ctx, object.PodEtcdPrefix+ctx.Param("uid"))
 }
 
 func SelectPods(ctx *gin.Context) {
@@ -85,11 +85,11 @@ func SelectPods(ctx *gin.Context) {
 	}
 
 	if len(selectors) == 0 {
-		getObjs(ctx, "/apis/pod/")
+		getObjs(ctx, object.PodEtcdPrefix)
 		return
 	}
 
-	selectObjs(ctx, "/apis/pod/", func(str []byte) bool {
+	selectObjs(ctx, object.PodEtcdPrefix, func(str []byte) bool {
 		var pod object.Pod
 		err = json.Unmarshal(str, &pod)
 		if err != nil {
@@ -113,7 +113,7 @@ func UpdatePodStatus(ctx *gin.Context) {
 		return
 	}
 
-	buf, err := etcdrw.GetObj("/apis/pod/" + newPod.UID)
+	buf, err := etcdrw.GetObj(object.PodEtcdPrefix + newPod.UID)
 	if err != nil {
 		serverError(ctx)
 		return
@@ -132,7 +132,7 @@ func UpdatePodStatus(ctx *gin.Context) {
 
 	pod.Status = newPod.Status
 	newBuf, _ := json.Marshal(pod)
-	err = etcdrw.PutObj("/apis/pod/"+newPod.UID, string(newBuf))
+	err = etcdrw.PutObj(object.PodEtcdPrefix+newPod.UID, string(newBuf))
 	if err != nil {
 		serverError(ctx)
 		return

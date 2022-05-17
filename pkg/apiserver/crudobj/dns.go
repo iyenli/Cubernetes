@@ -77,7 +77,7 @@ func CreateDns(dns object.Dns) (object.Dns, error) {
 	var newDns object.Dns
 	err = json.Unmarshal(body, &newDns)
 	if err != nil {
-		log.Println("fail to parse Dns, body: ", string(body))
+		log.Println("fail to parse Dns")
 		return dns, err
 	}
 
