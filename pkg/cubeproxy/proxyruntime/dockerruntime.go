@@ -49,13 +49,13 @@ func (pr *ProxyRuntime) StartDNSNginxDocker(host string, paths, serviceIPs, port
 
 	containerID, err := pr.DockerInstance.CreateContainer(config)
 	if err != nil {
-		log.Printf("[Error]: fail to create container #{container.Name}\n")
+		log.Printf("[Error]: fail to create container %v\n", dockerName)
 		return "", err
 	}
 
 	err = pr.DockerInstance.StartContainer(containerID)
 	if err != nil {
-		log.Printf("[Error]: fail to start container #{container.Name}\n")
+		log.Printf("[Error]: fail to start container %v\n", dockerName)
 		return "", err
 	}
 

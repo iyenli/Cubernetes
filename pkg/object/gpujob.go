@@ -16,6 +16,7 @@ type GpuJobSpec struct {
 type GpuJobStatus struct {
 	SlurmJobId string      `json:"slurmJobId,omitempty" yaml:"slurmJobId,omitempty"`
 	Phase      GpuJobPhase `json:"phase" yaml:"phase"`
+	NodeUID    string
 }
 
 type GpuJobPhase string

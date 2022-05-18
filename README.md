@@ -29,6 +29,7 @@ Worker1作为master, Worker2作为slave. 假设Worker1 的IP为192.168.1.9, Work
 # 如果想重新启动配置Node
 ./build/cuberoot reset
 ./build/cuberoot stop
+# if testing, MAKE!
 bash ./scripts/clear.sh
 ```
 
@@ -77,6 +78,12 @@ bash ./scripts/clear.sh
 ./build/cubectl apply -f ./example/yaml/dns/service2.yaml 
 
 ./build/cubectl apply -f ./example/yaml/dns/dns.yaml 
+```
+
+如果需要测试GPU：
+
+```shell
+./build/cubectl apply -f ./example/yaml/test-gpujob.yaml
 ```
 
 

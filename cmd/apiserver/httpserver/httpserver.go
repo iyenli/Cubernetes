@@ -16,7 +16,7 @@ type Handler struct {
 }
 
 func Run() {
-	_ = os.Mkdir(cubeconfig.JobFileDir, 0777)
+	_ = os.MkdirAll(cubeconfig.JobFileDir, 0777)
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()

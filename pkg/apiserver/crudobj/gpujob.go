@@ -32,14 +32,14 @@ func GetGpuJobs() ([]object.GpuJob, error) {
 
 	body, err := getRequest(url)
 	if err != nil {
-		log.Println("getRequest fail")
+		log.Println("[Error]: getRequest fail")
 		return nil, err
 	}
 
 	var jobs []object.GpuJob
 	err = json.Unmarshal(body, &jobs)
 	if err != nil {
-		log.Println("fail to parse GpuJobs")
+		log.Println("[Warn]: fail to parse GpuJobs, output:", string(body))
 		return nil, err
 	}
 

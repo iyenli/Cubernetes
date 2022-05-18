@@ -16,7 +16,7 @@ type PodInformer interface {
 	ListPods() []object.Pod
 }
 
-const watchRetryIntervalSec = 10
+const WatchRetryIntervalSec = 10
 
 func NewPodInformer() (PodInformer, error) {
 	return &cubePodInformer{
@@ -35,18 +35,17 @@ func (i *cubePodInformer) ListAndWatchPodsWithRetry() {
 	defer close(i.podEvent)
 	for {
 		i.tryListAndWatchPods()
-		time.Sleep(watchRetryIntervalSec * time.Second)
+		time.Sleep(WatchRetryIntervalSec * time.Second)
 	}
 }
 
 func (i *cubePodInformer) tryListAndWatchPods() {
-
 	// list all pods from apiserver first,
 	// in case of cubelet restart or lost connection with apiserver
 	// ensure informer cache all pods of apiserver
 	if allPods, err := crudobj.GetPods(); err != nil {
 		log.Printf("[INFO]: fail to get all pods from apiserver: %v\n", err)
-		log.Printf("[INFO]: will retry after %d seconds...\n", watchRetryIntervalSec)
+		log.Printf("[INFO]: will retry after %d seconds...\n", WatchRetryIntervalSec)
 		return
 	} else {
 		// put all pods to pod cache
@@ -73,7 +72,7 @@ func (i *cubePodInformer) tryListAndWatchPods() {
 		select {
 		case podEvent, ok := <-ch:
 			if !ok {
-				log.Printf("[INFO]: lost connection with APIServer, retry after %d seconds...\n", watchRetryIntervalSec)
+				log.Printf("[INFO]: lost connection with APIServer, retry after %d seconds...\n", WatchRetryIntervalSec)
 				return
 			}
 			if podEvent.Pod.Status == nil && podEvent.EType != watchobj.EVENT_DELETE {
@@ -130,7 +129,7 @@ func (i *cubePodInformer) informPod(newPod object.Pod, eType watchobj.EventType)
 		if exist {
 			delete(i.podCache, newPod.UID)
 			i.podEvent <- types.PodEvent{
-				Type: types.PodRemove,
+				Type: types.Remove,
 				Pod:  newPod}
 		} else {
 			log.Printf("pod %s not exist, DELETE do nothing\n", newPod.Name)
@@ -143,7 +142,7 @@ func (i *cubePodInformer) informPod(newPod object.Pod, eType watchobj.EventType)
 		if !exist {
 			// UID never seen -> create new Pod
 			i.podEvent <- types.PodEvent{
-				Type: types.PodCreate,
+				Type: types.Create,
 				Pod:  newPod}
 		} else {
 			// compute pod change: Name / Label / Spec
@@ -151,7 +150,7 @@ func (i *cubePodInformer) informPod(newPod object.Pod, eType watchobj.EventType)
 				object.ComputePodSpecChange(&newPod.Spec, &oldPod.Spec) {
 				log.Printf("pod %s spec configured\n", newPod.Name)
 				i.podEvent <- types.PodEvent{
-					Type: types.PodUpdate,
+					Type: types.Update,
 					Pod:  newPod}
 			} else {
 				log.Printf("pod %s spec not change\n", newPod.Name)

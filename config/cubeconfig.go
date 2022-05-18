@@ -18,7 +18,7 @@ const DefaultApiVersion = "v1"
 const CubeVersion = "v1.0"
 
 const (
-	JobFileDir = "/var/lib/cubernetes/jobs/"
-	MetaDir    = "/var/log/cubernetes/"
+	JobFileDir = "/etc/cubernetes/apiserver/jobs/"
+	MetaDir    = "/etc/cubernetes/cubernetes/"
 	MetaFile   = MetaDir + "meta"
 )
