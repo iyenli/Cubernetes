@@ -27,6 +27,8 @@ var lastUpdate time.Time
 var timeLock sync.Mutex
 var connLock sync.Mutex
 
+// CheckConn
+// package heartbeat is designed for cubelet
 func CheckConn() bool {
 	connLock.Lock()
 	ret := connected
@@ -107,6 +109,8 @@ func updateHeartBeat() {
 	}
 }
 
+// InitNode
+// package heartbeat is designed for cubelet
 func InitNode(n object.Node) {
 	node = n
 	node.Status.Condition.Ready = true
