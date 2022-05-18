@@ -6,6 +6,8 @@ import (
 )
 
 var restfulList = []Handler{
+	{http.MethodGet, "/health", restful.GetHealth},
+
 	{http.MethodGet, "/apis/pod/:uid", restful.GetPod},
 	{http.MethodGet, "/apis/pods", restful.GetPods},
 	{http.MethodPost, "/apis/pod", restful.PostPod},
