@@ -14,6 +14,8 @@ type AutoScaler struct {
 type AutoScalerSpec struct {
 	// Target audience for scale, should always be Pod
 	Workload string `json:"workload" yaml:"workload"`
+
+	Template PodTemplate `json:"template" yaml:"template"`
 	// lower limit for the number of pods that can be set by the autoscaler, default 1.
 	MinReplicas int `json:"minReplicas" yaml:"minReplicas"`
 
@@ -23,29 +25,34 @@ type AutoScalerSpec struct {
 
 	// target average CPU utilization & Memory bytes over all the pods.
 	// nil if not specified.
-	TargetUtilization Utilization `json:"targetUtilization" yaml:"targetUtilization"`
+	TargetUtilization UtilizationLimit `json:"targetUtilization" yaml:"targetUtilization"`
 }
 
 type AutoScalerStatus struct {
-	LastScaleTime     time.Time   `json:"lastScale,omitempty" yaml:"lastScale,omitempty"`
-	LastUpdateTime    time.Time   `json:"lastUpdateTime" yaml:"lastUpdateTime"`
-	ReplicaSetUID     string      `json:"replicaSetUID" yaml:"replicaSetUID"`
-	DesiredReplicas   int         `json:"desiredReplicas" yaml:"desiredReplicas"`
-	ActualReplicas    int         `json:"actualReplicas" yaml:"actualReplicas"`
-	ActualUtilization Utilization `json:"actualUtilization" yaml:"actualUtilization"`
+	LastScaleTime     time.Time          `json:"lastScale,omitempty" yaml:"lastScale,omitempty"`
+	LastUpdateTime    time.Time          `json:"lastUpdateTime" yaml:"lastUpdateTime"`
+	ReplicaSetUID     string             `json:"replicaSetUID" yaml:"replicaSetUID"`
+	DesiredReplicas   int                `json:"desiredReplicas" yaml:"desiredReplicas"`
+	ActualReplicas    int                `json:"actualReplicas" yaml:"actualReplicas"`
+	ActualUtilization AverageUtilization `json:"actualUtilization" yaml:"actualUtilization"`
 }
 
-type Utilization struct {
-	CPU    *CpuUtilization    `json:"cpu,omitempty" yaml:"cpu,omitempty"`
-	Memory *MemoryUtilization `json:"memory,omitempty" yaml:"memory,omitempty"`
+type UtilizationLimit struct {
+	CPU    *CpuUtilizationLimit    `json:"cpu,omitempty" yaml:"cpu,omitempty"`
+	Memory *MemoryUtilizationLimit `json:"memory,omitempty" yaml:"memory,omitempty"`
 }
 
-type CpuUtilization struct {
+type CpuUtilizationLimit struct {
 	MinPercentage float64 `json:"minPercentage" yaml:"minPercentage"`
 	MaxPercentage float64 `json:"maxPercentage" yaml:"maxPercentage"`
 }
 
-type MemoryUtilization struct {
+type MemoryUtilizationLimit struct {
 	MinBytes int64 `json:"minBytes" yaml:"minBytes"`
 	MaxBytes int64 `json:"maxBytes" yaml:"maxBytes"`
+}
+
+type AverageUtilization struct {
+	CPUPercentage float64 `json:"cpuPercentage" yaml:"cpuPercentage"`
+	MemoryBytes   int64   `json:"memoryBytes" yaml:"memoryBytes"`
 }

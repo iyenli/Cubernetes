@@ -2,6 +2,7 @@ package cuberuntime
 
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
+	"Cubernetes/pkg/cubelet/cache"
 	cubecontainer "Cubernetes/pkg/cubelet/container"
 	dockershim "Cubernetes/pkg/cubelet/dockershim"
 	"Cubernetes/pkg/cubenetwork/weaveplugins"
@@ -19,8 +20,8 @@ const (
 )
 
 type cubeRuntimeManager struct {
-	runtimeName string
-
+	runtimeName   string
+	cpuStatsCache cache.CpuStatsCache
 	dockerRuntime dockershim.DockerRuntime
 }
 
@@ -43,8 +44,6 @@ func (m *cubeRuntimeManager) SyncPod(pod *object.Pod, podStatus *cubecontainer.P
 
 	// Compute sandbox and container changes.
 	podContainerChanges := m.computePodActions(pod, podStatus)
-
-	log.Printf("\ncreate sandbox: %t\ncreate container: %v\n\n", podContainerChanges.CreateSandbox, podContainerChanges.ContainersToStart)
 
 	removeContainer := true
 	// Kill the pod if sandbox changed
@@ -314,6 +313,11 @@ func (c *cubeRuntimeManager) getPodStatusByUID(UID string) (*cubecontainer.PodSt
 		return nil, err
 	}
 
+	if len(containerStatuses) == 0 && len(sandboxStatuses) == 0 {
+		// both empty: pod not exists
+		return &cubecontainer.PodStatus{}, nil
+	}
+
 	podName := ""
 	if len(sandboxStatuses) > 0 {
 		podName = sandboxStatuses[0].Name
@@ -337,6 +341,7 @@ func NewCubeRuntimeManager() (CubeRuntime, error) {
 
 	cm := &cubeRuntimeManager{
 		dockerRuntime: dockerRuntime,
+		cpuStatsCache: cache.NewCpuStatsCache(),
 		runtimeName:   containerdRuntimeName,
 	}
 

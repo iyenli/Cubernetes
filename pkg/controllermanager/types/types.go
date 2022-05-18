@@ -27,3 +27,16 @@ type RsEvent struct {
 	Type       RsEventType
 	ReplicaSet object.ReplicaSet
 }
+
+type AsEventType string
+
+const (
+	AsCreate AsEventType = "create"
+	AsUpdate AsEventType = "update"
+	AsRemove AsEventType = "remove"
+)
+
+type AsEvent struct {
+	Type       AsEventType
+	AutoScaler object.AutoScaler
+}
