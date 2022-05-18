@@ -2,6 +2,7 @@ package heartbeat
 
 import (
 	cubeconfig "Cubernetes/config"
+	"Cubernetes/pkg/apiserver/health"
 	"Cubernetes/pkg/apiserver/watchobj"
 	"Cubernetes/pkg/object"
 	"bufio"
@@ -19,7 +20,7 @@ const MSG_HEARTBEAT = "alive"
 const INTERVAL = 5 * time.Second
 const TIMEOUT = 15 * time.Second
 
-var conn net.Conn
+var lostCnt int
 var connected bool
 var node object.Node
 var lastUpdate time.Time
@@ -36,13 +37,16 @@ func CheckConn() bool {
 	return ret
 }
 
-func closeConn() {
+func closeConn(conn *net.Conn, cnt int) {
+	_ = (*conn).Close()
+
 	connLock.Lock()
-	if connected {
-		_ = conn.Close()
+	if lostCnt == cnt {
+		lostCnt += 1
 		connected = false
 		log.Println("Heartbeat connection closed, stop all watching")
 		watchobj.StopAll()
+		go retryConnection()
 	}
 	connLock.Unlock()
 }
@@ -60,8 +64,8 @@ func getTime() time.Time {
 	return t
 }
 
-func maintainHealth() {
-	defer closeConn()
+func maintainHealth(conn *net.Conn, cnt int) {
+	defer closeConn(conn, cnt)
 
 	for {
 		if time.Since(getTime()) > TIMEOUT {
@@ -75,9 +79,9 @@ func maintainHealth() {
 			return
 		}
 		buf = append(buf, MSG_DELIM)
-		_, err = conn.Write(buf)
+		_, err = (*conn).Write(buf)
 		if err != nil {
-			log.Println("Fail to send Node message, err: ", err)
+			log.Println("Fail to send Node message, this is NORMAL when apiserver is lost, err: ", err)
 			return
 		}
 		time.Sleep(INTERVAL)
@@ -85,18 +89,32 @@ func maintainHealth() {
 }
 
 func updateHeartBeat() {
+	connLock.Lock()
+	cnt := lostCnt
+	connLock.Unlock()
+
+	var conn net.Conn
 	var err error
-	conn, err = net.Dial("tcp", cubeconfig.APIServerIp+":"+strconv.Itoa(cubeconfig.HeartbeatPort))
-	if err != nil {
-		log.Fatal("Fail to dial heartbeat server", err)
-		return
+
+	for {
+		conn, err = net.Dial("tcp", cubeconfig.APIServerIp+":"+strconv.Itoa(cubeconfig.HeartbeatPort))
+		if err == nil {
+			break
+		}
+		log.Println("Cannot connect with ApiServer, retry...")
+		time.Sleep(INTERVAL)
 	}
 
-	lastUpdate = time.Now()
-	connected = true
-	defer closeConn()
+	log.Println("Connected with ApiServer, sending heartbeat...")
+	updateTime()
 
-	go maintainHealth()
+	connLock.Lock()
+	connected = true
+	connLock.Unlock()
+
+	defer closeConn(&conn, cnt)
+
+	go maintainHealth(&conn, cnt)
 
 	reader := bufio.NewReader(conn)
 	for {
@@ -109,11 +127,25 @@ func updateHeartBeat() {
 	}
 }
 
+func retryConnection() {
+	for {
+		log.Println("Cannot access ApiServer, retry...")
+		time.Sleep(INTERVAL)
+		if health.CheckApiServerHealth() {
+			break
+		}
+	}
+	log.Println("ApiServer alive, connecting...")
+
+	go updateHeartBeat()
+}
+
 // InitNode
 // package heartbeat is designed for cubelet
 func InitNode(n object.Node) {
 	node = n
 	node.Status.Condition.Ready = true
 	connected = false
+	lostCnt = 0
 	go updateHeartBeat()
 }
