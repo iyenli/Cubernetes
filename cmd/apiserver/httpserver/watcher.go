@@ -31,6 +31,9 @@ var watchList = []Handler{
 
 	{http.MethodPost, "/apis/watch/autoScaler/:uid", watchAutoScaler},
 	{http.MethodPost, "/apis/watch/autoScalers", watchAutoScalers},
+
+	{http.MethodPost, "/apis/watch/gpuJob/:uid", watchGpuJob},
+	{http.MethodPost, "/apis/watch/gpuJobs", watchGpuJobs},
 }
 
 func handleEvent(ctx *gin.Context, e *clientv3.Event) {
@@ -89,43 +92,43 @@ func postWatch(ctx *gin.Context, path string, withPrefix bool) {
 }
 
 func watchPod(ctx *gin.Context) {
-	postWatch(ctx, "/apis/pod/"+ctx.Param("uid"), false)
+	postWatch(ctx, object.PodEtcdPrefix+ctx.Param("uid"), false)
 }
 
 func watchPods(ctx *gin.Context) {
-	postWatch(ctx, "/apis/pod/", true)
+	postWatch(ctx, object.PodEtcdPrefix, true)
 }
 
 func watchService(ctx *gin.Context) {
-	postWatch(ctx, "/apis/service/"+ctx.Param("uid"), false)
+	postWatch(ctx, object.ServiceEtcdPrefix+ctx.Param("uid"), false)
 }
 
 func watchServices(ctx *gin.Context) {
-	postWatch(ctx, "/apis/service/", true)
+	postWatch(ctx, object.ServiceEtcdPrefix, true)
 }
 
 func watchReplicaSet(ctx *gin.Context) {
-	postWatch(ctx, "/apis/replicaSet/"+ctx.Param("uid"), false)
+	postWatch(ctx, object.ReplicaSetEtcdPrefix+ctx.Param("uid"), false)
 }
 
 func watchReplicaSets(ctx *gin.Context) {
-	postWatch(ctx, "/apis/replicaSet/", true)
+	postWatch(ctx, object.ReplicaSetEtcdPrefix, true)
 }
 
 func watchNode(ctx *gin.Context) {
-	postWatch(ctx, "/apis/node/"+ctx.Param("uid"), false)
+	postWatch(ctx, object.NodeEtcdPrefix+ctx.Param("uid"), false)
 }
 
 func watchNodes(ctx *gin.Context) {
-	postWatch(ctx, "/apis/node/", true)
+	postWatch(ctx, object.NodeEtcdPrefix, true)
 }
 
 func watchDns(ctx *gin.Context) {
-	postWatch(ctx, "/apis/dns/"+ctx.Param("uid"), false)
+	postWatch(ctx, object.DnsEtcdPrefix+ctx.Param("uid"), false)
 }
 
 func watchDnses(ctx *gin.Context) {
-	postWatch(ctx, "/apis/dns/", true)
+	postWatch(ctx, object.DnsEtcdPrefix, true)
 }
 
 func watchAutoScaler(ctx *gin.Context) {
@@ -134,4 +137,12 @@ func watchAutoScaler(ctx *gin.Context) {
 
 func watchAutoScalers(ctx *gin.Context) {
 	postWatch(ctx, object.AutoScalerEtcdPrefix, true)
+}
+
+func watchGpuJob(ctx *gin.Context) {
+	postWatch(ctx, object.GpuJobEtcdPrefix+ctx.Param("uid"), false)
+}
+
+func watchGpuJobs(ctx *gin.Context) {
+	postWatch(ctx, object.GpuJobEtcdPrefix, true)
 }

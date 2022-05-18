@@ -136,6 +136,21 @@ for example:
 				fmt.Printf("%-30s\t%-40s\t(%-v ~ %-v)\n", as.Name, as.UID, as.Spec.MinReplicas, as.Spec.MaxReplicas)
 			}
 
+		case "job", "jobs", "gpujob", "gpujobs":
+			jobs, err := crudobj.GetGpuJobs()
+			if err != nil {
+				log.Fatal("[FATAL] fail to get GpuJobs")
+				return
+			}
+			if len(jobs) == 0 {
+				fmt.Println("No GpuJobs Found")
+				return
+			}
+			fmt.Printf("%d GpuJobs found\n", len(jobs))
+			fmt.Printf("%-30s\t%-40s\t%-v\n", "Name", "UID", "Phase")
+			for _, job := range jobs {
+				fmt.Printf("%-30s\t%-40s\t%-v\n", job.Name, job.UID, job.Status.Phase)
+			}
 		default:
 			log.Fatal("[FATAL] Unknown kind: " + args[0])
 		}

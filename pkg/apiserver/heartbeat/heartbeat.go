@@ -27,6 +27,13 @@ var lastUpdate time.Time
 var timeLock sync.Mutex
 var connLock sync.Mutex
 
+func CheckConn() bool {
+	connLock.Lock()
+	ret := connected
+	connLock.Unlock()
+	return ret
+}
+
 func closeConn() {
 	connLock.Lock()
 	if connected {

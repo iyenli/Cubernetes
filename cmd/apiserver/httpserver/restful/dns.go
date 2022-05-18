@@ -1,6 +1,7 @@
 package restful
 
 import (
+	"Cubernetes/cmd/apiserver/httpserver/utils"
 	"Cubernetes/pkg/object"
 	"Cubernetes/pkg/utils/etcdrw"
 	"encoding/json"
@@ -21,18 +22,18 @@ func PostDns(ctx *gin.Context) {
 	dns := object.Dns{}
 	err := ctx.BindJSON(&dns)
 	if err != nil {
-		parseFail(ctx)
+		utils.ParseFail(ctx)
 		return
 	}
 	if dns.Name == "" {
-		badRequest(ctx)
+		utils.BadRequest(ctx)
 		return
 	}
 	dns.UID = uuid.New().String()
 	buf, _ := json.Marshal(dns)
 	err = etcdrw.PutObj(object.DnsEtcdPrefix+dns.UID, string(buf))
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
 	ctx.JSON(http.StatusOK, dns)
@@ -42,29 +43,29 @@ func PutDns(ctx *gin.Context) {
 	newDns := object.Dns{}
 	err := ctx.BindJSON(&newDns)
 	if err != nil {
-		parseFail(ctx)
+		utils.ParseFail(ctx)
 		return
 	}
 
 	if newDns.UID != ctx.Param("uid") {
-		badRequest(ctx)
+		utils.BadRequest(ctx)
 		return
 	}
 
 	oldBuf, err := etcdrw.GetObj(object.DnsEtcdPrefix + newDns.UID)
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
 	if oldBuf == nil {
-		notFound(ctx)
+		utils.NotFound(ctx)
 		return
 	}
 
 	newBuf, _ := json.Marshal(newDns)
 	err = etcdrw.PutObj(object.DnsEtcdPrefix+newDns.UID, string(newBuf))
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
 
@@ -80,7 +81,7 @@ func SelectDnses(ctx *gin.Context) {
 	var selectors map[string]string
 	err := ctx.BindJSON(&selectors)
 	if err != nil {
-		parseFail(ctx)
+		utils.ParseFail(ctx)
 		return
 	}
 

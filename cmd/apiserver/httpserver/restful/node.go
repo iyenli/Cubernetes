@@ -1,6 +1,7 @@
 package restful
 
 import (
+	"Cubernetes/cmd/apiserver/httpserver/utils"
 	"Cubernetes/pkg/object"
 	"Cubernetes/pkg/utils/etcdrw"
 	"encoding/json"
@@ -21,11 +22,11 @@ func PostNode(ctx *gin.Context) {
 	var node object.Node
 	err := ctx.BindJSON(&node)
 	if err != nil {
-		parseFail(ctx)
+		utils.ParseFail(ctx)
 		return
 	}
 	if node.Name == "" {
-		badRequest(ctx)
+		utils.BadRequest(ctx)
 		return
 	}
 
@@ -33,7 +34,7 @@ func PostNode(ctx *gin.Context) {
 	buf, _ := json.Marshal(node)
 	err = etcdrw.PutObj(object.NodeEtcdPrefix+node.UID, string(buf))
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
 	ctx.JSON(http.StatusOK, node)
@@ -43,29 +44,29 @@ func PutNode(ctx *gin.Context) {
 	newNode := object.Node{}
 	err := ctx.BindJSON(&newNode)
 	if err != nil {
-		parseFail(ctx)
+		utils.ParseFail(ctx)
 		return
 	}
 
 	if newNode.UID != ctx.Param("uid") {
-		badRequest(ctx)
+		utils.BadRequest(ctx)
 		return
 	}
 
 	oldBuf, err := etcdrw.GetObj(object.NodeEtcdPrefix + newNode.UID)
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
 	if oldBuf == nil {
-		notFound(ctx)
+		utils.NotFound(ctx)
 		return
 	}
 
 	newBuf, _ := json.Marshal(newNode)
 	err = etcdrw.PutObj(object.NodeEtcdPrefix+newNode.UID, string(newBuf))
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
 
@@ -81,7 +82,7 @@ func SelectNodes(ctx *gin.Context) {
 	var selectors map[string]string
 	err := ctx.BindJSON(&selectors)
 	if err != nil {
-		parseFail(ctx)
+		utils.ParseFail(ctx)
 		return
 	}
 

@@ -92,13 +92,7 @@ func deleteRequest(url string) error {
 
 	defer func() { _ = resp.Body.Close() }()
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Println("fail to read http delete response body")
-		return err
-	}
-
-	if string(body) != "\"deleted\"" {
+	if resp.StatusCode != http.StatusOK {
 		return errors.New("fail to delete the obj")
 	}
 

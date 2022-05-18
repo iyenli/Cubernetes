@@ -109,6 +109,9 @@ github.com/inconshreveable/mousetrap
 # github.com/json-iterator/go v1.1.12
 ## explicit; go 1.12
 github.com/json-iterator/go
+# github.com/kr/fs v0.1.0
+## explicit
+github.com/kr/fs
 # github.com/leodido/go-urn v1.2.1
 ## explicit; go 1.13
 github.com/leodido/go-urn
@@ -138,6 +141,10 @@ github.com/opencontainers/image-spec/specs-go/v1
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
+# github.com/pkg/sftp v1.13.4
+## explicit; go 1.15
+github.com/pkg/sftp
+github.com/pkg/sftp/internal/encoding/ssh/filexfer
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
 github.com/pmezard/go-difflib/difflib
@@ -190,9 +197,18 @@ go.uber.org/zap/internal/color
 go.uber.org/zap/internal/exit
 go.uber.org/zap/zapcore
 go.uber.org/zap/zapgrpc
-# golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
+# golang.org/x/crypto v0.0.0-20220516162934-403b01795ae8
 ## explicit; go 1.17
+golang.org/x/crypto/blowfish
+golang.org/x/crypto/chacha20
+golang.org/x/crypto/curve25519
+golang.org/x/crypto/curve25519/internal/field
+golang.org/x/crypto/ed25519
+golang.org/x/crypto/internal/poly1305
+golang.org/x/crypto/internal/subtle
 golang.org/x/crypto/sha3
+golang.org/x/crypto/ssh
+golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 # golang.org/x/net v0.0.0-20220412020605-290c469a71a5
 ## explicit; go 1.17
 golang.org/x/net/http/httpguts

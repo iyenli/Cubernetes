@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 )
 
@@ -15,10 +16,13 @@ type Handler struct {
 }
 
 func Run() {
+	_ = os.Mkdir(cubeconfig.JobFileDir, 0777)
+
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
 	handlerList := append(restfulList, watchList...)
+	handlerList = append(handlerList, fileList...)
 
 	for _, handler := range handlerList {
 		switch handler.Method {
