@@ -5,8 +5,8 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	cubeconfig "Cubernetes/config"
 	"Cubernetes/pkg/apiserver/crudobj"
+	"Cubernetes/pkg/apiserver/jobfile"
 	"Cubernetes/pkg/object"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -37,50 +37,93 @@ for example:
 		err = yaml.Unmarshal(file, &t)
 		if err != nil {
 			log.Fatal("[FATAL] fail to unmarshal config file")
-			return
 		}
+
 		switch t.Kind {
-		case cubeconfig.KindPod:
+
+		case object.KindPod:
 			var pod object.Pod
 			err = yaml.Unmarshal(file, &pod)
 			if err != nil {
 				log.Fatal("[FATAL] fail to parse Pod")
-				return
 			}
 			newPod, err := crudobj.CreatePod(pod)
 			if err != nil {
 				log.Fatal("[FATAL] fail to create new Pod")
-				return
 			}
 			log.Printf("Pod UID=%s created\n", newPod.UID)
 
-		case cubeconfig.KindService:
+		case object.KindService:
 			var service object.Service
 			err = yaml.Unmarshal(file, &service)
 			if err != nil {
 				log.Fatal("[FATAL] fail to parse Service")
-				return
 			}
 			newService, err := crudobj.CreateService(service)
 			if err != nil {
 				log.Fatal("[FATAL] fail to create new Service")
-				return
 			}
 			log.Printf("Service UID=%s created\n", newService.UID)
 
-		case cubeconfig.KindReplicaset:
+		case object.KindReplicaSet:
 			var rs object.ReplicaSet
 			err = yaml.Unmarshal(file, &rs)
 			if err != nil {
 				log.Fatal("[FATAL] fail to parse ReplicaSet", err)
-				return
 			}
 			newRs, err := crudobj.CreateReplicaSet(rs)
 			if err != nil {
 				log.Fatal("[FATAL] fail to create new ReplicaSet")
-				return
 			}
 			log.Printf("ReplicaSet UID=%s created\n", newRs.UID)
+
+		case object.KindDns:
+			var dns object.Dns
+			err = yaml.Unmarshal(file, &dns)
+			if err != nil {
+				log.Fatal("[FATAL] fail to parse Dns", err)
+			}
+			newDns, err := crudobj.CreateDns(dns)
+			if err != nil {
+				log.Fatal("[FATAL] fail to create new Dns")
+			}
+			log.Printf("Dns UID=%s created\n", newDns.UID)
+
+		case object.KindAutoScaler:
+			var as object.AutoScaler
+			err = yaml.Unmarshal(file, &as)
+			if err != nil {
+				log.Fatal("[FATAL] fail to parse AutoScaler", err)
+			}
+			newAs, err := crudobj.CreateAutoScaler(as)
+			if err != nil {
+				log.Fatal("[FATAL] fail to create new AutoScaler")
+			}
+			log.Printf("AutoScaler UID=%s created\n", newAs.UID)
+
+		case object.KindGpuJob:
+			var job object.GpuJob
+			err = yaml.Unmarshal(file, &job)
+			if err != nil {
+				log.Fatal("[FATAL] fail to parse GpuJob", err)
+			}
+			newJob, err := crudobj.CreateGpuJob(job)
+			if err != nil {
+				log.Fatal("[FATAL] fail to create new GpuJob")
+			}
+
+			err = jobfile.PostJobFile(newJob.UID, job.Spec.Filename)
+			if err != nil {
+				log.Fatal("[FATAL] fail to upload GpuJob file")
+			}
+
+			newJob.Status.Phase = object.JobCreated
+			newJob, err = crudobj.UpdateGpuJob(newJob)
+			if err != nil {
+				log.Fatal("[FATAL] fail to update GpuJob phase")
+			}
+
+			log.Printf("GpuJob UID=%s created\n", newJob.UID)
 
 		default:
 			log.Fatal("[FATAL] Unknown kind: " + t.Kind)

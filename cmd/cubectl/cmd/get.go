@@ -27,6 +27,7 @@ for example:
 			return
 		}
 		switch strings.ToLower(args[0]) {
+
 		case "pod", "pods":
 			pods, err := crudobj.GetPods()
 			if err != nil {
@@ -58,6 +59,7 @@ for example:
 			for _, svc := range svcs {
 				fmt.Printf("%-30s\t%-s\n", svc.Name, svc.UID)
 			}
+
 		case "replicaset", "replicasets", "rs", "rss":
 			rss, err := crudobj.GetReplicaSets()
 			if err != nil {
@@ -79,6 +81,7 @@ for example:
 				}
 				fmt.Printf("%-30s\t%-40s\t(%-v/%-v)\n", rs.Name, rs.UID, running, rs.Spec.Replicas)
 			}
+
 		case "node", "nodes":
 			nodes, err := crudobj.GetNodes()
 			if err != nil {
@@ -99,6 +102,54 @@ for example:
 					ready = false
 				}
 				fmt.Printf("%-30s\t%-40s\t%-v\n", node.Name, node.UID, ready)
+			}
+
+		case "dns", "dnses":
+			dnses, err := crudobj.GetDnses()
+			if err != nil {
+				log.Fatal("[FATAL] fail to get Dnses")
+				return
+			}
+			if len(dnses) == 0 {
+				fmt.Println("No Dnses Found")
+				return
+			}
+			fmt.Printf("%d Dnses Found\n", len(dnses))
+			fmt.Printf("%-30s\t%-40s\t%-30s\t%-s\n", "Name", "UID", "Host", "PathCnt")
+			for _, dns := range dnses {
+				fmt.Printf("%-30s\t%-40s\t%-30s\t%-v\n", dns.Name, dns.UID, dns.Spec.Host, len(dns.Spec.Paths))
+			}
+
+		case "autoscaler", "autoscalers":
+			autoScalers, err := crudobj.GetAutoScalers()
+			if err != nil {
+				log.Fatal("[FATAL] fail to get AutoScalers")
+				return
+			}
+			if len(autoScalers) == 0 {
+				fmt.Println("No AutoScalers Found")
+				return
+			}
+			fmt.Printf("%d AutoScalers Found\n", len(autoScalers))
+			fmt.Printf("%-30s\t%-40s\t(%-v ~ %-v)\n", "Name", "UID", "min", "max")
+			for _, as := range autoScalers {
+				fmt.Printf("%-30s\t%-40s\t(%-v ~ %-v)\n", as.Name, as.UID, as.Spec.MinReplicas, as.Spec.MaxReplicas)
+			}
+
+		case "job", "jobs", "gpujob", "gpujobs":
+			jobs, err := crudobj.GetGpuJobs()
+			if err != nil {
+				log.Fatal("[FATAL] fail to get GpuJobs")
+				return
+			}
+			if len(jobs) == 0 {
+				fmt.Println("No GpuJobs Found")
+				return
+			}
+			fmt.Printf("%d GpuJobs found\n", len(jobs))
+			fmt.Printf("%-30s\t%-40s\t%-v\n", "Name", "UID", "Phase")
+			for _, job := range jobs {
+				fmt.Printf("%-30s\t%-40s\t%-v\n", job.Name, job.UID, job.Status.Phase)
 			}
 		default:
 			log.Fatal("[FATAL] Unknown kind: " + args[0])

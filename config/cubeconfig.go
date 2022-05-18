@@ -6,25 +6,19 @@ import (
 
 const ETCDTimeout = time.Second
 const ETCDAddr = "127.0.0.1:2379"
-const ServiceClusterIPRange = "172.16.0.0/12"
+const ServiceClusterIPRange = "10.96.0.0/16"
 
 var APIServerIp = "127.0.0.1"
 
 const APIServerPort = 8080
 const HeartbeatPort = 8081
 
-const (
-	KindPod        = "Pod"
-	KindService    = "Service"
-	KindReplicaset = "ReplicaSet"
-	KindNode       = "Node"
-)
-
 const DefaultApiVersion = "v1"
 
 const CubeVersion = "v1.0"
 
 const (
-	MetaDir  = "/var/log/cubernetes/"
-	MetaFile = MetaDir + "meta"
+	JobFileDir = "/etc/cubernetes/apiserver/jobs/"
+	MetaDir    = "/etc/cubernetes/cubernetes/"
+	MetaFile   = MetaDir + "meta"
 )

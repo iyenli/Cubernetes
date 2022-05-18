@@ -1,5 +1,15 @@
 package object
 
+const (
+	KindPod        = "Pod"
+	KindService    = "Service"
+	KindReplicaSet = "ReplicaSet"
+	KindNode       = "Node"
+	KindDns        = "Dns"
+	KindAutoScaler = "AutoScaler"
+	KindGpuJob     = "GpuJob"
+)
+
 type TypeMeta struct {
 	Kind       string `json:"kind,omitempty" yaml:"kind,omitempty"`
 	APIVersion string `json:"apiVersion,omitempty" yaml:"apiVersion,omitempty"`

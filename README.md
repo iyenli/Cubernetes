@@ -29,6 +29,7 @@ Worker1作为master, Worker2作为slave. 假设Worker1 的IP为192.168.1.9, Work
 # 如果想重新启动配置Node
 ./build/cuberoot reset
 ./build/cuberoot stop
+# if testing, MAKE!
 bash ./scripts/clear.sh
 ```
 
@@ -66,6 +67,24 @@ bash ./scripts/clear.sh
 ```
 
 如果想测试负载均衡，可以修改Nginx config. 将`example/html`下的`nginx.conf`copy到运行环境的`/etc/nginx/nginx.conf`. 再将两个HTML文件copy到`/var/www/html/`下。启动`test-pod(2).yaml`，并启动`service.yaml`. 然后访问Cluster IP，就可以发现是哪个Pod提供的服务。
+
+测试DNS时，建议启动两个Pod和Service.
+
+```shell
+./build/cubectl apply -f ./example/yaml/dns/pod1.yaml 
+./build/cubectl apply -f ./example/yaml/dns/pod2.yaml 
+
+./build/cubectl apply -f ./example/yaml/dns/service1.yaml 
+./build/cubectl apply -f ./example/yaml/dns/service2.yaml 
+
+./build/cubectl apply -f ./example/yaml/dns/dns.yaml 
+```
+
+如果需要测试GPU：
+
+```shell
+./build/cubectl apply -f ./example/yaml/test-gpujob.yaml
+```
 
 
 

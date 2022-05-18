@@ -1,6 +1,7 @@
 package restful
 
 import (
+	"Cubernetes/cmd/apiserver/httpserver/utils"
 	"Cubernetes/pkg/utils/etcdrw"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -9,11 +10,11 @@ import (
 func getObj(ctx *gin.Context, path string) {
 	buf, err := etcdrw.GetObj(path)
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
 	if buf == nil {
-		notFound(ctx)
+		utils.NotFound(ctx)
 		return
 	}
 	ctx.Header("Content-Type", "application/json")
@@ -23,7 +24,7 @@ func getObj(ctx *gin.Context, path string) {
 func getObjs(ctx *gin.Context, prefix string) {
 	buf, err := etcdrw.GetObjs(prefix)
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
 	if buf == nil {
@@ -48,7 +49,7 @@ func getObjs(ctx *gin.Context, prefix string) {
 func selectObjs(ctx *gin.Context, prefix string, match func([]byte) bool) {
 	buf, err := etcdrw.GetObjs(prefix)
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
 	if buf == nil {
@@ -75,18 +76,18 @@ func selectObjs(ctx *gin.Context, prefix string, match func([]byte) bool) {
 func delObj(ctx *gin.Context, path string) {
 	oldBuf, err := etcdrw.GetObj(path)
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
 	if oldBuf == nil {
-		notFound(ctx)
+		utils.NotFound(ctx)
 		return
 	}
 
 	err = etcdrw.DelObj(path)
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
-	ctx.JSON(http.StatusOK, "deleted")
+	ctx.String(http.StatusOK, "deleted")
 }

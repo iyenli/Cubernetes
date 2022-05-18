@@ -1,6 +1,7 @@
 package restful
 
 import (
+	"Cubernetes/cmd/apiserver/httpserver/utils"
 	"Cubernetes/pkg/object"
 	"Cubernetes/pkg/utils/etcdrw"
 	"encoding/json"
@@ -10,29 +11,29 @@ import (
 )
 
 func GetReplicaSet(ctx *gin.Context) {
-	getObj(ctx, "/apis/replicaSet/"+ctx.Param("uid"))
+	getObj(ctx, object.ReplicaSetEtcdPrefix+ctx.Param("uid"))
 }
 
 func GetReplicaSets(ctx *gin.Context) {
-	getObjs(ctx, "/apis/replicaSet/")
+	getObjs(ctx, object.ReplicaSetEtcdPrefix)
 }
 
 func PostReplicaSet(ctx *gin.Context) {
 	rs := object.ReplicaSet{}
 	err := ctx.BindJSON(&rs)
 	if err != nil {
-		parseFail(ctx)
+		utils.ParseFail(ctx)
 		return
 	}
 	if rs.Name == "" {
-		badRequest(ctx)
+		utils.BadRequest(ctx)
 		return
 	}
 	rs.UID = uuid.New().String()
 	buf, _ := json.Marshal(rs)
-	err = etcdrw.PutObj("/apis/replicaSet/"+rs.UID, string(buf))
+	err = etcdrw.PutObj(object.ReplicaSetEtcdPrefix+rs.UID, string(buf))
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
 	ctx.JSON(http.StatusOK, rs)
@@ -42,29 +43,29 @@ func PutReplicaSet(ctx *gin.Context) {
 	newRs := object.ReplicaSet{}
 	err := ctx.BindJSON(&newRs)
 	if err != nil {
-		parseFail(ctx)
+		utils.ParseFail(ctx)
 		return
 	}
 
 	if newRs.UID != ctx.Param("uid") {
-		badRequest(ctx)
+		utils.BadRequest(ctx)
 		return
 	}
 
-	oldBuf, err := etcdrw.GetObj("/apis/replicaSet/" + newRs.UID)
+	oldBuf, err := etcdrw.GetObj(object.ReplicaSetEtcdPrefix + newRs.UID)
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
 	if oldBuf == nil {
-		notFound(ctx)
+		utils.NotFound(ctx)
 		return
 	}
 
 	newBuf, _ := json.Marshal(newRs)
-	err = etcdrw.PutObj("/apis/replicaSet/"+newRs.UID, string(newBuf))
+	err = etcdrw.PutObj(object.ReplicaSetEtcdPrefix+newRs.UID, string(newBuf))
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
 
@@ -73,23 +74,23 @@ func PutReplicaSet(ctx *gin.Context) {
 }
 
 func DelReplicaSet(ctx *gin.Context) {
-	delObj(ctx, "/apis/replicaSet/"+ctx.Param("uid"))
+	delObj(ctx, object.ReplicaSetEtcdPrefix+ctx.Param("uid"))
 }
 
 func SelectReplicaSets(ctx *gin.Context) {
 	var selectors map[string]string
 	err := ctx.BindJSON(&selectors)
 	if err != nil {
-		parseFail(ctx)
+		utils.ParseFail(ctx)
 		return
 	}
 
 	if len(selectors) == 0 {
-		getObjs(ctx, "/apis/replicaSet/")
+		getObjs(ctx, object.ReplicaSetEtcdPrefix)
 		return
 	}
 
-	selectObjs(ctx, "/apis/replicaSet/", func(str []byte) bool {
+	selectObjs(ctx, object.ReplicaSetEtcdPrefix, func(str []byte) bool {
 		var rs object.ReplicaSet
 		err = json.Unmarshal(str, &rs)
 		if err != nil {

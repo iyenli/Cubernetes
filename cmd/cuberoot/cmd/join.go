@@ -82,6 +82,8 @@ example:
 		if err != nil {
 			log.Fatal("[FATAL] fail to start slave processes, err: ", err)
 		}
+
+		time.Sleep(12 * time.Second)
 		log.Println("Slave node launched successfully")
 	},
 }

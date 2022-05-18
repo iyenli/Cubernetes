@@ -1,6 +1,7 @@
 package restful
 
 import (
+	"Cubernetes/cmd/apiserver/httpserver/utils"
 	"Cubernetes/pkg/object"
 	"Cubernetes/pkg/utils/etcdrw"
 	"encoding/json"
@@ -10,30 +11,30 @@ import (
 )
 
 func GetNode(ctx *gin.Context) {
-	getObj(ctx, "/apis/node/"+ctx.Param("uid"))
+	getObj(ctx, object.NodeEtcdPrefix+ctx.Param("uid"))
 }
 
 func GetNodes(ctx *gin.Context) {
-	getObjs(ctx, "/apis/node/")
+	getObjs(ctx, object.NodeEtcdPrefix)
 }
 
 func PostNode(ctx *gin.Context) {
 	var node object.Node
 	err := ctx.BindJSON(&node)
 	if err != nil {
-		parseFail(ctx)
+		utils.ParseFail(ctx)
 		return
 	}
 	if node.Name == "" {
-		badRequest(ctx)
+		utils.BadRequest(ctx)
 		return
 	}
 
 	node.UID = uuid.New().String()
 	buf, _ := json.Marshal(node)
-	err = etcdrw.PutObj("/apis/node/"+node.UID, string(buf))
+	err = etcdrw.PutObj(object.NodeEtcdPrefix+node.UID, string(buf))
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
 	ctx.JSON(http.StatusOK, node)
@@ -43,29 +44,29 @@ func PutNode(ctx *gin.Context) {
 	newNode := object.Node{}
 	err := ctx.BindJSON(&newNode)
 	if err != nil {
-		parseFail(ctx)
+		utils.ParseFail(ctx)
 		return
 	}
 
 	if newNode.UID != ctx.Param("uid") {
-		badRequest(ctx)
+		utils.BadRequest(ctx)
 		return
 	}
 
-	oldBuf, err := etcdrw.GetObj("/apis/node/" + newNode.UID)
+	oldBuf, err := etcdrw.GetObj(object.NodeEtcdPrefix + newNode.UID)
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
 	if oldBuf == nil {
-		notFound(ctx)
+		utils.NotFound(ctx)
 		return
 	}
 
 	newBuf, _ := json.Marshal(newNode)
-	err = etcdrw.PutObj("/apis/node/"+newNode.UID, string(newBuf))
+	err = etcdrw.PutObj(object.NodeEtcdPrefix+newNode.UID, string(newBuf))
 	if err != nil {
-		serverError(ctx)
+		utils.ServerError(ctx)
 		return
 	}
 
@@ -74,23 +75,23 @@ func PutNode(ctx *gin.Context) {
 }
 
 func DelNode(ctx *gin.Context) {
-	delObj(ctx, "/apis/node/"+ctx.Param("uid"))
+	delObj(ctx, object.NodeEtcdPrefix+ctx.Param("uid"))
 }
 
 func SelectNodes(ctx *gin.Context) {
 	var selectors map[string]string
 	err := ctx.BindJSON(&selectors)
 	if err != nil {
-		parseFail(ctx)
+		utils.ParseFail(ctx)
 		return
 	}
 
 	if len(selectors) == 0 {
-		getObjs(ctx, "/apis/node/")
+		getObjs(ctx, object.NodeEtcdPrefix)
 		return
 	}
 
-	selectObjs(ctx, "/apis/node/", func(str []byte) bool {
+	selectObjs(ctx, object.NodeEtcdPrefix, func(str []byte) bool {
 		var node object.Node
 		err = json.Unmarshal(str, &node)
 		if err != nil {
