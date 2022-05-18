@@ -7,7 +7,7 @@ import (
 	"os/exec"
 )
 
-// StartDaemonProcess arg[0]: log, arg[1...n]args
+// StartDaemonProcess arg[0]: log, arg[1...n]: args
 func StartDaemonProcess(args ...string) error {
 	_, err := os.Stat(args[1])
 	if err != nil {

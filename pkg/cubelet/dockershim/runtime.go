@@ -15,7 +15,7 @@ import (
 )
 
 type DockerRuntime interface {
-	// Container Service
+	// CreateContainer Container Service
 	CreateContainer(config *dockertypes.ContainerCreateConfig) (string, error)
 	StartContainer(containerID string) error
 	StopContainer(containerID string) error
@@ -24,13 +24,13 @@ type DockerRuntime interface {
 	InspectContainer(containerID string) (*dockertypes.ContainerJSON, error)
 	GetContainerStats(containerID string) (*dockertypes.StatsJSON, error)
 
-	// Image Service
+	// PullImage Image Service
 	PullImage(imageName string) error
 	RemoveImage(imageName string) error
 	ListImages(all bool) ([]*dockertypes.ImageSummary, error)
 	// GetImageName(imageID string) (string, error)
 
-	// Closer
+	// CloseConnection Closer
 	CloseConnection()
 }
 
@@ -72,7 +72,7 @@ func (c *dockerClient) CreateContainer(config *dockertypes.ContainerCreateConfig
 	}
 
 	if len(resp.Warnings) > 0 {
-		log.Print("[Waring] ", resp.Warnings)
+		log.Print("[Waring]: ", resp.Warnings)
 	}
 	return resp.ID, nil
 }
@@ -172,7 +172,12 @@ func (c *dockerClient) PullImage(imageName string) error {
 		log.Printf("fail to pull image %s : %v\n", imageName, err)
 		return err
 	}
-	defer out.Close()
+	defer func(out io.ReadCloser) {
+		err := out.Close()
+		if err != nil {
+			log.Println("[Error]: close reader failed")
+		}
+	}(out)
 
 	decoder := json.NewDecoder(out)
 	for {

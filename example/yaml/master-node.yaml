@@ -15,4 +15,4 @@ spec:
 status:
   addresses:
     hostName: worker-1
-    internalIP: 192.168.1.9
+    internalIP: 192.168.1.5

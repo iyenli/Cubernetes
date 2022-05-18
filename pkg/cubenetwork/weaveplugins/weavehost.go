@@ -71,7 +71,7 @@ func InitWeave() error {
 		return err
 	}
 
-	log.Println("Init weave node...")
+	log.Println("[INFO]: Init weave node...")
 	// stop weave if weave is running
 	cmd := osexec.Command(path, option.Stop)
 	err = cmd.Run() // Could fail here
@@ -121,14 +121,14 @@ func AddNode(newHost Host, apiServerHost Host) error {
 	}
 
 	output, err = CheckPeers()
-	log.Println("Peers: ", string(output))
+	log.Println("[INFO]: Peers: ", string(output))
 	return nil
 }
 
 func CheckPeers() ([]byte, error) {
 	path, err := osexec.LookPath(option.WeaveName)
 	if err != nil {
-		log.Println("Weave Not found.")
+		log.Println("[Error]: Weave Not found.")
 		return nil, err
 	}
 

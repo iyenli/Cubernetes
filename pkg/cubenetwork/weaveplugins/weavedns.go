@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func AddDNSEntry(containerName string, containerID string) error {
+func AddDNSEntry(hostname string, serviceIP string) error {
 	path, err := osexec.LookPath(option.WeaveName)
 	if err != nil {
 		log.Println("Weave Not found.")
@@ -16,16 +16,16 @@ func AddDNSEntry(containerName string, containerID string) error {
 
 	// add default name
 	var str strings.Builder
-	str.WriteString(containerName)
-	if !strings.HasSuffix(containerName, option.DefaultSuffix) {
+	str.WriteString(hostname)
+	if !strings.HasSuffix(hostname, option.DefaultSuffix) {
 		str.WriteString(option.DefaultSuffix)
 	}
 
-	containerName = str.String()
-	containerName = strings.Trim(containerName, "\n")
-	containerID = strings.Trim(containerID, "\n")
+	hostname = str.String()
+	hostname = strings.Trim(hostname, "\n")
+	serviceIP = strings.Trim(serviceIP, "\n")
 
-	cmd := osexec.Command(path, option.DnsAdd, containerID, "-h", containerName)
+	cmd := osexec.Command(path, option.DnsAdd, serviceIP, "-h", hostname)
 	output, err := cmd.CombinedOutput()
 	log.Println(string(output))
 	if err != nil {

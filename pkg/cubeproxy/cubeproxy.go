@@ -1,8 +1,6 @@
 package cubeproxy
 
 import (
-	"Cubernetes/pkg/apiserver/crudobj"
-	"Cubernetes/pkg/apiserver/watchobj"
 	"Cubernetes/pkg/cubeproxy/informer/types"
 	"Cubernetes/pkg/cubeproxy/proxyruntime"
 	"log"
@@ -10,17 +8,15 @@ import (
 )
 
 type Cubeproxy struct {
-	//Runtime CubeproxyRuntime
 	Runtime *proxyruntime.ProxyRuntime
-
-	lock sync.Mutex
+	lock    sync.Mutex
 }
 
 func NewCubeProxy() *Cubeproxy {
-	log.Printf("creating cubeproxy\n")
+	log.Printf("[INFO]: creating cubeproxy\n")
 	runtime, err := proxyruntime.InitProxyRuntime()
 	if err != nil {
-		log.Printf("Create cube proxy runtime error: %v", err.Error())
+		log.Printf("[Fatal]: Create cube proxy runtime error: %v", err.Error())
 	}
 
 	cp := &Cubeproxy{
@@ -28,7 +24,7 @@ func NewCubeProxy() *Cubeproxy {
 		lock:    sync.Mutex{},
 	}
 
-	log.Println("Cubeproxy created")
+	log.Println("[INFO]: Cubeproxy created")
 	return cp
 }
 
@@ -38,76 +34,67 @@ func (cp *Cubeproxy) Run() {
 	}
 
 	defer func(runtime *proxyruntime.ProxyRuntime) {
-		log.Printf("Release IP Tables...")
+		log.Printf("[INFO]: Release IP Tables...")
 		err := runtime.ReleaseIPTables()
 		if err != nil {
 			log.Panicln("[Panic]: Error when release proxy Runtime")
 		}
 	}(cp.Runtime)
 
-	// before watch service, add exist service to iptables
-	pods, err := crudobj.GetPods()
-	if err != nil {
-		log.Fatalln("[Fatal]: get pods failed when init cubeproxy")
-	}
-	err = cp.Runtime.PodInformer.InitInformer(pods)
-	if err != nil {
-		log.Fatalln("[Fatal]: Init pod informer failed")
-	}
-	err = cp.Runtime.AddAllExistService()
+	err := cp.Runtime.AddAllExistService()
 	if err != nil {
 		log.Fatalln("[Fatal]Add exist services failed")
 	}
 
-	ch, cancel, err := watchobj.WatchServices()
-	if err != nil {
-		log.Println("Error occurs when watching services")
-		return
-	}
-	defer cancel()
+	var wg sync.WaitGroup
+	wg.Add(6)
 
 	// sync pod and service
-	go cp.syncService()
-	go cp.syncPod()
+	go func() {
+		defer wg.Done()
+		cp.syncService()
+	}()
+	go func() {
+		defer wg.Done()
+		go cp.syncPod()
+	}()
+	go func() {
+		defer wg.Done()
+		go cp.syncDNS()
+	}()
 
 	// watch pod and service
 	go func() {
-		err := cp.WatchPodsChange()
-		if err != nil {
-			log.Fatalln("[Fatal]: watching pods in cubeproxy failed")
-			return
-		}
+		defer wg.Done()
+		cp.Runtime.PodInformer.ListAndWatchPodsWithRetry()
 	}()
 
-	for serviceEvent := range ch {
-		log.Printf("A service comes, types is %v, id is %v", serviceEvent.EType, serviceEvent.Service.UID)
-		switch serviceEvent.EType {
-		case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
-			err := cp.Runtime.ServiceInformer.InformService(serviceEvent.Service, serviceEvent.EType)
-			if err != nil {
-				log.Panic("Inform service failed")
-				return
-			}
-		default:
-			log.Panic("Unsupported types in watching service.")
-		}
-	}
+	go func() {
+		defer wg.Done()
+		cp.Runtime.DNSInformer.ListAndWatchDNSWithRetry()
+	}()
 
-	log.Fatalln("Unreachable here")
+	go func() {
+		defer wg.Done()
+		cp.Runtime.ServiceInformer.ListAndWatchServicesWithRetry()
+	}()
+
+	wg.Wait()
+	log.Fatalln("[Fatal]: Unreachable here")
 }
 
 func (cp *Cubeproxy) syncService() {
 	informEvent := cp.Runtime.ServiceInformer.WatchServiceEvent()
 
 	for serviceEvent := range informEvent {
-		log.Printf("[INFO]: Main loop working, types is %v,service id is %v", serviceEvent.Type, serviceEvent.Service.UID)
+		log.Printf("[INFO]: [INFO]: Main loop working, types is %v,service id is %v", serviceEvent.Type, serviceEvent.Service.UID)
 		service := serviceEvent.Service
 		eType := serviceEvent.Type
 		cp.lock.Lock()
 
 		switch eType {
 		case types.ServiceCreate:
-			log.Printf("from serviceEvent: create service %s\n", service.UID)
+			log.Printf("[INFO]: create service %s\n", service.UID)
 			err := cp.Runtime.AddService(&service)
 			if err != nil {
 				log.Printf("[Error]: Add service error: %v", err.Error())
@@ -115,24 +102,24 @@ func (cp *Cubeproxy) syncService() {
 			}
 		case types.ServiceUpdate:
 			// critical update: simply delete and rebuild
-			log.Printf("from serviceEvent: update service %s\n", service.UID)
+			log.Printf("[INFO]: update service %s\n", service.UID)
 			err := cp.Runtime.DeleteService(&service)
 			if err != nil {
-				log.Printf("Delete service error: %v", err.Error())
+				log.Printf("[Fatal]: Delete service error: %v", err.Error())
 				return
 			}
 
 			err = cp.Runtime.AddService(&service)
 			if err != nil {
-				log.Printf("Add service error: %v", err.Error())
+				log.Printf("[Fatal]: Add service error: %v", err.Error())
 				return
 			}
 
 		case types.ServiceRemove:
-			log.Printf("serviceEvent: delete service %s\n", service.UID)
+			log.Printf("[INFO]: delete service %s\n", service.UID)
 			err := cp.Runtime.DeleteService(&service)
 			if err != nil {
-				log.Printf("Delete service error: %v", err.Error())
+				log.Printf("[Fatal]: Delete service error: %v", err.Error())
 				return
 			}
 		}
@@ -145,14 +132,14 @@ func (cp *Cubeproxy) syncPod() {
 	informEvent := cp.Runtime.PodInformer.WatchPodEvent()
 
 	for podEvent := range informEvent {
-		log.Printf("Main loop working, type is %v, pod id is %v", podEvent.Type, &podEvent.Pod.UID)
+		log.Printf("[INFO]: Main loop working, type is %v, pod id is %v", podEvent.Type, &podEvent.Pod.UID)
 		pod := podEvent.Pod
 		eType := podEvent.Type
 		cp.lock.Lock()
 
 		switch eType {
 		case types.PodCreate, types.PodRemove, types.PodUpdate:
-			log.Printf("from podEvent: create pod %s\n", pod.UID)
+			log.Printf("[INFO]: create pod %s\n", pod.UID)
 			err := cp.Runtime.ModifyPod(&(pod))
 			if err != nil {
 				log.Fatalln("[Fatal]: error when modify pod")
@@ -164,27 +151,41 @@ func (cp *Cubeproxy) syncPod() {
 	}
 }
 
-func (cp *Cubeproxy) WatchPodsChange() error {
-	ch, cancel, err := watchobj.WatchPods()
-	if err != nil {
-		log.Println("Error occurs when watching pods")
-		return err
-	}
-	defer cancel()
+func (cp *Cubeproxy) syncDNS() {
+	informEvent := cp.Runtime.DNSInformer.WatchDNSEvent()
 
-	for podEvent := range ch {
-		switch podEvent.EType {
-		case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
-			err := cp.Runtime.PodInformer.InformPod(podEvent.Pod, podEvent.EType)
+	for podEvent := range informEvent {
+		log.Printf("[INFO]: Main loop working, type is %v, DNS id is %v", podEvent.Type, &podEvent.DNS.UID)
+		dns := podEvent.DNS
+		eType := podEvent.Type
+		cp.lock.Lock()
+
+		switch eType {
+		case types.DNSCreate:
+			log.Printf("[INFO] DNS Created, DnsID %s\n", dns.UID)
+			err := cp.Runtime.AddDNS(&dns)
 			if err != nil {
-				log.Println("Error when inform pod: ", podEvent.Pod.UID)
-				return err
+				log.Fatalln("[Fatal]: error when create DNS")
+				return
 			}
-		default:
-			log.Panic("Unsupported types in watch pod")
-		}
-	}
 
-	log.Fatalln("Unreachable here")
-	return nil
+		case types.DNSRemove:
+			log.Printf("[INFO] DNS Removed, DnsID %s\n", dns.UID)
+			err := cp.Runtime.DeleteDNS(&dns)
+			if err != nil {
+				log.Fatalln("[Fatal]: error when remove DNS")
+				return
+			}
+
+		case types.DNSUpdate:
+			log.Printf("[INFO] DNS Update, DnsID %s\n", dns.UID)
+			err := cp.Runtime.AddDNS(&dns)
+			if err != nil {
+				log.Fatalln("[Fatal]: error when modify DNS")
+				return
+			}
+		}
+
+		cp.lock.Unlock()
+	}
 }

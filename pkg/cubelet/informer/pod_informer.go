@@ -26,7 +26,7 @@ func NewPodInformer() (PodInformer, error) {
 }
 
 type cubePodInformer struct {
-	nodeUID string
+	nodeUID  string
 	podEvent chan types.PodEvent
 	podCache map[string]object.Pod
 }
@@ -45,15 +45,15 @@ func (i *cubePodInformer) tryListAndWatchPods() {
 	// in case of cubelet restart or lost connection with apiserver
 	// ensure informer cache all pods of apiserver
 	if allPods, err := crudobj.GetPods(); err != nil {
-		log.Printf("fail to get all pods from apiserver: %v\n", err)
-		log.Printf("will retry after %d seconds...\n", watchRetryIntervalSec)
+		log.Printf("[INFO]: fail to get all pods from apiserver: %v\n", err)
+		log.Printf("[INFO]: will retry after %d seconds...\n", watchRetryIntervalSec)
 		return
 	} else {
 		// put all pods to pod cache
 		for _, pod := range allPods {
 			if pod.Status != nil && pod.Status.NodeUID == i.nodeUID {
 				// simply initialize cache without inform
-				// inform could lead to Create event because cache is empty
+				// informer could lead to Create event because cache is empty
 				// we assume that no new pod will be bound since apiserver lost connection with this Node
 				// much simplified :)
 				i.podCache[pod.UID] = pod
@@ -61,24 +61,23 @@ func (i *cubePodInformer) tryListAndWatchPods() {
 		}
 	}
 
-	// then watch pod status change 
+	// then watch pod status change
 	ch, cancel, err := watchobj.WatchPods()
 	if err != nil {
 		log.Printf("fail to watch pods from apiserver: %v\n", err)
 		return
 	}
-
 	defer cancel()
 
 	for {
 		select {
 		case podEvent, ok := <-ch:
 			if !ok {
-				log.Printf("lost connection with APIServer, retry after %d seconds...\n", watchRetryIntervalSec)
+				log.Printf("[INFO]: lost connection with APIServer, retry after %d seconds...\n", watchRetryIntervalSec)
 				return
 			}
 			if podEvent.Pod.Status == nil && podEvent.EType != watchobj.EVENT_DELETE {
-				log.Println("[INFO] Pod caught, but status is nil so Cubelet doesn't handle it")
+				log.Println("[INFO]: Pod caught, but status is nil so Cubelet doesn't handle it")
 				continue
 			}
 			if podEvent.EType == watchobj.EVENT_DELETE || podEvent.Pod.Status.NodeUID == i.nodeUID {
@@ -90,7 +89,7 @@ func (i *cubePodInformer) tryListAndWatchPods() {
 						return
 					}
 				default:
-					log.Panic("Unsupported types in watch pod.")
+					log.Panic("[Error]: Unsupported types in watch pod.")
 				}
 			} else {
 				log.Printf("[INFO]: pod caught, but not my pod, pod UUID = %v, my UUID = %v",
@@ -104,7 +103,7 @@ func (i *cubePodInformer) tryListAndWatchPods() {
 
 func (i *cubePodInformer) SetNodeUID(uid string) {
 	if i.nodeUID != "" {
-		log.Printf("[FATAL] Node ID already set!\n")
+		log.Printf("[FATAL]: Node ID already set!\n")
 	}
 	i.nodeUID = uid
 }

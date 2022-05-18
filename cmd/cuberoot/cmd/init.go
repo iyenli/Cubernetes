@@ -81,6 +81,7 @@ example:
 			log.Fatal("[FATAL] fail to start master processes, err: ", err)
 		}
 
+		time.Sleep(12 * time.Second)
 		log.Printf("Master node launched successfully\n"+
 			"To join Cubernetes cluster, execute:\n"+
 			"\tcuberoot join %s -f [node config file]\n", node.Status.Addresses.InternalIP)
