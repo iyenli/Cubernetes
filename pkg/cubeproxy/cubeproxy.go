@@ -1,8 +1,6 @@
 package cubeproxy
 
 import (
-	"Cubernetes/pkg/apiserver/crudobj"
-	"Cubernetes/pkg/apiserver/watchobj"
 	"Cubernetes/pkg/cubeproxy/informer/types"
 	"Cubernetes/pkg/cubeproxy/proxyruntime"
 	"log"
@@ -10,7 +8,6 @@ import (
 )
 
 type Cubeproxy struct {
-	//Runtime CubeproxyRuntime
 	Runtime *proxyruntime.ProxyRuntime
 	lock    sync.Mutex
 }
@@ -44,16 +41,7 @@ func (cp *Cubeproxy) Run() {
 		}
 	}(cp.Runtime)
 
-	// before watch service, add exist service to iptables
-	pods, err := crudobj.GetPods()
-	if err != nil {
-		log.Fatalln("[Fatal]: get pods failed when init cubeproxy")
-	}
-	err = cp.Runtime.PodInformer.InitInformer(pods)
-	if err != nil {
-		log.Fatalln("[Fatal]: Init pod informer failed")
-	}
-	err = cp.Runtime.AddAllExistService()
+	err := cp.Runtime.AddAllExistService()
 	if err != nil {
 		log.Fatalln("[Fatal]Add exist services failed")
 	}
@@ -63,46 +51,32 @@ func (cp *Cubeproxy) Run() {
 
 	// sync pod and service
 	go func() {
+		defer wg.Done()
 		cp.syncService()
 	}()
 	go func() {
+		defer wg.Done()
 		go cp.syncPod()
 	}()
 	go func() {
+		defer wg.Done()
 		go cp.syncDNS()
 	}()
 
 	// watch pod and service
 	go func() {
-		err := cp.WatchPodsChange()
-		if err != nil {
-			log.Fatalln("[Fatal]: watching pods in cubeproxy failed")
-			return
-		}
+		defer wg.Done()
+		cp.Runtime.PodInformer.ListAndWatchPodsWithRetry()
 	}()
 
 	go func() {
-		err := cp.WatchDNSChange()
-		if err != nil {
-			log.Fatalln("[Fatal]: watching dns in cubeproxy failed")
-			return
-		}
+		defer wg.Done()
+		cp.Runtime.DNSInformer.ListAndWatchDNSWithRetry()
 	}()
 
 	go func() {
-		err := cp.WatchPodsChange()
-		if err != nil {
-			log.Fatalln("[Fatal]: watching pods in cubeproxy failed")
-			return
-		}
-	}()
-
-	go func() {
-		err := cp.WatchServiceChange()
-		if err != nil {
-			log.Fatalln("[Fatal]: watching services in cubeproxy failed")
-			return
-		}
+		defer wg.Done()
+		cp.Runtime.ServiceInformer.ListAndWatchServicesWithRetry()
 	}()
 
 	wg.Wait()
@@ -214,80 +188,4 @@ func (cp *Cubeproxy) syncDNS() {
 
 		cp.lock.Unlock()
 	}
-}
-
-func (cp *Cubeproxy) WatchPodsChange() error {
-	ch, cancel, err := watchobj.WatchPods()
-	if err != nil {
-		log.Println("[Error]: Error occurs when watching pods")
-		return err
-	}
-	defer cancel()
-
-	for podEvent := range ch {
-		switch podEvent.EType {
-		case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
-			err := cp.Runtime.PodInformer.InformPod(podEvent.Pod, podEvent.EType)
-			if err != nil {
-				log.Println("[Error]: Error when inform pod: ", podEvent.Pod.UID)
-				return err
-			}
-		default:
-			log.Panic("[Fatal]: Unsupported types in watch pod")
-		}
-	}
-
-	log.Fatalln("[Fatal]: Unreachable here")
-	return nil
-}
-
-func (cp *Cubeproxy) WatchDNSChange() error {
-	ch, cancel, err := watchobj.WatchDnses()
-	if err != nil {
-		log.Println("[Error]: Error occurs when watching DNSes")
-		return err
-	}
-	defer cancel()
-
-	for dnsEvent := range ch {
-		switch dnsEvent.EType {
-		case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
-			err := cp.Runtime.DNSInformer.InformDNS(dnsEvent.Dns, dnsEvent.EType)
-			if err != nil {
-				log.Println("[Error]: Error when inform DNS:", dnsEvent.Dns.UID)
-				return err
-			}
-		default:
-			log.Panic("[Fatal]: Unsupported types in watch dns")
-		}
-	}
-
-	log.Fatalln("[Fatal]: Unreachable here")
-	return nil
-}
-
-func (cp *Cubeproxy) WatchServiceChange() error {
-	ch, cancel, err := watchobj.WatchServices()
-	if err != nil {
-		log.Println("[Error]: Error occurs when watching services")
-		return err
-	}
-	defer cancel()
-
-	for serviceEvent := range ch {
-		log.Printf("A service comes, types is %v, id is %v", serviceEvent.EType, serviceEvent.Service.UID)
-		switch serviceEvent.EType {
-		case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
-			err := cp.Runtime.ServiceInformer.InformService(serviceEvent.Service, serviceEvent.EType)
-			if err != nil {
-				log.Panic("[Fatal]: Inform service failed")
-				return err
-			}
-		default:
-			log.Panic("[Fatal]: Unsupported types in watching service.")
-		}
-	}
-
-	log.Fatalln("[Fatal]: Unreachable here")
-	return nil
 }

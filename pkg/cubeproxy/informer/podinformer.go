@@ -1,19 +1,19 @@
 package informer
 
 import (
+	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/apiserver/watchobj"
 	"Cubernetes/pkg/cubeproxy/informer/types"
 	"Cubernetes/pkg/object"
 	"log"
 	"sync"
+	"time"
 )
 
 type PodInformer interface {
-	InitInformer(pods []object.Pod) error
 	WatchPodEvent() <-chan types.PodEvent
-	InformPod(newPod object.Pod, eType watchobj.EventType) error
+	ListAndWatchPodsWithRetry()
 	ListPods() []object.Pod
-	CloseChan()
 }
 
 type ProxyPodInformer struct {
@@ -30,20 +30,63 @@ func NewPodInformer() PodInformer {
 	}
 }
 
-func (i *ProxyPodInformer) InitInformer(pods []object.Pod) error {
-	for _, pod := range pods {
-		i.podCache[pod.UID] = pod
+func (i *ProxyPodInformer) ListAndWatchPodsWithRetry() {
+	defer close(i.podChannel)
+	for {
+		i.tryListAndWatchPods()
+		time.Sleep(WatchRetryIntervalSec * time.Second)
+	}
+}
+
+func (i *ProxyPodInformer) tryListAndWatchPods() {
+	if allPods, err := crudobj.GetPods(); err != nil {
+		log.Printf("[INFO]: fail to get all pods from apiserver: %v\n", err)
+		log.Printf("[INFO]: will retry after %d seconds...\n", WatchRetryIntervalSec)
+		return
+	} else {
+		for _, pod := range allPods {
+			if pod.Status != nil {
+				i.podCache[pod.UID] = pod
+			}
+		}
 	}
 
-	return nil
+	ch, cancel, err := watchobj.WatchPods()
+	if err != nil {
+		log.Println("[Error]: Error occurs when watching pods")
+		return
+	}
+	defer cancel()
+
+	for {
+		select {
+		case podEvent, ok := <-ch:
+			if !ok {
+				log.Printf("[INFO]: lost connection with APIServer, retry after %d seconds...\n", WatchRetryIntervalSec)
+				return
+			}
+			if podEvent.Pod.Status == nil && podEvent.EType != watchobj.EVENT_DELETE {
+				log.Println("[INFO]: Pod caught, but status is nil so Cubeproxy doesn't handle it")
+				continue
+			}
+			switch podEvent.EType {
+			case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
+				err := i.informPod(podEvent.Pod, podEvent.EType)
+				if err != nil {
+					log.Println("[Error]: Error when inform pod: ", podEvent.Pod.UID)
+					return
+				}
+			default:
+				log.Panic("[Fatal]: Unsupported types in watch pod")
+			}
+		default:
+			time.Sleep(time.Second)
+		}
+	}
 }
 
 func (i *ProxyPodInformer) WatchPodEvent() <-chan types.PodEvent {
 	return i.podChannel
-}
-
-func (i *ProxyPodInformer) CloseChan() {
-	close(i.podChannel)
 }
 
 func (i *ProxyPodInformer) ListPods() []object.Pod {
@@ -57,7 +100,7 @@ func (i *ProxyPodInformer) ListPods() []object.Pod {
 	return pods
 }
 
-func (i *ProxyPodInformer) InformPod(newPod object.Pod, eType watchobj.EventType) error {
+func (i *ProxyPodInformer) informPod(newPod object.Pod, eType watchobj.EventType) error {
 	i.mtx.Lock()
 	oldPod, exist := i.podCache[newPod.UID]
 

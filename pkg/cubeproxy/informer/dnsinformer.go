@@ -1,19 +1,21 @@
 package informer
 
 import (
+	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/apiserver/watchobj"
 	"Cubernetes/pkg/cubeproxy/informer/types"
 	"Cubernetes/pkg/object"
 	"log"
 	"sync"
+	"time"
 )
 
+const WatchRetryIntervalSec = 10
+
 type DNSInformer interface {
-	InitInformer(dns []object.Dns) error
+	ListAndWatchDNSWithRetry()
 	WatchDNSEvent() <-chan types.DNSEvent
-	InformDNS(new object.Dns, eType watchobj.EventType) error
 	ListDNS() []object.Dns
-	CloseChan()
 }
 
 type ProxyDNSInformer struct {
@@ -30,20 +32,58 @@ func NewDNSInformer() DNSInformer {
 	}
 }
 
-func (p *ProxyDNSInformer) InitInformer(dns []object.Dns) error {
-	for _, item := range dns {
-		p.DNSCache[item.UID] = item
+func (p *ProxyDNSInformer) ListAndWatchDNSWithRetry() {
+	defer close(p.DNSChannel)
+	for {
+		p.tryListAndWatchDNS()
+		time.Sleep(WatchRetryIntervalSec * time.Second)
+	}
+}
+
+func (p *ProxyDNSInformer) tryListAndWatchDNS() {
+	if allDNS, err := crudobj.GetDnses(); err != nil {
+		log.Printf("[Error]: fail to get all dnses from apiserver: %v\n", err)
+		log.Printf("[INFO]: will retry after %d seconds...\n", WatchRetryIntervalSec)
+		return
+	} else {
+		log.Printf("[INFO]: Ready to init dns using %v items\n", len(allDNS))
+		for _, dns := range allDNS {
+			p.DNSCache[dns.UID] = dns
+		}
 	}
 
-	return nil
+	ch, cancel, err := watchobj.WatchDnses()
+	if err != nil {
+		log.Printf("[INFO]: fail to watch dnses from apiserver: %v\n", err)
+		return
+	}
+	defer cancel()
+
+	for {
+		select {
+		case dnsEvent, ok := <-ch:
+			if !ok {
+				log.Printf("[INFO]: lost connection with APIServer, retry after %d seconds...\n", WatchRetryIntervalSec)
+				return
+			}
+			switch dnsEvent.EType {
+			case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
+				err := p.informDNS(dnsEvent.Dns, dnsEvent.EType)
+				if err != nil {
+					log.Println("[Error]: Error when inform DNS:", dnsEvent.Dns.UID)
+					return
+				}
+			default:
+				log.Panic("[Fatal]: Unsupported types in watch dns")
+			}
+		default:
+			time.Sleep(time.Second)
+		}
+	}
 }
 
 func (p *ProxyDNSInformer) WatchDNSEvent() <-chan types.DNSEvent {
 	return p.DNSChannel
-}
-
-func (p *ProxyDNSInformer) CloseChan() {
-	close(p.DNSChannel)
 }
 
 func (p *ProxyDNSInformer) ListDNS() []object.Dns {
@@ -58,7 +98,7 @@ func (p *ProxyDNSInformer) ListDNS() []object.Dns {
 	return dns
 }
 
-func (p *ProxyDNSInformer) InformDNS(new object.Dns, eType watchobj.EventType) error {
+func (p *ProxyDNSInformer) informDNS(new object.Dns, eType watchobj.EventType) error {
 	p.mtx.Lock()
 	oldDns, exist := p.DNSCache[new.UID]
 

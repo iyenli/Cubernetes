@@ -109,11 +109,6 @@ func (pr *ProxyRuntime) AddAllExistService() error {
 	if len(pr.ServiceChainMap) != 0 {
 		log.Println("[BUG]: Add exist service should be called when initializing")
 	}
-	err = pr.ServiceInformer.InitInformer(services)
-	if err != nil {
-		log.Fatalln("[Fatal]: Init pod informer failed")
-	}
-
 	for _, service := range services {
 		log.Println("[INFO]: Cubeproxy init, add exist service, UID:", service.UID)
 		err := pr.AddExistService(&service)
