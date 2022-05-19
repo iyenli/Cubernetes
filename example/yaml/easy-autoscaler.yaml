@@ -1,0 +1,20 @@
+apiVersion: justtest/v1
+kind: AutoScaler
+metadata:
+  name: easy-autoscaler
+spec:
+  workload: Pod
+  minReplicas: 2
+  maxReplicas: 4
+  targetUtilization:
+    cpu:
+      minPercentage: 50.0
+      maxPercentage: 80.0
+  template:
+    metadata:
+      labels:
+        thisis: useless
+    spec:
+      containers:
+        - name: easy-as-pod
+          image: docker/desktop-kubernetes-pause:3.7

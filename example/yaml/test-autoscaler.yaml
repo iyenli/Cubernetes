@@ -1,0 +1,21 @@
+apiVersion: fuck/v1
+kind: AutoScaler
+metadata:
+  name: test-autoscaler
+spec:
+  workload: Pod
+  minReplicas: 2
+  maxReplicas: 4
+  targetUtilization:
+    cpu:
+      minPercentage: 50.0
+      maxPercentage: 80.0
+  template:
+    metadata:
+      labels:
+        thisis: useless
+    spec:
+      containers:
+        - name: test-as-pod
+          image: polinux/stress
+          command: ["stress", "--cpu", "1"]

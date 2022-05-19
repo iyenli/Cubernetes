@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Node
+metadata:
+  name: my-name-is-slave
+spec:
+  type: Slave
+  capacity:
+    cpuCount: 4
+    memory: 8192
+    maxPods: 100
+  info:
+    cubeVersion: v1
+    kernelVersion: 5.4
+    deviceName: worker-2
+status:
+  addresses:
+    hostName: worker-2
+    internalIP: 192.168.1.5
