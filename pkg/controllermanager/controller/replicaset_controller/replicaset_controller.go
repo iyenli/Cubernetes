@@ -2,7 +2,7 @@ package replicaset_controller
 
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
-	"Cubernetes/pkg/apiserver/watchobj"
+	"Cubernetes/pkg/apiserver/health"
 	"Cubernetes/pkg/controllermanager/informer"
 	"Cubernetes/pkg/controllermanager/phase"
 	"Cubernetes/pkg/controllermanager/types"
@@ -25,25 +25,23 @@ type replicaSetController struct {
 	podInformer informer.PodInformer
 	rsInformer  informer.ReplicaSetInformer
 	biglock     sync.Mutex
+	wg          sync.WaitGroup
 }
 
 func NewReplicaSetController(
 	podInformer informer.PodInformer,
-	rsInformer informer.ReplicaSetInformer) (ReplicaSetController, error) {
+	rsInformer informer.ReplicaSetInformer,
+	wg sync.WaitGroup) (ReplicaSetController, error) {
+	wg.Add(1)
 	return &replicaSetController{
 		podInformer: podInformer,
 		rsInformer:  rsInformer,
 		biglock:     sync.Mutex{},
+		wg:          wg,
 	}, nil
 }
 
 func (rsc *replicaSetController) Run() {
-	ch, cancel, err := watchobj.WatchReplicaSets()
-	if err != nil {
-		log.Printf("fail to watch ReplicaSets from apiserver: %v\n", err)
-		return
-	}
-	defer cancel()
 
 	go func() {
 		for {
@@ -52,16 +50,7 @@ func (rsc *replicaSetController) Run() {
 		}
 	}()
 
-	go rsc.syncLoop()
-
-	for rsEvent := range ch {
-		switch rsEvent.EType {
-		case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
-			rsc.rsInformer.InformReplicaSet(rsEvent.ReplicaSet, rsEvent.EType)
-		default:
-			log.Fatal("[FATAL] Unknown event types: " + rsEvent.EType)
-		}
-	}
+	rsc.syncLoop()
 }
 
 func (rsc *replicaSetController) syncLoop() {
@@ -70,6 +59,8 @@ func (rsc *replicaSetController) syncLoop() {
 
 	rsEventChan := rsc.rsInformer.WatchRSEvent()
 	defer rsc.rsInformer.CloseChan(rsEventChan)
+
+	rsc.wg.Done()
 
 	for {
 		select {
@@ -117,6 +108,11 @@ func (rsc *replicaSetController) syncLoop() {
 func (rsc *replicaSetController) updateReplicaSetsRoutine() {
 	rsc.biglock.Lock()
 	defer rsc.biglock.Unlock()
+
+	if !health.CheckApiServerHealth() {
+		log.Printf("[FATAL] lost connection with apiserver: not update this time\n")
+		return
+	}
 
 	replicaSets := rsc.rsInformer.ListReplicaSets()
 

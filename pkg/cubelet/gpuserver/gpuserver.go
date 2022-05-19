@@ -85,6 +85,6 @@ func (jr *JobRuntime) ReleaseContainerResource() {
 		}
 		jr.mutex.Unlock()
 
-		time.Sleep(time.Second * 60)
+		time.Sleep(time.Second * 120)
 	}
 }

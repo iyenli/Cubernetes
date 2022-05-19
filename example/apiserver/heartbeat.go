@@ -18,5 +18,5 @@ func main() {
 	fmt.Println(node)
 
 	heartbeat.InitNode(node)
-	time.Sleep(100 * time.Second)
+	time.Sleep(1000 * time.Second)
 }

@@ -11,7 +11,7 @@ import (
 var client *clientv3.Client
 
 func Init() {
-	log.Println("initializing etcd client...")
+	log.Println("[INFO]: initializing etcd client...")
 
 	var err error
 	client, err = clientv3.New(clientv3.Config{
@@ -20,11 +20,11 @@ func Init() {
 	})
 
 	if err != nil {
-		log.Fatalf("fail to initialize etcd client, err: %v\n", err)
+		log.Fatalf("Error]: fail to initialize etcd client, err: %v\n", err)
 		return
 	}
 
-	log.Println("etcd client initialized")
+	log.Println("[INFO]: etcd client initialized")
 }
 
 func Free() {

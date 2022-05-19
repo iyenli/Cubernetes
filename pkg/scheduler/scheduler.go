@@ -8,7 +8,10 @@ import (
 	"Cubernetes/pkg/scheduler/types"
 	"log"
 	"sync"
+	"time"
 )
+
+const WatchRetryIntervalSec = 10
 
 type ScheduleRuntime struct {
 	Implement types.Scheduler
@@ -42,10 +45,7 @@ func (sr *ScheduleRuntime) Run() {
 
 	go func() {
 		defer wg.Done()
-		err := sr.WatchNode()
-		if err != nil {
-			return
-		}
+		sr.WatchNode()
 	}()
 
 	go func() {
@@ -115,46 +115,6 @@ func (sr *ScheduleRuntime) ScheduleJob(job *object.GpuJob) {
 	}
 }
 
-func (sr *ScheduleRuntime) WatchPod() {
-	ch, cancel, err := watchobj.WatchPods()
-
-	if err != nil {
-		log.Panicf("Error occurs when watching pods: %v", err)
-	}
-	defer cancel()
-
-	for podEvent := range ch {
-		switch podEvent.EType {
-		case watchobj.EVENT_PUT:
-			sr.SchedulePod(&podEvent.Pod)
-		case watchobj.EVENT_DELETE:
-			log.Println("[Info]: Delete pod, do nothing")
-		default:
-			log.Panic("[Fatal]: Unsupported types in watch pod.")
-		}
-	}
-}
-
-func (sr *ScheduleRuntime) WatchJob() {
-	ch, cancel, err := watchobj.WatchGpuJobs()
-
-	if err != nil {
-		log.Panicf("Error occurs when watching pods: %v", err)
-	}
-	defer cancel()
-
-	for jobEvent := range ch {
-		switch jobEvent.EType {
-		case watchobj.EVENT_PUT:
-			sr.ScheduleJob(&jobEvent.GpuJob)
-		case watchobj.EVENT_DELETE:
-			log.Println("[Info]: delete pod, do nothing")
-		default:
-			log.Panic("[Fatal]: Unsupported types in watching pod")
-		}
-	}
-}
-
 func (sr *ScheduleRuntime) SendPodScheduleInfoBack(podToSchedule *object.Pod, info *types.PodInfo) error {
 	podToSchedule.Status.NodeUID = info.NodeUUID
 	podToSchedule.Status.Phase = object.PodBound
@@ -165,7 +125,7 @@ func (sr *ScheduleRuntime) SendPodScheduleInfoBack(podToSchedule *object.Pod, in
 		return err
 	}
 
-	log.Println("[INFO]: Schedule pod", podToSchedule.UID, "To node", info.NodeUUID)
+	log.Println("[INFO]: Schedule pod", podToSchedule.UID, "to node", info.NodeUUID)
 	return nil
 }
 
@@ -178,46 +138,165 @@ func (sr *ScheduleRuntime) SendJobScheduleInfoBack(jobToSchedule *object.GpuJob,
 		return err
 	}
 
-	log.Println("[INFO]: Schedule pod", jobToSchedule.UID, "to node", info.NodeUUID)
+	log.Println("[INFO]: Schedule job", jobToSchedule.UID, "to node", info.NodeUUID)
 	return nil
 }
 
-func (sr *ScheduleRuntime) WatchNode() error {
-	// init: Get existed scheduler
-	ch, handler, err := watchobj.WatchNodes()
-	if err != nil {
-		log.Fatalln("[Fatal]: Get nodes to init failed")
+func (sr *ScheduleRuntime) WatchNode() {
+	for true {
+		sr.tryWatchNode()
+		log.Println("[INFO]: Trying to get nodes info from apiserver after 10 secs...")
+		time.Sleep(WatchRetryIntervalSec * time.Second)
 	}
+}
 
-	defer handler()
-	for nodeEvent := range ch {
-		if nodeEvent.EType == watchobj.EVENT_PUT {
-			if nodeEvent.Node.Status == nil {
-				continue
-			}
+func (sr *ScheduleRuntime) WatchPod() {
+	for true {
+		sr.tryWatchPod()
+		time.Sleep(WatchRetryIntervalSec * time.Second)
+	}
+}
 
-			if nodeEvent.Node.Status.Condition.Ready == false {
-				log.Println("[INFO]: Scheduler may removed a node: ", nodeEvent.Node.UID)
-				err := sr.Implement.RemoveNode(&types.NodeInfo{NodeUUID: nodeEvent.Node.UID})
-				if err != nil {
-					log.Println("[Error]: remove node failed")
-				}
-			}
-			if nodeEvent.Node.Status.Condition.Ready == true {
-				log.Println("[INFO]: Scheduler may added a node: ", nodeEvent.Node.UID)
-				err := sr.Implement.AddNode(&types.NodeInfo{NodeUUID: nodeEvent.Node.UID})
-				if err != nil {
-					log.Println("[error]: add node failed")
-				}
-			}
-		} else if nodeEvent.EType == watchobj.EVENT_DELETE {
-			log.Println("[INFO]: Scheduler may removed a node: ", nodeEvent.Node.UID)
-			err := sr.Implement.RemoveNode(&types.NodeInfo{NodeUUID: nodeEvent.Node.UID})
-			if err != nil {
-				log.Println("[error]: remove node failed")
-			}
+func (sr *ScheduleRuntime) WatchJob() {
+	for true {
+		sr.tryWatchJob()
+		time.Sleep(WatchRetryIntervalSec * time.Second)
+	}
+}
+
+func (sr *ScheduleRuntime) tryWatchNode() {
+	if allNodes, err := crudobj.GetNodes(); err != nil {
+		log.Printf("[INFO]: fail to get all nodes from apiserver: %v\n", err)
+		log.Printf("[INFO]: will retry after %d seconds...\n", WatchRetryIntervalSec)
+		return
+	} else {
+		for _, node := range allNodes {
+			_ = sr.Implement.AddNode(&types.NodeInfo{NodeUUID: node.UID})
 		}
 	}
 
-	return nil
+	ch, handler, err := watchobj.WatchNodes()
+	if err != nil {
+		log.Println("[INFO]: Get nodes channel failed")
+		return
+	}
+	defer handler()
+
+	for true {
+		select {
+		case nodeEvent, ok := <-ch:
+			if !ok {
+				log.Printf("[INFO]: lost connection with APIServer, retry after %d seconds...\n", WatchRetryIntervalSec)
+				return
+			} else {
+				if nodeEvent.EType == watchobj.EVENT_PUT {
+					if nodeEvent.Node.Status == nil {
+						continue
+					}
+					if nodeEvent.Node.Status.Condition.Ready == false {
+						log.Println("[INFO]: Scheduler may removed a node: ", nodeEvent.Node.UID)
+						err := sr.Implement.RemoveNode(&types.NodeInfo{NodeUUID: nodeEvent.Node.UID})
+						if err != nil {
+							log.Println("[Error]: remove node failed")
+						}
+					}
+					if nodeEvent.Node.Status.Condition.Ready == true {
+						log.Println("[INFO]: Scheduler may added a node: ", nodeEvent.Node.UID)
+						err := sr.Implement.AddNode(&types.NodeInfo{NodeUUID: nodeEvent.Node.UID})
+						if err != nil {
+							log.Println("[error]: add node failed")
+						}
+					}
+				} else if nodeEvent.EType == watchobj.EVENT_DELETE {
+					log.Println("[INFO]: Scheduler may removed a node: ", nodeEvent.Node.UID)
+					err := sr.Implement.RemoveNode(&types.NodeInfo{NodeUUID: nodeEvent.Node.UID})
+					if err != nil {
+						log.Println("[error]: remove node failed")
+					}
+				}
+			}
+		default:
+			time.Sleep(time.Second)
+		}
+	}
+}
+
+func (sr *ScheduleRuntime) tryWatchPod() {
+	if allPods, err := crudobj.GetPods(); err != nil {
+		log.Printf("[INFO]: fail to get all pods from apiserver: %v\n", err)
+		log.Printf("[INFO]: will retry after %d seconds...\n", WatchRetryIntervalSec)
+		return
+	} else {
+		for _, pod := range allPods {
+			sr.SchedulePod(&pod)
+		}
+	}
+
+	ch, cancel, err := watchobj.WatchPods()
+	if err != nil {
+		log.Printf("Error occurs when watching pods: %v", err)
+		return
+	}
+	defer cancel()
+
+	for true {
+		select {
+		case podEvent, ok := <-ch:
+			if !ok {
+				log.Printf("[INFO]: lost connection with APIServer, retry after %d seconds...\n", WatchRetryIntervalSec)
+				return
+			} else {
+				switch podEvent.EType {
+				case watchobj.EVENT_PUT:
+					sr.SchedulePod(&podEvent.Pod)
+				case watchobj.EVENT_DELETE:
+					log.Println("[Info]: Delete pod, do nothing")
+				default:
+					log.Panic("[Fatal]: Unsupported types in watching pod.")
+				}
+			}
+		default:
+			time.Sleep(time.Second)
+		}
+	}
+}
+
+func (sr *ScheduleRuntime) tryWatchJob() {
+	if allJobs, err := crudobj.GetGpuJobs(); err != nil {
+		log.Printf("[INFO]: fail to get all jobs from apiserver: %v\n", err)
+		log.Printf("[INFO]: will retry after %d seconds...\n", WatchRetryIntervalSec)
+		return
+	} else {
+		for _, job := range allJobs {
+			sr.ScheduleJob(&job)
+		}
+	}
+
+	ch, cancel, err := watchobj.WatchGpuJobs()
+	if err != nil {
+		log.Printf("Error occurs when watching jobs: %v", err)
+		return
+	}
+	defer cancel()
+
+	for true {
+		select {
+		case jobEvent, ok := <-ch:
+			if !ok {
+				log.Printf("[INFO]: lost connection with APIServer, retry after %d seconds...\n", WatchRetryIntervalSec)
+				return
+			} else {
+				switch jobEvent.EType {
+				case watchobj.EVENT_PUT:
+					sr.ScheduleJob(&jobEvent.GpuJob)
+				case watchobj.EVENT_DELETE:
+					log.Println("[Info]: delete pod, do nothing")
+				default:
+					log.Panic("[Fatal]: Unsupported types in watching pod")
+				}
+			}
+		default:
+			time.Sleep(time.Second)
+		}
+	}
 }

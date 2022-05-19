@@ -2,7 +2,7 @@ package autoscaler_controller
 
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
-	"Cubernetes/pkg/apiserver/watchobj"
+	"Cubernetes/pkg/apiserver/health"
 	"Cubernetes/pkg/controllermanager/informer"
 	"Cubernetes/pkg/controllermanager/phase"
 	"Cubernetes/pkg/controllermanager/types"
@@ -21,13 +21,17 @@ type AutoScalerController interface {
 	Run()
 }
 
-func NewAutoScalerController(podInformer informer.PodInformer,
+func NewAutoScalerController(
+	podInformer informer.PodInformer,
 	rsInformer informer.ReplicaSetInformer,
-	asInformer informer.AutoScalerInformer) (AutoScalerController, error) {
+	asInformer informer.AutoScalerInformer,
+	wg sync.WaitGroup) (AutoScalerController, error) {
+	wg.Add(1)
 	return &autoScalerController{
 		podInformer: podInformer,
 		rsInformer:  rsInformer,
 		asInformer:  asInformer,
+		wg:          wg,
 	}, nil
 }
 
@@ -36,15 +40,10 @@ type autoScalerController struct {
 	rsInformer  informer.ReplicaSetInformer
 	asInformer  informer.AutoScalerInformer
 	biglock     sync.Mutex
+	wg          sync.WaitGroup
 }
 
 func (asc *autoScalerController) Run() {
-	ch, cancel, err := watchobj.WatchAutoScalers()
-	if err != nil {
-		log.Printf("fail to watch AutoScalers from apiserver: %v\n", err)
-		return
-	}
-	defer cancel()
 
 	go func() {
 		for {
@@ -53,16 +52,7 @@ func (asc *autoScalerController) Run() {
 		}
 	}()
 
-	go asc.syncLoop()
-
-	for asEvent := range ch {
-		switch asEvent.EType {
-		case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
-			asc.asInformer.InformAutoScaler(asEvent.AutoScaler, asEvent.EType)
-		default:
-			log.Fatal("[FATAL] Unknown event types: " + asEvent.EType)
-		}
-	}
+	asc.syncLoop()
 }
 
 func (asc *autoScalerController) syncLoop() {
@@ -71,6 +61,8 @@ func (asc *autoScalerController) syncLoop() {
 
 	asEventChan := asc.asInformer.WatchASEvent()
 	defer asc.asInformer.CloseChan(asEventChan)
+
+	asc.wg.Done()
 
 	for {
 		select {
@@ -112,6 +104,11 @@ func (asc *autoScalerController) syncLoop() {
 func (asc *autoScalerController) updateAutoScalersRoutine() {
 	asc.biglock.Lock()
 	defer asc.biglock.Unlock()
+
+	if !health.CheckApiServerHealth() {
+		log.Printf("[FATAL] lost connection with apiserver: not update this time\n")
+		return
+	}
 
 	autoScalers := asc.asInformer.ListAutoScalers()
 
@@ -163,7 +160,7 @@ func (asc *autoScalerController) checkAndUpdateAutoScalerStatus(as *object.AutoS
 	if runningCount > 0 {
 		actual := as.Status.ActualUtilization
 		log.Printf("\n[AutoScaler] Average usage of %d Pods:\n", runningCount)
-		log.Printf("CPU Percentage: %f %%\n", actual.CPUPercentage * 100)
+		log.Printf("CPU Percentage: %f %%\n", actual.CPUPercentage*100)
 		log.Printf("Memory Bytes:   %d bytes\n\n", actual.MemoryBytes)
 	}
 
