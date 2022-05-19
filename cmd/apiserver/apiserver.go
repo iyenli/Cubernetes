@@ -17,6 +17,7 @@ func main() {
 	etcdrw.Init()
 	defer etcdrw.Free()
 
+	time.Sleep(time.Second)
 	updateNodeReadyState()
 
 	var wg sync.WaitGroup

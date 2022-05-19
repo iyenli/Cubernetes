@@ -27,11 +27,11 @@ func GetObjs(prefix string) ([][]byte, error) {
 	res, err := client.Get(ctx, prefix, clientv3.WithPrefix())
 	cancel()
 	if err != nil {
-		log.Printf("fail to get objects from etcd, prefix: %v, err: %v\n", prefix, err)
+		log.Printf("[Error]: fail to get objects from etcd, prefix: %v, err: %v\n", prefix, err)
 		return nil, err
 	}
 	if res.Count == 0 {
-		log.Printf("no objects found in etcd, prefix: %v\n", prefix)
+		log.Printf("[INFO]: no objects found in etcd, prefix: %v\n", prefix)
 		return nil, nil
 	}
 	var ret [][]byte

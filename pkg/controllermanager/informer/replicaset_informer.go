@@ -1,15 +1,17 @@
 package informer
 
 import (
+	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/apiserver/watchobj"
 	"Cubernetes/pkg/controllermanager/types"
 	"Cubernetes/pkg/object"
 	"log"
+	"time"
 )
 
 type ReplicaSetInformer interface {
+	ListAndWatchReplicaSetsWithRetry()
 	WatchRSEvent() <-chan types.RsEvent
-	InformReplicaSet(newRs object.ReplicaSet, eType watchobj.EventType) error
 	GetMatchedReplicaSet(pod *object.Pod) []object.ReplicaSet
 	ListReplicaSets() []object.ReplicaSet
 	GetReplicaSet(UID string) (*object.ReplicaSet, bool)
@@ -28,6 +30,52 @@ type rsInformer struct {
 	rsCache      map[string]object.ReplicaSet
 }
 
+func (i *rsInformer) ListAndWatchReplicaSetsWithRetry() {
+	for {
+		i.tryListAndWatchReplicaSets()
+		time.Sleep(watchRSRetryIntervalSec * time.Second)
+	}
+}
+
+func (i *rsInformer) tryListAndWatchReplicaSets() {
+
+	if all, err := crudobj.GetReplicaSets(); err != nil {
+		log.Printf("[Manager] fail to get all ReplicaSets from apiserver: %v\n", err)
+		log.Printf("[Manager] will retry after %d seconds...\n", watchRSRetryIntervalSec)
+		return
+	} else {
+		for _, rs := range all {
+			i.rsCache[rs.UID] = rs
+		}
+	}
+
+	ch, cancel, err := watchobj.WatchReplicaSets()
+	if err != nil {
+		log.Printf("fail to watch ReplicaSets from apiserver: %v\n", err)
+		return
+	}
+	defer cancel()
+
+	for {
+		select {
+		case rsEvent, ok := <-ch:
+			if !ok {
+				log.Printf("lost connection with APIServer, retry after %d seconds...\n", watchRSRetryIntervalSec)
+				return
+			}
+			rs := rsEvent.ReplicaSet
+			switch rsEvent.EType {
+			case watchobj.EVENT_PUT, watchobj.EVENT_DELETE:
+				i.informReplicaSet(rs, rsEvent.EType)
+			default:
+				log.Fatal("[FATAL] Unknown event types: " + rsEvent.EType)
+			}
+		default:
+			time.Sleep(time.Second)
+		}
+	}
+}
+
 func (i *rsInformer) WatchRSEvent() <-chan types.RsEvent {
 	log.Printf("replicaset informer make a new chan!\n")
 	newChan := make(chan types.RsEvent)
@@ -35,7 +83,7 @@ func (i *rsInformer) WatchRSEvent() <-chan types.RsEvent {
 	return newChan
 }
 
-func (i *rsInformer) InformReplicaSet(newRs object.ReplicaSet, eType watchobj.EventType) error {
+func (i *rsInformer) informReplicaSet(newRs object.ReplicaSet, eType watchobj.EventType) error {
 	oldRs, exist := i.rsCache[newRs.UID]
 
 	if eType == watchobj.EVENT_DELETE {
