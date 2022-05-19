@@ -19,9 +19,9 @@ type Metadata struct {
 func SaveMeta(meta Metadata) error {
 	_, err := os.Stat(cubeconfig.MetaDir)
 	if err != nil {
-		err = os.Mkdir(cubeconfig.MetaDir, 0666)
+		err = os.MkdirAll(cubeconfig.MetaDir, 0666)
 		if err != nil {
-			log.Println("[FATAL] fail to make metadata dir, err: ", err)
+			log.Println("[FATAL]: fail to make metadata dir, err: ", err)
 			return err
 		}
 	}

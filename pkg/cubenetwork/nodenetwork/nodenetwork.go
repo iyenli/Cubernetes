@@ -7,5 +7,5 @@ import (
 
 func SetMasterIP(IP string) {
 	cubeconfig.APIServerIp = IP
-	log.Println("[INFO]: Set master IP: ", IP)
+	log.Println("[INFO]: Set master IP:", IP)
 }
