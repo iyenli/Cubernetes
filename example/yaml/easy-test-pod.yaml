@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: test-pod-easy-3
+  name: test-pod-easy-5
   labels:
     app: nginx
 spec:
