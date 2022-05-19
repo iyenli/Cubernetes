@@ -1,19 +1,27 @@
 package informer
 
 import (
+	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/apiserver/watchobj"
 	"Cubernetes/pkg/controllermanager/phase"
 	"Cubernetes/pkg/controllermanager/types"
 	"Cubernetes/pkg/object"
 	"log"
+	"time"
 )
 
 type PodInformer interface {
+	ListAndWatchPodsWithRetry()
 	WatchPodEvent() <-chan types.PodEvent
-	InformPod(newPod object.Pod, eType watchobj.EventType) error
 	CloseChan(<-chan types.PodEvent)
 	SelectPods(selector map[string]string) []object.Pod
 }
+
+const (
+	watchPodsRetryIntervalSec = 8
+	watchRSRetryIntervalSec   = 10
+	watchASRetryIntervalSec   = 12
+)
 
 func NewPodInformer() (PodInformer, error) {
 	return &cmPodInformer{
@@ -27,6 +35,59 @@ type cmPodInformer struct {
 	podCache      map[string]object.Pod
 }
 
+func (i *cmPodInformer) ListAndWatchPodsWithRetry() {
+	for {
+		i.tryListAndWatchPods()
+		time.Sleep(watchPodsRetryIntervalSec * time.Second)
+	}
+}
+
+func (i *cmPodInformer) tryListAndWatchPods() {
+	// List all pods from apiserver
+	if allPods, err := crudobj.GetPods(); err != nil {
+		log.Printf("[Manager] fail to get all pods from apiserver: %v\n", err)
+		log.Printf("[Manager] will retry after %d seconds...\n", watchPodsRetryIntervalSec)
+		return
+	} else {
+		for _, pod := range allPods {
+			if pod.Status != nil && !phase.NotHandle(pod.Status.Phase) {
+				i.podCache[pod.UID] = pod
+			}
+		}
+	}
+
+	ch, cancel, err := watchobj.WatchPods()
+	if err != nil {
+		log.Printf("fail to watch pods from apiserver: %v\n", err)
+		return
+	}
+	defer cancel()
+
+	for {
+		select {
+		case podEvent, ok := <-ch:
+			if !ok {
+				log.Printf("lost connection with APIServer, retry after %d seconds...\n", watchPodsRetryIntervalSec)
+				return
+			}
+			pod := podEvent.Pod
+			// pod status not ready to handle by controller_manager
+			if (pod.Status == nil || phase.NotHandle(pod.Status.Phase)) &&
+				podEvent.EType != watchobj.EVENT_DELETE {
+				continue
+			}
+			switch podEvent.EType {
+			case watchobj.EVENT_DELETE, watchobj.EVENT_PUT:
+				i.informPod(pod, podEvent.EType)
+			default:
+				log.Panic("Unsupported types in watch pod.")
+			}
+		default:
+			time.Sleep(time.Second)
+		}
+	}
+}
+
 func (i *cmPodInformer) WatchPodEvent() <-chan types.PodEvent {
 	log.Printf("pod informer make a new chan!\n")
 	newChan := make(chan types.PodEvent)
@@ -34,7 +95,7 @@ func (i *cmPodInformer) WatchPodEvent() <-chan types.PodEvent {
 	return newChan
 }
 
-func (i *cmPodInformer) InformPod(newPod object.Pod, eType watchobj.EventType) error {
+func (i *cmPodInformer) informPod(newPod object.Pod, eType watchobj.EventType) error {
 	oldPod, exist := i.podCache[newPod.UID]
 
 	if eType == watchobj.EVENT_DELETE {

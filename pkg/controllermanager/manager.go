@@ -1,58 +1,58 @@
 package controllermanager
 
 import (
-	"Cubernetes/pkg/apiserver/watchobj"
 	"Cubernetes/pkg/controllermanager/controller/autoscaler_controller"
 	"Cubernetes/pkg/controllermanager/controller/replicaset_controller"
 	"Cubernetes/pkg/controllermanager/informer"
-	"Cubernetes/pkg/controllermanager/phase"
 	"log"
+	"sync"
 )
 
 type ControllerManager struct {
-	RSController replicaset_controller.ReplicaSetController
-	ASController autoscaler_controller.AutoScalerController
-	PodInformer  informer.PodInformer
-	// other controller here
+	// controller daemons
+	rsController replicaset_controller.ReplicaSetController
+	asController autoscaler_controller.AutoScalerController
+	// informer that watch from apiserver
+	podInformer informer.PodInformer
+	rsInformer  informer.ReplicaSetInformer
+	asInformer  informer.AutoScalerInformer
+	// ensure watch order
+	wg sync.WaitGroup
 }
 
 func NewControllerManager() ControllerManager {
+	wg := sync.WaitGroup{}
+	// informer of resources
 	podInformer, _ := informer.NewPodInformer()
 	rsInformer, _ := informer.NewReplicaSetInformer()
 	asInformer, _ := informer.NewAutoScalerInformer()
-	rsController, _ := replicaset_controller.NewReplicaSetController(podInformer, rsInformer)
-	asController, _ := autoscaler_controller.NewAutoScalerController(podInformer, rsInformer, asInformer)
+	// controllers
+	rsController, _ := replicaset_controller.NewReplicaSetController(podInformer, rsInformer, wg)
+	asController, _ := autoscaler_controller.NewAutoScalerController(podInformer, rsInformer, asInformer, wg)
 	return ControllerManager{
-		RSController: rsController,
-		ASController: asController,
-		PodInformer:  podInformer,
+		rsController: rsController,
+		asController: asController,
+		podInformer:  podInformer,
+		rsInformer:   rsInformer,
+		asInformer:   asInformer,
+		wg:           wg,
 	}
 }
 
 func (cm *ControllerManager) Run() {
-	ch, cancel, err := watchobj.WatchPods()
-	if err != nil {
-		panic(err)
-	}
-	defer cancel()
 
-	// watch ReplicaSet from API Server
-	go cm.RSController.Run()
-	go cm.ASController.Run()
+	// running controllers daemon
+	go cm.rsController.Run()
+	go cm.asController.Run()
 
-	for podEvent := range ch {
-		pod := podEvent.Pod
-		// pod status not ready to handle by controller_manager
-		if (pod.Status == nil || phase.NotHandle(pod.Status.Phase)) && podEvent.EType != watchobj.EVENT_DELETE {
-			continue
-		}
-		switch podEvent.EType {
-		case watchobj.EVENT_DELETE, watchobj.EVENT_PUT:
-			cm.PodInformer.InformPod(pod, podEvent.EType)
-		default:
-			log.Panic("Unsupported types in watch pod.")
-		}
-	}
+	// informer watch must start after all controller watch
+	// so we add a WaitGroup here
+	cm.wg.Wait()
+
+	// watch resources (Pod, ReplicaSet, AutoScaler) from API Server
+	go cm.rsInformer.ListAndWatchReplicaSetsWithRetry()
+	go cm.asInformer.ListAndWatchAutoScalersWithRetry()
+	cm.podInformer.ListAndWatchPodsWithRetry()
 
 	log.Fatalln("Unreachable here")
 }

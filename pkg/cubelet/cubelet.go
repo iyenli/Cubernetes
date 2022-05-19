@@ -2,8 +2,9 @@ package cubelet
 
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
+	"Cubernetes/pkg/apiserver/heartbeat"
 	"Cubernetes/pkg/cubelet/container"
-	cuberuntime "Cubernetes/pkg/cubelet/cuberuntime"
+	"Cubernetes/pkg/cubelet/cuberuntime"
 	"Cubernetes/pkg/cubelet/informer"
 	informertypes "Cubernetes/pkg/cubelet/informer/types"
 	"Cubernetes/pkg/object"
@@ -106,6 +107,11 @@ func (cl *Cubelet) syncLoop() {
 func (cl *Cubelet) updatePodsRoutine() {
 	cl.biglock.Lock()
 	defer cl.biglock.Unlock()
+
+	if !heartbeat.CheckConn() {
+		log.Printf("[FATAL] lost connection with apiserver: not update this time\n")
+		return
+	}
 
 	// collect all pod in podCache
 	pods := cl.informer.ListPods()
