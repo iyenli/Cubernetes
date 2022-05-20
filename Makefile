@@ -1,11 +1,12 @@
 build_path = build
 targets = cubectl apiserver cubelet cuberoot cubeproxy manager scheduler gpuserver
 
-all: ${targets}
+all: ${targets} gpuexamples
 
 .PHONY:clean
 clean:
 	rm -f $(addprefix ${build_path}/, ${targets})
+	rm -f ${build_path}/*.tar.gz
 
 cubectl: cmd/cubectl/cubectl.go
 	go build -o ${build_path}/cubectl cmd/cubectl/cubectl.go
@@ -30,3 +31,8 @@ scheduler: cmd/scheduler/scheduler.go
 
 gpuserver: cmd/gpujobserver/gpujobserver.go
 	go build -o ${build_path}/gpuserver cmd/gpujobserver/gpujobserver.go
+
+gpu_path = example/gpujob
+gpu_files = cublashello matmult
+gpuexamples: $(addprefix ${gpu_path}/, ${gpu_files})
+	$(foreach file, ${gpu_files}, tar zcvf ${build_path}/${file}.tar.gz -C ${gpu_path} ${file};)

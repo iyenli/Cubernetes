@@ -22,10 +22,11 @@ type GpuJobStatus struct {
 type GpuJobPhase string
 
 const (
-	JobCreating  GpuJobPhase = "Creating"
-	JobCreated   GpuJobPhase = "Created"
-	JobWaiting   GpuJobPhase = "Waiting"
-	JobRunning   GpuJobPhase = "Running"
-	JobSucceeded GpuJobPhase = "Succeeded"
-	JobFailed    GpuJobPhase = "Failed"
+	JobCreating   GpuJobPhase = "Creating"
+	JobCreated    GpuJobPhase = "Created"
+	JobSubmitting GpuJobPhase = "Submitting"
+	JobWaiting    GpuJobPhase = "Waiting"
+	JobRunning    GpuJobPhase = "Running"
+	JobSucceeded  GpuJobPhase = "Succeeded"
+	JobFailed     GpuJobPhase = "Failed"
 )
