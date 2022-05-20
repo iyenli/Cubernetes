@@ -3,4 +3,4 @@ kind: GpuJob
 metadata:
   name: test-gpu
 spec:
-  filename: /root/C8s/example/gpujob/GpuJobTest.tar.gz
+  filename: ./matmult.tar.gz

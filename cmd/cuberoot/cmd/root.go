@@ -21,7 +21,7 @@ var rootCmd = &cobra.Command{
 func Execute() {
 	// Check log files:
 	if _, err := os.Stat(options.LOGDIR); err != nil {
-		err := os.Mkdir(options.LOGDIR, 0666)
+		err := os.MkdirAll(options.LOGDIR, 0666)
 		if err != nil {
 			log.Panicln("Mkdir log failed. please run in su mode.")
 			return

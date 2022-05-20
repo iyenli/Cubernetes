@@ -34,7 +34,7 @@ func UploadFile(client *ssh.Client, localFile string, remoteFile string, mkdir s
 	defer func() { _ = sftpClient.Close() }()
 
 	if mkdir != "" {
-		_ = sftpClient.Mkdir(mkdir)
+		_ = sftpClient.MkdirAll(mkdir)
 	}
 
 	dstFile, err := sftpClient.Create(remoteFile)
