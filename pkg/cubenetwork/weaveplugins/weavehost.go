@@ -4,6 +4,7 @@ import (
 	"Cubernetes/pkg/cubenetwork/weaveplugins/option"
 	"log"
 	"net"
+	"os"
 	osexec "os/exec"
 	"strings"
 )
@@ -152,6 +153,43 @@ func CloseNetwork() error {
 	err = cmd.Run()
 	if err != nil {
 		log.Panicf("Weave reset error: %s\n", err)
+		return err
+	}
+
+	return nil
+}
+
+// SetWeaveEnv Execute in host, set docker env
+// FIXME: When network crash, consider this function:)
+func SetWeaveEnv() error {
+	_, err := osexec.LookPath(option.WeaveName)
+	if err != nil {
+		log.Println("[Error]: Weave Not found")
+		return err
+	}
+
+	err = os.MkdirAll(option.InitScriptFileDir, 0666)
+	if err != nil {
+		log.Println("[Error]: Mkdir failed")
+		return err
+	}
+
+	f, err := os.Create(option.InitScriptFile)
+	if err != nil {
+		log.Println("[Error]: Mkdir failed")
+		return err
+	}
+
+	_, err = f.Write([]byte(option.InitScript))
+	if err != nil {
+		log.Println("[Error]: Create script failed")
+		return err
+	}
+
+	cmd := osexec.Command("/bin/bash", option.InitScriptFile)
+	err = cmd.Run()
+	if err != nil {
+		log.Panicf("Weave init env error: %s\n", err)
 		return err
 	}
 

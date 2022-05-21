@@ -13,10 +13,10 @@ type Cubeproxy struct {
 }
 
 func NewCubeProxy() *Cubeproxy {
-	log.Printf("[INFO]: creating cubeproxy\n")
+	log.Println("[INFO]: creating cubeproxy")
 	runtime, err := proxyruntime.InitProxyRuntime()
 	if err != nil {
-		log.Printf("[Fatal]: Create cube proxy runtime error: %v", err.Error())
+		log.Fatalf("[Fatal]: Create cube proxy runtime error: %v", err.Error())
 	}
 
 	cp := &Cubeproxy{
@@ -49,7 +49,7 @@ func (cp *Cubeproxy) Run() {
 	var wg sync.WaitGroup
 	wg.Add(6)
 
-	// sync pod and service
+	// sync pod and service and DNS
 	go func() {
 		defer wg.Done()
 		cp.syncService()
@@ -63,7 +63,7 @@ func (cp *Cubeproxy) Run() {
 		go cp.syncDNS()
 	}()
 
-	// watch pod and service
+	// watch pod and service and DNS
 	go func() {
 		defer wg.Done()
 		cp.Runtime.PodInformer.ListAndWatchPodsWithRetry()
@@ -179,7 +179,7 @@ func (cp *Cubeproxy) syncDNS() {
 
 		case types.DNSUpdate:
 			log.Printf("[INFO] DNS Update, DnsID %s\n", dns.UID)
-			err := cp.Runtime.AddDNS(&dns)
+			err := cp.Runtime.ModifyDNS(&dns)
 			if err != nil {
 				log.Fatalln("[Fatal]: error when modify DNS")
 				return

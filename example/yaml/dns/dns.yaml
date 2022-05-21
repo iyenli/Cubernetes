@@ -2,14 +2,14 @@
 apiVersion: v1
 kind: Dns
 metadata:
-  name: test-dns
+  name: test-dns-2
 spec:
   host: "example.cubernetes.nb"
   paths:
     "/nb/ass":
-        serviceUID: "01849f34-1908-4278-b60f-e6561bbb3683" # Fill in temporarily
+        serviceUID: "fd3c04ae-b2e4-4b18-9429-1d9f4bf0125c" # Fill in temporarily
         servicePort: 8080 # Fill in temporarily
     "/cjnb/okk":
-        serviceUID: "8f84c213-a440-47a8-bbe4-5a43ca874359" # Fill in temporarily
+        serviceUID: "27158903-416d-477c-9aff-c06ad86372c4" # Fill in temporarily
         servicePort: 80 # Fill in temporarily
 

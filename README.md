@@ -50,7 +50,7 @@ bash ./scripts/clear.sh
 
 `iptables -t nat -L`, 与K8s保持一致。
 
-![image-20220514131850160](https://s2.loli.net/2022/05/14/iprcM7wYNFL1moR.png)
+<img src="https://s2.loli.net/2022/05/14/iprcM7wYNFL1moR.png" alt="image-20220514131850160" style="zoom: 50%;" />
 
 然后`./build/cubectl describe svc uid`得到Cluster IP后，你可以通过它访问：
 
@@ -76,7 +76,7 @@ bash ./scripts/clear.sh
 
 ./build/cubectl apply -f ./example/yaml/dns/service1.yaml 
 ./build/cubectl apply -f ./example/yaml/dns/service2.yaml 
-
+# change service ip!
 ./build/cubectl apply -f ./example/yaml/dns/dns.yaml 
 ```
 
@@ -89,4 +89,18 @@ bash ./scripts/clear.sh
 
 
 
+
+```shell
+weave launch
+eval $(weave env)
+weave expose 
+docker run --name nginx-test -d nginx
+docker ps # choose nginx docker ip
+weave attach $docker_id # get weave ip
+iptables -t nat -I PREROUTING -d 172.16.0.0 -p tcp --dport 80 -j DNAT --to-destination $ip
+iptables -t nat -I OUTPUT -d 172.16.0.0 -p tcp --dport 80 -j DNAT --to-destination $ip
+curl 172.16.0.0
+docker exec -it $docker_id bash
+curl 172.16.0.0
+```
 

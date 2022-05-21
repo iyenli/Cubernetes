@@ -109,13 +109,13 @@ func (cl *Cubelet) syncPodLoop() {
 
 		switch eType {
 		case informertypes.Create:
-			log.Printf("from podEvent: create pod %s\n", pod.UID)
+			log.Printf("[INFO]: podEvent coming: create pod %s\n", pod.UID)
 			err := cl.podRuntime.SyncPod(&pod, &container.PodStatus{})
 			if err != nil {
 				log.Printf("fail to create pod %s: %v\n", pod.Name, err)
 			}
 		case informertypes.Update:
-			log.Printf("from podEvent: update pod %s\n", pod.UID)
+			log.Printf("[INFO]: podEvent coming: update pod %s\n", pod.UID)
 			podStatus, err := cl.podRuntime.GetPodStatus(pod.UID)
 			if err != nil {
 				log.Printf("fail to get pod %s status: %v\n", pod.Name, err)
