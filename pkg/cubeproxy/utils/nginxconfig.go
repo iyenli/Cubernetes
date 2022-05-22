@@ -45,6 +45,7 @@ func PrepareNginxFile(hostname string, config *string) error {
 	}
 
 	if _, err := os.Stat(configFile); err == nil {
+		// remove stale config
 		err := os.RemoveAll(configFile)
 		if err != nil {
 			log.Println("[Error]: delete exist config file failed")
@@ -54,7 +55,7 @@ func PrepareNginxFile(hostname string, config *string) error {
 
 	err := os.MkdirAll(configFile, 0666)
 	if err != nil {
-		log.Println("[INFO]: Create directory failed")
+		log.Println("[Error]: Create directory failed")
 		return err
 	}
 
@@ -77,6 +78,23 @@ func PrepareNginxFile(hostname string, config *string) error {
 		return err
 	}
 
+	f, err := os.Create(configFile + options.DefaultFile)
+	if err != nil {
+		log.Println("[Error]: replace config file failed")
+		return err
+	}
+
+	// write into
+	writeString, err := f.WriteString(options.DefaultConfContent)
+	if err != nil {
+		log.Println("[Error]: write default config file failed")
+		return err
+	}
+
+	if writeString != len(*config) {
+		log.Println("[Warn]: not write whole file")
+	}
+
 	configFile = configFile + options.SiteEnabled
 	err = os.MkdirAll(configFile, 0666)
 	if err != nil {
@@ -92,21 +110,14 @@ func PrepareNginxFile(hostname string, config *string) error {
 		return err
 	}
 
-	f, err := os.Create(configFile)
+	f, err = os.Create(configFile)
 	if err != nil {
 		log.Println("[Error]: create config file failed")
 		return err
 	}
 
-	defer func(f *os.File) {
-		err := f.Close()
-		if err != nil {
-			log.Println("[Error]: Close file failed")
-		}
-	}(f)
-
 	// write into
-	writeString, err := f.WriteString(*config)
+	writeString, err = f.WriteString(*config)
 	if err != nil {
 		log.Println("[Error]: write config file failed")
 		return err

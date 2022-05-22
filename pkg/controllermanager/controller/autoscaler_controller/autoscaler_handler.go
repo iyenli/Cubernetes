@@ -73,7 +73,12 @@ func buildLowerReplicaSet(as *object.AutoScaler) *object.ReplicaSet {
 		},
 	}
 
+	if rs.Labels == nil {
+		rs.Labels = make(map[string]string)
+	}
+
 	// modify ReplicaSet LabelSelector & Pod template
+	rs.Labels[lowerReplocaSetParentUIDLabel] = as.UID
 	rs.Spec.Selector[lowerReplocaSetParentUIDLabel] = as.UID
 	rs.Spec.Template.Labels[lowerReplocaSetParentUIDLabel] = as.UID
 

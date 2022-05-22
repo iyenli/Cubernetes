@@ -17,3 +17,12 @@ const (
 	Detach    = "detach"
 	Stop      = "stop"
 )
+
+const (
+	InitScriptFileDir = "/etc/cubernetes/cubenetwork/"
+	InitScriptFile    = InitScriptFileDir + "init.sh"
+	InitScript        = `#!/bin/bash
+
+eval $(weave env)
+`
+)

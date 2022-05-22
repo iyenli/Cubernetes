@@ -2,6 +2,8 @@ apiVersion: v1
 kind: Node
 metadata:
   name: my-name-is-master
+  labels:
+    gpu: RTX5090TiMaxProUltimateUltraPlus
 spec:
   type: Master
   capacity:
@@ -15,4 +17,4 @@ spec:
 status:
   addresses:
     hostName: worker-1
-    internalIP: 192.168.1.9
+    internalIP: 192.168.1.6

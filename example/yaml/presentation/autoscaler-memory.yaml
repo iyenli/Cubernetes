@@ -4,12 +4,12 @@ metadata:
   name: test-autoscaler
 spec:
   workload: Pod
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 4
   targetUtilization:
-    cpu:
-      minPercentage: 50.0
-      maxPercentage: 80.0
+    memory:
+      minBytes: 128000000 # 128 MB
+      maxBytes: 512000000 # 1 GB
   template:
     metadata:
       labels:
@@ -18,4 +18,4 @@ spec:
       containers:
         - name: test-as-pod
           image: polinux/stress
-          command: ["stress", "--cpu", "1"]
+          command: ["stress", "--vm", "1", "--vm-bytes", "800000000", "--vm-hang", "60"]
