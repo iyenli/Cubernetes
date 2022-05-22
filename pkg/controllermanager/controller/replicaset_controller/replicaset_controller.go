@@ -182,13 +182,18 @@ func (rsc *replicaSetController) checkAndUpdateReplicaSetStatus(rs *object.Repli
 	}
 	// also kill bad pods found in update, then remove duplication
 	podsToKill = utils.RemoveDuplication(append(podsToKill, bads...))
-	for _, uid := range podsToKill {
+	noExist := make([]int, 0)
+	for idx, uid := range podsToKill {
 		if err := crudobj.DeletePod(uid); err != nil {
 			log.Printf("fail to delete pod %s from API Server: %v\n", uid, err)
+			if err.Error() == "fail to delete the obj" {
+				noExist = append(noExist, idx)
+			}
 		} else {
 			log.Printf("ReplicaSet %s remove pod from API Server: %s\n", rs.Name, uid)
 		}
 	}
+	podsToKill = utils.RemoveMultiIndex(podsToKill, noExist)
 
 	rs.Status = &object.ReplicaSetStatus{
 		RunningReplicas: int32(len(runnings)),
