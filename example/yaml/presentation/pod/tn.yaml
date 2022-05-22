@@ -1,0 +1,26 @@
+# If you're not testing load balance, use test-replicaset.yaml
+# sudo apt-get install nginx
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-pod--first-stage
+  labels:
+    app: nginx
+spec:
+  containers:
+    - name: test-pod-nginx-first-stage
+      image: nginx
+      ports:
+        - hostPort: 8090
+          containerPort: 80
+    - name: test-pod-tomcat-first-stage
+      image: tomcat
+      volumeMounts:
+        - name: conf
+          mountPath: /usr/local/tomcat/webapps
+      ports:
+        - hostPort: 8095
+          containerPort: 8080
+  volumes:
+    - name: conf
+      hostPath: /usr/tomcat-test/

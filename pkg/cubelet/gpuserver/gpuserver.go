@@ -77,9 +77,9 @@ func (jr *JobRuntime) ReleaseContainerResource() {
 		jr.mutex.Lock()
 		log.Println("[INFO]: Inspecting docker status and release exited docker every 2 minutes...")
 		for job, container := range jr.jobMap {
-			if container == "" {
-				delete(jr.jobMap, job)
-			}
+			//if container == "" {
+			//	delete(jr.jobMap, job)
+			//}
 			log.Printf("[INFO]: Clearing job %v, corresponding containerID is %v",
 				job, container)
 

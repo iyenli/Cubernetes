@@ -19,4 +19,3 @@ const (
 	ETCDLOG      = LOGDIR + "etcd.log"
 	SCHEDULERLOG = LOGDIR + "scheduler.log"
 )
-																								

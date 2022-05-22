@@ -1,0 +1,15 @@
+# sudo apt-get install nginx
+apiVersion: v1
+kind: Dns
+metadata:
+  name: test-dns
+spec:
+  host: "example.cubernetes.nb"
+  paths:
+    "/test/cubernetes/nb":
+        serviceUID: "787ba0eb-e629-40af-8840-940cc9d3c728" # Fill in temporarily
+        servicePort: 8080 # Fill in temporarily
+    "/test/cubernetes/very/nb":
+        serviceUID: "c88b99e0-67a7-4358-970f-a9c99f38b9c1" # Fill in temporarily
+        servicePort: 80 # Fill in temporarily
+

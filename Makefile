@@ -33,6 +33,6 @@ gpuserver: cmd/gpujobserver/gpujobserver.go
 	go build -o ${build_path}/gpuserver cmd/gpujobserver/gpujobserver.go
 
 gpu_path = example/gpujob
-gpu_files = cublashello matmult
+gpu_files = cublashello matmult matadd
 gpuexamples: $(addprefix ${gpu_path}/, ${gpu_files})
 	$(foreach file, ${gpu_files}, tar zcvf ${build_path}/${file}.tar.gz -C ${gpu_path} ${file};)
