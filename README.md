@@ -46,10 +46,6 @@ bash ./scripts/clear.sh
 ./build/cubectl apply -f ./example/yaml/service.yaml 
 ```
 
-然后`./build/cubectl describe svc uid`得到Cluster IP后，你可以通过它访问：
-
-<img src="https://s2.loli.net/2022/05/19/SUB9DoVuRTFgCbm.png" alt="image-20220514103639327" style="zoom: 50%;" />
-
 至此，无论是docker内/外都可以正常访问Service了。而且多机上也能很好的支持。测试rs:
 
 ```shell
@@ -86,7 +82,7 @@ bash ./scripts/clear.sh
 
 ### Init
 
-```
+```shell
 ./build/cuberoot init -f ./example/yaml/master-node.yaml
 ./build/cuberoot join 192.168.1.6 -f ./example/yaml/slave-node.yaml
 
@@ -130,6 +126,8 @@ curl 127.0.0.1:8080
 ./build/cubectl apply -f ./example/yaml/presentation/gpu/gpu-mult.yaml
 
 # Job也有基本的RR负载均衡
+./build/cubectl get gpuJobs
+./build/cubectl describe GpuJob
 ```
 
 ### Svc
@@ -143,34 +141,72 @@ curl 127.0.0.1:8080
 ./build/cubectl apply -f ./example/yaml/presentation/svc-1.yaml
 ./build/cubectl apply -f ./example/yaml/presentation/svc-2.yaml
 
+# 回填svc ID
 curl 172.16.0.0:8080
 curl 172.16.0.1:80
+
 ./build/cubectl apply -f ./example/yaml/presentation/dns.yaml
 ./build/cubectl describe dns xxx
 
-curl example.cubernetes.nb.weave.local/test/cubernetes/nb
-curl example.cubernetes.nb.weave.local/test/cubernetes/very/nb
+curl example.cubernetes.weave.local/test/cubernetes/nb
+curl example.cubernetes.weave.local/test/cubernetes/very/nb
+
+# 展示docker内也可以访问DNS与Svc
+docker exec it ...
+
+# 删除Pod尝试
+./build/cubectl get rs
+./build/cubectl describe rs x
+./build/cubectl delete pod
+# Waiting...
+./build/cubectl describe rs
 ```
-
-
 
 ### AS
 
+```shell
+# Keep scaling
+./build/cubectl apply -f ./example/yaml/presentation/autoscaler-cpu.yaml
 
+./build/cubectl get autoscaler 
+./build/cubectl describe autoscaler 732f4c11-165c-445e-9779-ea8bfb369d62
+# Scale to more, then drop to 1
+./build/cubectl apply -f ./example/yaml/presentation/autoscaler-memory.yaml
+
+# waiting...
+./build/cubectl describe autoscaler
+```
 
 ### 容错
 
+```shell
+./build/cuberoot stop
+# 检查Pod IP和Service
+curl podIP
+curl serviceIP
 
-
-
+./build/cuberoot start
+# 检查Pod IP和Service
+curl podIP
+curl serviceIP
+```
 
 ### Schedule
 
-这部分将运行2个符合仅符合一个node标签的Pod, 观察他们是否被部署到了唯一符合的node上。
+这部分将运行2个符合仅符合一个node标签的Pod, 观察他们是否被部署到了唯一符合的node上。同时作为容错恢复后的检查。
 
+```shell
+./build/cubectl apply -f ./example/yaml/presentation/onemoreRS.yaml
 
+./build/cubectl describe pod
+# Only stay in worker 1
+```
 
+### Serverless
 
+```shell
+
+```
 
 ### Finally
 
@@ -179,10 +215,9 @@ curl example.cubernetes.nb.weave.local/test/cubernetes/very/nb
 ./build/cuberoot stop
 ```
 
-
-
 ## Bug
 
 Delete RS不成功
 
-<img src="C:/Users/11796/AppData/Roaming/Typora/typora-user-images/image-20220522111638328.png" alt="image-20220522111638328" style="zoom:67%;" />
+<img src="C:/Users/11796/AppData/Roaming/Typora/typora-user-images/image-20220522111638328.png" alt="image-20220522111638328" style="zoom: 50%;" />
+

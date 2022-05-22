@@ -9,6 +9,7 @@ import (
 	"Cubernetes/pkg/cubelet/informer"
 	informertypes "Cubernetes/pkg/cubelet/informer/types"
 	"Cubernetes/pkg/object"
+	"encoding/json"
 	"log"
 	"net"
 	"sync"
@@ -197,7 +198,9 @@ func (cl *Cubelet) updatePodsRoutine() {
 
 			rp, err := crudobj.UpdatePodStatus(p.UID, *podStatus)
 			if err != nil {
-				log.Printf("fail to push pod status %s: %v\n", p.UID, err)
+				status, _ := json.Marshal(*podStatus)
+				log.Printf("[Error]: updating pod status, %v", string(status))
+				log.Printf("[Error]: fail to push pod status %s: %v\n", p.UID, err)
 			} else {
 				log.Printf("[INFO]: push pod status %s: %s\n", rp.Name, podStatus.Phase)
 			}

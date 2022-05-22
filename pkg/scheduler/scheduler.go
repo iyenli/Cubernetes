@@ -14,14 +14,12 @@ import (
 const WatchRetryIntervalSec = 10
 
 type ScheduleRuntime struct {
-	Implement types.Scheduler
+	Implement         types.Scheduler
+	AdvancedScheduler types.Scheduler
 }
 
-// RealScheduler Choose one: RR.SchedulerRR / Advanced.SchedulerAdvanced
-type RealScheduler = RR.SchedulerRR
-
 func NewScheduler() *ScheduleRuntime {
-	scheduler := RealScheduler{
+	scheduler := RR.SchedulerRR{
 		NumOfNodes:  0,
 		NameOfNodes: []string{},
 	}
@@ -89,9 +87,31 @@ func (sr *ScheduleRuntime) SchedulePod(pod *object.Pod) {
 			}
 		}
 
-		podInfo, err := sr.Implement.Schedule()
-		if err != nil {
-			log.Println("[Error]: when scheduling, error:", err.Error())
+		podInfo := types.PodInfo{NodeUUID: ""}
+		var err error
+		if len(pod.Spec.Selector) != 0 {
+			nodes, err := crudobj.GetNodes()
+			if err != nil {
+				log.Println("[Error]: when scheduling, get nodes error:", err.Error())
+				return
+			}
+
+			for _, node := range nodes {
+				if object.MatchLabelSelector(pod.Spec.Selector, node.Labels) {
+					podInfo = types.PodInfo{NodeUUID: node.UID}
+					break
+				}
+			}
+		} else {
+			podInfo, err = sr.Implement.Schedule()
+			if err != nil {
+				log.Println("[Error]: when scheduling, error:", err.Error())
+				return
+			}
+		}
+
+		if podInfo.NodeUUID == "" {
+			log.Println("[Warn]: No node to schedule this node")
 		}
 
 		err = sr.SendPodScheduleInfoBack(pod, &podInfo)

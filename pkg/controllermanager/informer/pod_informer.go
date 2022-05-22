@@ -78,7 +78,12 @@ func (i *cmPodInformer) tryListAndWatchPods() {
 			}
 			switch podEvent.EType {
 			case watchobj.EVENT_DELETE, watchobj.EVENT_PUT:
-				i.informPod(pod, podEvent.EType)
+				log.Println("[INFO]: Delete or put an pod, pod ID is", pod.UID)
+				err := i.informPod(pod, podEvent.EType)
+				if err != nil {
+					log.Println("[INFO]: Delete or put an pod error", pod.UID)
+					return
+				}
 			default:
 				log.Panic("Unsupported types in watch pod.")
 			}

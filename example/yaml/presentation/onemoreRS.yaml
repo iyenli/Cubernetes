@@ -1,0 +1,26 @@
+# If you're not testing load balance, use test-replicaset.yaml
+# sudo apt-get install nginx
+apiVersion: v1
+kind: ReplicaSet
+metadata:
+  name: test-rs-onemore-tomcat
+spec:
+  replicas: 2
+  selector:
+    app: tomcat-rs-onemore-tomcat
+  template:
+    metadata:
+      labels:
+        app: tomcat-rs-onemore-tomcat
+    spec:
+      selector:
+        gpu: RTX5090TiMaxProUltimateUltraPlus
+      containers:
+        - name: test-pod-tomcat-third-stage
+          image: tomcat
+          volumeMounts:
+            - name: conf
+              mountPath: /usr/local/tomcat/webapps
+      volumes:
+        - name: conf
+          hostPath: /usr/tomcat-test/

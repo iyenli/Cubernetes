@@ -2,14 +2,14 @@
 apiVersion: v1
 kind: Dns
 metadata:
-  name: test-dns
+  name: test-dns-nginx-1
 spec:
-  host: "example.cubernetes.nb"
+  host: "example.cubernetes"
   paths:
     "/test/cubernetes/nb":
-        serviceUID: "787ba0eb-e629-40af-8840-940cc9d3c728" # Fill in temporarily
+        serviceUID: "698169b0-3e01-42a8-851c-da7d0a62b440" # svc1
         servicePort: 8080 # Fill in temporarily
     "/test/cubernetes/very/nb":
-        serviceUID: "c88b99e0-67a7-4358-970f-a9c99f38b9c1" # Fill in temporarily
+        serviceUID: "22526fc8-ed69-4bdb-884b-825dc16a33a6" # svc2
         servicePort: 80 # Fill in temporarily
 

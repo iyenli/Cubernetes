@@ -87,7 +87,7 @@ func (cp *Cubeproxy) syncService() {
 	informEvent := cp.Runtime.ServiceInformer.WatchServiceEvent()
 
 	for serviceEvent := range informEvent {
-		log.Printf("[INFO]: [INFO]: Main loop working, types is %v,service id is %v", serviceEvent.Type, serviceEvent.Service.UID)
+		log.Printf("[INFO]: Main loop working, types is %v,service id is %v", serviceEvent.Type, serviceEvent.Service.UID)
 		service := serviceEvent.Service
 		eType := serviceEvent.Type
 		cp.lock.Lock()
@@ -132,14 +132,14 @@ func (cp *Cubeproxy) syncPod() {
 	informEvent := cp.Runtime.PodInformer.WatchPodEvent()
 
 	for podEvent := range informEvent {
-		log.Printf("[INFO]: Main loop working, type is %v, pod id is %v", podEvent.Type, &podEvent.Pod.UID)
+		log.Printf("[INFO]: Main loop working, type is %v, pod id is %v", podEvent.Type, podEvent.Pod.UID)
 		pod := podEvent.Pod
 		eType := podEvent.Type
 		cp.lock.Lock()
 
 		switch eType {
 		case types.PodCreate, types.PodRemove, types.PodUpdate:
-			log.Printf("[INFO]: create pod %s\n", pod.UID)
+			log.Printf("[INFO]: %v, podID is %s\n", eType, pod.UID)
 			err := cp.Runtime.ModifyPod(&(pod))
 			if err != nil {
 				log.Fatalln("[Fatal]: error when modify pod")
@@ -155,7 +155,7 @@ func (cp *Cubeproxy) syncDNS() {
 	informEvent := cp.Runtime.DNSInformer.WatchDNSEvent()
 
 	for podEvent := range informEvent {
-		log.Printf("[INFO]: Main loop working, type is %v, DNS id is %v", podEvent.Type, &podEvent.DNS.UID)
+		log.Printf("[INFO]: Main loop working, type is %v, DNS id is %v", podEvent.Type, podEvent.DNS.UID)
 		dns := podEvent.DNS
 		eType := podEvent.Type
 		cp.lock.Lock()
