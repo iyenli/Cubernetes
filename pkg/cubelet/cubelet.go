@@ -201,6 +201,7 @@ func (cl *Cubelet) updatePodsRoutine() {
 				status, _ := json.Marshal(*podStatus)
 				log.Printf("[Error]: updating pod status, %v", string(status))
 				log.Printf("[Error]: fail to push pod status %s: %v\n", p.UID, err)
+				cl.podInformer.ForceRemove(p.UID)
 			} else {
 				log.Printf("[INFO]: push pod status %s: %s\n", rp.Name, podStatus.Phase)
 			}
