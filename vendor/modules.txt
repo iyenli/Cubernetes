@@ -220,10 +220,6 @@ github.com/stretchr/testify/assert
 # github.com/ugorji/go/codec v1.2.7
 ## explicit; go 1.11
 github.com/ugorji/go/codec
-# github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c
-## explicit
-# github.com/xdg/stringprep v1.0.0
-## explicit
 # go.etcd.io/etcd/api/v3 v3.5.4
 ## explicit; go 1.16
 go.etcd.io/etcd/api/v3/authpb

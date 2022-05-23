@@ -34,6 +34,15 @@ var watchList = []Handler{
 
 	{http.MethodPost, "/apis/watch/gpuJob/:uid", watchGpuJob},
 	{http.MethodPost, "/apis/watch/gpuJobs", watchGpuJobs},
+
+	{http.MethodPost, "/apis/watch/action/:uid", watchAction},
+	{http.MethodPost, "/apis/watch/actions", watchActions},
+
+	{http.MethodPost, "/apis/watch/actor/:uid", watchActor},
+	{http.MethodPost, "/apis/watch/actors", watchActors},
+
+	{http.MethodPost, "/apis/watch/ingress/:uid", watchIngress},
+	{http.MethodPost, "/apis/watch/ingresses", watchIngresses},
 }
 
 func handleEvent(ctx *gin.Context, e *clientv3.Event) {
@@ -145,4 +154,28 @@ func watchGpuJob(ctx *gin.Context) {
 
 func watchGpuJobs(ctx *gin.Context) {
 	postWatch(ctx, object.GpuJobEtcdPrefix, true)
+}
+
+func watchAction(ctx *gin.Context) {
+	postWatch(ctx, object.ActionEtcdPrefix+ctx.Param("uid"), false)
+}
+
+func watchActions(ctx *gin.Context) {
+	postWatch(ctx, object.ActionEtcdPrefix, true)
+}
+
+func watchActor(ctx *gin.Context) {
+	postWatch(ctx, object.ActorEtcdPrefix+ctx.Param("uid"), false)
+}
+
+func watchActors(ctx *gin.Context) {
+	postWatch(ctx, object.ActorEtcdPrefix, true)
+}
+
+func watchIngress(ctx *gin.Context) {
+	postWatch(ctx, object.IngressEtcdPrefix+ctx.Param("uid"), false)
+}
+
+func watchIngresses(ctx *gin.Context) {
+	postWatch(ctx, object.IngressEtcdPrefix, true)
 }
