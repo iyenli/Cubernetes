@@ -2,37 +2,24 @@ package kafka
 
 import (
 	"Cubernetes/pkg/utils/kafka/options"
+	"errors"
 	"github.com/segmentio/kafka-go"
 	"log"
-	"net"
-	"strconv"
 )
 
 func CreateTopic(host string, topic string) error {
 	conn := NewKafkaClient(host)
 	if conn == nil {
-		log.Fatalln("[Fatal]: Create conn failed")
-	}
-
-	controller, err := conn.Controller()
-	if err != nil {
-		log.Println("[Error]: get controller failed")
-		return err
-	}
-
-	var controllerConn *kafka.Conn
-	controllerConn, err = kafka.Dial("tcp", net.JoinHostPort(controller.Host, strconv.Itoa(controller.Port)))
-	if err != nil {
-		log.Println("[Error]: get controller failed")
-		return err
+		log.Println("[Fatal]: Create conn failed")
+		return errors.New("get Kafka client failed")
 	}
 
 	defer func(controllerConn *kafka.Conn) {
 		err := controllerConn.Close()
 		if err != nil {
-			log.Println("[Error]: close controller failed")
+			log.Println("[Error]: close connection with master failed")
 		}
-	}(controllerConn)
+	}(conn)
 
 	topicConfigs := []kafka.TopicConfig{
 		{
@@ -42,14 +29,38 @@ func CreateTopic(host string, topic string) error {
 		},
 	}
 
-	err = controllerConn.CreateTopics(topicConfigs...)
+	err := conn.CreateTopics(topicConfigs...)
 	if err != nil {
 		log.Println("[Error]: create topic failed")
 		return err
 	}
+
 	return nil
 }
 
-func ListTopics(conn *kafka.Conn, topic string) {
+func ListTopics(host string) (mp map[string]struct{}) {
+	conn := NewKafkaClient(host)
+	if conn == nil {
+		log.Println("[Fatal]: Create conn failed")
+		return
+	}
 
+	defer func(controllerConn *kafka.Conn) {
+		err := controllerConn.Close()
+		if err != nil {
+			log.Println("[Error]: close connection with master failed")
+		}
+	}(conn)
+
+	partitions, err := conn.ReadPartitions()
+	if err != nil {
+		log.Println("[Fatal]: Get Partition failed")
+		return
+	}
+
+	for _, p := range partitions {
+		mp[p.Topic] = struct{}{}
+	}
+
+	return
 }
