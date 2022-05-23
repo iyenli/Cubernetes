@@ -6,7 +6,7 @@ package cmd
 
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
-	"Cubernetes/pkg/apiserver/jobfile"
+	"Cubernetes/pkg/apiserver/objfile"
 	"Cubernetes/pkg/object"
 	"fmt"
 	"gopkg.in/yaml.v3"
@@ -103,7 +103,7 @@ for example:
 
 			res := string(str)
 			if job.Status.Phase == object.JobSucceeded || job.Status.Phase == object.JobFailed {
-				output, err := jobfile.GetJobOutput(UID)
+				output, err := objfile.GetJobOutput(UID)
 				if err != nil {
 					log.Println("[Warning] fail to get GpuJob output")
 				} else {

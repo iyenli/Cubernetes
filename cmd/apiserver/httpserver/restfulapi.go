@@ -1,12 +1,22 @@
 package httpserver
 
 import (
+	"Cubernetes/cmd/apiserver/httpserver/file"
 	"Cubernetes/cmd/apiserver/httpserver/restful"
 	"net/http"
 )
 
 var restfulList = []Handler{
 	{http.MethodGet, "/health", restful.GetHealth},
+
+	{http.MethodGet, "/apis/action/file/:uid", file.GetActionFile},
+	{http.MethodPost, "/apis/action/file/:uid", file.PostActionFile},
+
+	{http.MethodGet, "/apis/gpuJob/file/:uid", file.GetJobFile},
+	{http.MethodPost, "/apis/gpuJob/file/:uid", file.PostJobFile},
+
+	{http.MethodGet, "/apis/gpuJob/output/:uid", file.GetJobOutput},
+	{http.MethodPost, "/apis/gpuJob/output/:uid", file.PostJobOutput},
 
 	{http.MethodGet, "/apis/pod/:uid", restful.GetPod},
 	{http.MethodGet, "/apis/pods", restful.GetPods},

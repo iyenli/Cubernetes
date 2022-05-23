@@ -6,7 +6,7 @@ package cmd
 
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
-	"Cubernetes/pkg/apiserver/jobfile"
+	"Cubernetes/pkg/apiserver/objfile"
 	"Cubernetes/pkg/object"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -112,7 +112,7 @@ for example:
 				log.Fatal("[FATAL] fail to create new GpuJob")
 			}
 
-			err = jobfile.PostJobFile(newJob.UID, job.Spec.Filename)
+			err = objfile.PostJobFile(newJob.UID, job.Spec.Filename)
 			if err != nil {
 				log.Fatal("[FATAL] fail to upload GpuJob file")
 			}

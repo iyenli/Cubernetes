@@ -1,4 +1,4 @@
-package httpserver
+package file
 
 import (
 	"Cubernetes/cmd/apiserver/httpserver/utils"
@@ -10,38 +10,17 @@ import (
 	"path"
 )
 
-var fileList = []Handler{
-	{http.MethodGet, "/apis/gpuJob/file/:uid", getJobFile},
-	{http.MethodPost, "/apis/gpuJob/file/:uid", postJobFile},
-
-	{http.MethodGet, "/apis/gpuJob/output/:uid", getJobOutput},
-	{http.MethodPost, "/apis/gpuJob/output/:uid", postJobOutput},
-}
-
-func getJobFile(ctx *gin.Context) {
+func GetJobFile(ctx *gin.Context) {
 	filename := path.Join(cubeconfig.JobFileDir, ctx.Param("uid")+".tar.gz")
 	ctx.File(filename)
 }
 
-func postJobFile(ctx *gin.Context) {
-	file, err := ctx.FormFile("file")
-	if err != nil {
-		utils.BadRequest(ctx)
-		return
-	}
-
+func PostJobFile(ctx *gin.Context) {
 	filename := path.Join(cubeconfig.JobFileDir, ctx.Param("uid")+".tar.gz")
-	err = ctx.SaveUploadedFile(file, filename)
-
-	if err != nil {
-		utils.ServerError(ctx)
-		return
-	}
-
-	ctx.String(http.StatusOK, "succeeded")
+	PostFile(ctx, filename)
 }
 
-func getJobOutput(ctx *gin.Context) {
+func GetJobOutput(ctx *gin.Context) {
 	filename := path.Join(cubeconfig.JobFileDir, ctx.Param("uid")+".out")
 	fmt.Println(filename)
 	buf, err := ioutil.ReadFile(filename)
@@ -54,7 +33,7 @@ func getJobOutput(ctx *gin.Context) {
 	ctx.String(http.StatusOK, string(buf))
 }
 
-func postJobOutput(ctx *gin.Context) {
+func PostJobOutput(ctx *gin.Context) {
 	output, err := ctx.GetRawData()
 	if err != nil {
 		utils.BadRequest(ctx)
