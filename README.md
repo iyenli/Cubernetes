@@ -219,5 +219,5 @@ curl serviceIP
 
 Delete RS不成功
 
-<img src="C:/Users/11796/AppData/Roaming/Typora/typora-user-images/image-20220522111638328.png" alt="image-20220522111638328" style="zoom: 50%;" />
+<img src="https://s2.loli.net/2022/05/23/GCL7goy9HXOA1Sr.png" alt="image-20220522111638328" style="zoom: 50%;" />
 
