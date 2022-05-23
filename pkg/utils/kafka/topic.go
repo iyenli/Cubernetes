@@ -8,7 +8,12 @@ import (
 	"strconv"
 )
 
-func CreateTopic(conn *kafka.Conn, topic string) error {
+func CreateTopic(host string, topic string) error {
+	conn := NewKafkaClient(host)
+	if conn == nil {
+		log.Fatalln("[Fatal]: Create conn failed")
+	}
+
 	controller, err := conn.Controller()
 	if err != nil {
 		log.Println("[Error]: get controller failed")
@@ -43,4 +48,8 @@ func CreateTopic(conn *kafka.Conn, topic string) error {
 		return err
 	}
 	return nil
+}
+
+func ListTopics(conn *kafka.Conn, topic string) {
+
 }
