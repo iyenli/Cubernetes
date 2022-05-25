@@ -276,3 +276,15 @@ func ComputeDNSCriticalChange(new *Dns, old *Dns) bool {
 
 	return false
 }
+
+func ComputeActorSpecChange(new *Actor, old *Actor) bool {
+	if new.Spec.ActionName != old.Spec.ActionName {
+		return true
+	}
+
+	if new.Spec.ScriptFile != old.Spec.ScriptFile {
+		return true
+	}
+
+	return false
+}

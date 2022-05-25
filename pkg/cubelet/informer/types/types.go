@@ -19,3 +19,8 @@ type JobEvent struct {
 	Type EventType
 	Job  object.GpuJob
 }
+
+type ActorEvent struct {
+	Type  EventType
+	Actor object.Actor
+}
