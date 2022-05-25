@@ -1,12 +1,22 @@
 package httpserver
 
 import (
+	"Cubernetes/cmd/apiserver/httpserver/file"
 	"Cubernetes/cmd/apiserver/httpserver/restful"
 	"net/http"
 )
 
 var restfulList = []Handler{
 	{http.MethodGet, "/health", restful.GetHealth},
+
+	{http.MethodGet, "/apis/action/file/:uid", file.GetActionFile},
+	{http.MethodPost, "/apis/action/file/:uid", file.PostActionFile},
+
+	{http.MethodGet, "/apis/gpuJob/file/:uid", file.GetJobFile},
+	{http.MethodPost, "/apis/gpuJob/file/:uid", file.PostJobFile},
+
+	{http.MethodGet, "/apis/gpuJob/output/:uid", file.GetJobOutput},
+	{http.MethodPost, "/apis/gpuJob/output/:uid", file.PostJobOutput},
 
 	{http.MethodGet, "/apis/pod/:uid", restful.GetPod},
 	{http.MethodGet, "/apis/pods", restful.GetPods},
@@ -57,4 +67,25 @@ var restfulList = []Handler{
 	{http.MethodPut, "/apis/gpuJob/:uid", restful.PutGpuJob},
 	{http.MethodDelete, "/apis/gpuJob/:uid", restful.DelGpuJob},
 	{http.MethodPost, "/apis/select/gpuJobs", restful.SelectGpuJobs},
+
+	{http.MethodGet, "/apis/action/:uid", restful.GetAction},
+	{http.MethodGet, "/apis/actions", restful.GetActions},
+	{http.MethodPost, "/apis/action", restful.PostAction},
+	{http.MethodPut, "/apis/action/:uid", restful.PutAction},
+	{http.MethodDelete, "/apis/action/:uid", restful.DelAction},
+	{http.MethodPost, "/apis/select/actions", restful.SelectActions},
+
+	{http.MethodGet, "/apis/actor/:uid", restful.GetActor},
+	{http.MethodGet, "/apis/actors", restful.GetActors},
+	{http.MethodPost, "/apis/actor", restful.PostActor},
+	{http.MethodPut, "/apis/actor/:uid", restful.PutActor},
+	{http.MethodDelete, "/apis/actor/:uid", restful.DelActor},
+	{http.MethodPost, "/apis/select/actors", restful.SelectActors},
+
+	{http.MethodGet, "/apis/ingress/:uid", restful.GetIngress},
+	{http.MethodGet, "/apis/ingresses", restful.GetIngresses},
+	{http.MethodPost, "/apis/ingress", restful.PostIngress},
+	{http.MethodPut, "/apis/ingress/:uid", restful.PutIngress},
+	{http.MethodDelete, "/apis/ingress/:uid", restful.DelIngress},
+	{http.MethodPost, "/apis/select/ingresses", restful.SelectIngresses},
 }

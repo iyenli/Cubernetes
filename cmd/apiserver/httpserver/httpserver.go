@@ -17,12 +17,12 @@ type Handler struct {
 
 func Run() {
 	_ = os.MkdirAll(cubeconfig.JobFileDir, 0777)
+	_ = os.MkdirAll(cubeconfig.ActionFileDir, 0777)
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
 	handlerList := append(restfulList, watchList...)
-	handlerList = append(handlerList, fileList...)
 
 	for _, handler := range handlerList {
 		switch handler.Method {

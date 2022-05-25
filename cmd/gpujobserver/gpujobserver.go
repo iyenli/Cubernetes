@@ -2,7 +2,7 @@ package main
 
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
-	"Cubernetes/pkg/apiserver/jobfile"
+	"Cubernetes/pkg/apiserver/objfile"
 	"Cubernetes/pkg/cubenetwork/nodenetwork"
 	"Cubernetes/pkg/object"
 	"Cubernetes/pkg/utils/sshutils"
@@ -41,7 +41,7 @@ func main() {
 
 	log.Println("[INFO]: Get GPU Job meta success")
 	_ = os.MkdirAll(JobDir, 0777)
-	err = jobfile.GetJobFile(gpuJobUID, JobDir+gpuJobUID+".tar.gz")
+	err = objfile.GetJobFile(gpuJobUID, JobDir+gpuJobUID+".tar.gz")
 	if err != nil {
 		jobFail("[FATAL] Fail to get job file, err: ", err)
 	}
@@ -146,7 +146,7 @@ func main() {
 }
 
 func jobSuccess(output string) {
-	err := jobfile.PostJobOutput(gpuJobUID, output)
+	err := objfile.PostJobOutput(gpuJobUID, output)
 	if err != nil {
 		jobFail("[FATAL] Fail to upload output, err: ", err)
 	}
@@ -163,7 +163,7 @@ func jobSuccess(output string) {
 
 func jobFail(msg string, err error) {
 	output := msg + err.Error()
-	lerr := jobfile.PostJobOutput(gpuJobUID, output)
+	lerr := objfile.PostJobOutput(gpuJobUID, output)
 	if lerr != nil {
 		log.Println("[FATAL] Fail to upload output, err: ", lerr)
 	}
