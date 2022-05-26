@@ -1,19 +1,11 @@
 package gateway
 
 import (
-	cubeconfig "Cubernetes/config"
 	"Cubernetes/pkg/object"
-	kafka2 "Cubernetes/pkg/utils/kafka"
 	"context"
 	"encoding/json"
-	"github.com/segmentio/kafka-go"
 	"log"
 )
-
-func (rg *RuntimeGateway) NewConsumer() *kafka.Reader {
-	consumerGroupID := "GatewayConsumerGroup-" + rg.returnTopic
-	return kafka2.NewReaderByConsumerGroup(cubeconfig.APIServerIp, rg.returnTopic, consumerGroupID)
-}
 
 func (rg *RuntimeGateway) ListenReturnTopic() {
 	ctx := context.Background()

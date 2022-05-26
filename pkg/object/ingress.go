@@ -20,9 +20,9 @@ type IngressSpec struct {
 	// Http trigger used to call this Ingress
 	TriggerPath string `json:"trigger" yaml:"trigger"`
 	// Put json payload into this topic
-	InvokeAction string `json:"feed" yaml:"feed"`
+	InvokeAction string `json:"invokeAction" yaml:"invokeAction"`
 	// http request type
-	HTTPType string `json:"HTTPType" yaml:"HTTPType"`
+	HTTPType string `json:"httpType" yaml:"httpType"`
 }
 
 type IngressStatus struct {

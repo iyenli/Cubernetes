@@ -223,7 +223,7 @@ curl serviceIP
 ### Serverless
 
 ```shell
-
+./build/cubectl apply -f ./example/yaml/test-ingress.yaml
 ```
 
 ### Finally

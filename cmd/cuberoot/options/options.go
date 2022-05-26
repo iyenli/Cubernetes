@@ -10,6 +10,7 @@ const (
 	SCHEDULER = BUILDDIR + "scheduler"
 	ETCD      = "/usr/local/bin/etcd"
 	ETCDDATA  = "/var/lib/etcd"
+	GATEWAY   = BUILDDIR + "gateway"
 
 	LOGDIR       = "/var/log/cubernetes/"
 	APISERVERLOG = LOGDIR + "apiserver.log"
@@ -18,4 +19,5 @@ const (
 	MANAGERLOG   = LOGDIR + "manager.log"
 	ETCDLOG      = LOGDIR + "etcd.log"
 	SCHEDULERLOG = LOGDIR + "scheduler.log"
+	GATEWAYLOG   = LOGDIR + "gateway.log"
 )
