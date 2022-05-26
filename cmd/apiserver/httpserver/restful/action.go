@@ -30,6 +30,20 @@ func PostAction(ctx *gin.Context) {
 		return
 	}
 
+	acts, err := etcdrw.GetObjs(object.ActionEtcdPrefix)
+	for _, buf := range acts {
+		var act object.Action
+		err = json.Unmarshal(buf, &act)
+		if err != nil {
+			utils.ServerError(ctx)
+			return
+		}
+		if act.Name == action.Name {
+			ctx.String(http.StatusBadRequest, "bad request: Action %s existed", action.Name)
+			return
+		}
+	}
+
 	action.UID = uuid.New().String()
 	action.Status.Phase = object.ActionCreating
 
