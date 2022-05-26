@@ -19,10 +19,10 @@ vim /etc/systemd/system/kafka.service
 vim /etc/systemd/system/zookeeper.service
 
 systemctl daemon-reload
-systemctl restart kafka
-systemctl status kafka
 systemctl restart zookeeper
 systemctl status zookeeper
+systemctl restart kafka
+systemctl status kafka
 
 systemctl enable kafka
 systemctl enable zookeeper
