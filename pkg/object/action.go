@@ -23,10 +23,12 @@ type ActionSpec struct {
 }
 
 type ActionStatus struct {
-	// Implement by ReplicaSet, kinda like AutoScaler
-	ReplicaSetUID   string    `json:"replicaSetUID" yaml:"replicaSetUID"`
 	LastScaleTime   time.Time `json:"lastScale,omitempty" yaml:"lastScale,omitempty"`
 	LastUpdateTime  time.Time `json:"lastUpdateTime" yaml:"lastUpdateTime"`
 	DesiredReplicas int       `json:"desiredReplicas" yaml:"desiredReplicas"`
 	ActualReplicas  int       `json:"actualReplicas" yaml:"actualReplicas"`
+
+	Actors []string `json:"actors" yaml:"actors"`
+	ToRun  []string `json:"toRun" yaml:"toRun"`
+	ToKill []string `json:"toKill" yaml:"toKill"`
 }

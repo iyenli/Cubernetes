@@ -99,7 +99,7 @@ func (rsc *replicaSetController) syncLoop() {
 			}
 			rsc.biglock.Unlock()
 		default:
-			time.Sleep(time.Second * 4)
+			time.Sleep(time.Second * 2)
 		}
 	}
 
