@@ -151,6 +151,36 @@ for example:
 			for _, job := range jobs {
 				fmt.Printf("%-30s\t%-40s\t%-v\n", job.Name, job.UID, job.Status.Phase)
 			}
+		case "action", "actions":
+			actions, err := crudobj.GetActions()
+			if err != nil {
+				log.Fatal("[FATAL] fail to get Actions")
+				return
+			}
+			if len(actions) == 0 {
+				fmt.Println("No Actions Found")
+				return
+			}
+			fmt.Printf("%d Actions found\n", len(actions))
+			fmt.Printf("%-30s\t%-40s\t%-v\n", "Name", "UID", "Phase")
+			for _, action := range actions {
+				fmt.Printf("%-30s\t%-40s\t%-v\n", action.Name, action.UID, action.Status.Phase)
+			}
+		case "ingress", "ingresses", "igs":
+			ingresses, err := crudobj.GetIngresses()
+			if err != nil {
+				log.Fatal("[FATAL] fail to get Ingresses")
+				return
+			}
+			if len(ingresses) == 0 {
+				fmt.Println("No Ingresses Found")
+				return
+			}
+			fmt.Printf("%d Ingresses found\n", len(ingresses))
+			fmt.Printf("%-30s\t%-40s\t%-30s\t%-s\n", "Name", "UID", "Trigger", "InvokeAction")
+			for _, ingress := range ingresses {
+				fmt.Printf("%-30s\t%-40s\t%-30s\t%-v\n", ingress.Name, ingress.UID, ingress.Spec.TriggerPath, ingress.Spec.InvokeAction)
+			}
 		default:
 			log.Fatal("[FATAL] Unknown kind: " + args[0])
 		}

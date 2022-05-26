@@ -111,6 +111,26 @@ for example:
 				}
 			}
 			fmt.Print(res)
+		case "action":
+			action, err := crudobj.GetAction(UID)
+			if err != nil {
+				log.Fatal("[FATAL] fail to get Action")
+			}
+			str, err := yaml.Marshal(action)
+			if err != nil {
+				log.Fatal("[FATAL] fail to marshall Action")
+			}
+			fmt.Print(string(str))
+		case "ingress":
+			ingress, err := crudobj.GetIngress(UID)
+			if err != nil {
+				log.Fatal("[FATAL] fail to get Ingress")
+			}
+			str, err := yaml.Marshal(ingress)
+			if err != nil {
+				log.Fatal("[FATAL] fail to marshall Ingress")
+			}
+			fmt.Print(string(str))
 		default:
 			log.Fatal("[FATAL] Unknown kind: " + args[0])
 		}
