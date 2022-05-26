@@ -7,11 +7,11 @@ import (
 )
 
 func GetActionFile(ctx *gin.Context) {
-	filename := path.Join(cubeconfig.ActionFileDir, ctx.Param("uid")+".py")
+	filename := path.Join(cubeconfig.ActionFileDir, ctx.Param("name")+".py")
 	GetFile(ctx, filename)
 }
 
 func PostActionFile(ctx *gin.Context) {
-	filename := path.Join(cubeconfig.ActionFileDir, ctx.Param("uid")+".py")
+	filename := path.Join(cubeconfig.ActionFileDir, ctx.Param("name")+".py")
 	PostFile(ctx, filename)
 }

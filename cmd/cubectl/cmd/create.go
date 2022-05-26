@@ -134,10 +134,10 @@ for example:
 			}
 			newAction, err := crudobj.CreateAction(action)
 			if err != nil {
-				log.Fatal("[FATAL] fail to create new Action")
+				log.Fatal("[FATAL] fail to create new Action, err: ", err)
 			}
 
-			err = objfile.PostActionFile(newAction.UID, action.Spec.ScriptPath)
+			err = objfile.PostActionFile(newAction.Name, action.Spec.ScriptPath)
 			if err != nil {
 				log.Fatal("[FATAL] fail to upload Action script")
 			}
