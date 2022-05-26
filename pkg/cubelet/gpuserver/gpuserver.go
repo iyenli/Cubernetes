@@ -13,7 +13,12 @@ import (
 	"time"
 )
 
-type JobRuntime struct {
+type JobRuntime interface {
+	AddGPUJob(job *object.GpuJob) error
+	ReleaseContainerResource()
+}
+
+type jobRuntimeManager struct {
 	// Job UID -> Container ID
 	jobMap         map[string]string
 	dockerInstance dockershim.DockerRuntime
@@ -27,14 +32,14 @@ func NewJobRuntime() JobRuntime {
 		log.Println("[Error]: Init docker runtime error")
 	}
 
-	return JobRuntime{
+	return &jobRuntimeManager{
 		jobMap:         make(map[string]string),
 		dockerInstance: dockerInstance,
 		mutex:          sync.Mutex{},
 	}
 }
 
-func (jr *JobRuntime) AddGPUJob(job *object.GpuJob) error {
+func (jr *jobRuntimeManager) AddGPUJob(job *object.GpuJob) error {
 	jr.mutex.Lock()
 	defer jr.mutex.Unlock()
 
@@ -72,7 +77,7 @@ func (jr *JobRuntime) AddGPUJob(job *object.GpuJob) error {
 	return nil
 }
 
-func (jr *JobRuntime) ReleaseContainerResource() {
+func (jr *jobRuntimeManager) ReleaseContainerResource() {
 	for {
 		jr.mutex.Lock()
 		log.Println("[INFO]: Inspecting docker status and release exited docker every 2 minutes...")

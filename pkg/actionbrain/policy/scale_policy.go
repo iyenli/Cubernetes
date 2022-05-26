@@ -3,14 +3,14 @@ package policy
 import "time"
 
 const (
-	MaxScaleReplicas = 5
+	MaxScaleReplicas   = 5
 	CountRequestPeriod = time.Minute * 1
 )
 
 // most easy scale policy
-func CalculateScale(period time.Duration, calls int, actualReplicas int) (int, bool) {
+func CalculateScale(calls int, actualReplicas int) (int, bool) {
 	// average calls per minute
-	avg := (int)(time.Minute / period) * calls
+	avg := (int)(time.Minute/CountRequestPeriod) * calls
 
 	// so stupid
 	var target int

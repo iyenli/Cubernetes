@@ -15,8 +15,9 @@ type Actor struct {
 }
 
 type ActorSpec struct {
-	ActionName string `json:"action" yaml:"action"`
-	ScriptFile string `json:"file" yaml:"file"`
+	ActionName    string   `json:"actionName" yaml:"actionName"`
+	ScriptFile    string   `json:"file" yaml:"file"`
+	InvokeActions []string `json:"invokeActions" yaml:"invokeActions"`
 }
 
 type ActorStatus struct {

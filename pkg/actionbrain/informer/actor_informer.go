@@ -1,10 +1,10 @@
 package informer
 
 import (
+	"Cubernetes/pkg/actionbrain/phase"
+	"Cubernetes/pkg/actionbrain/types"
 	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/apiserver/watchobj"
-	"Cubernetes/pkg/controllermanager/phase"
-	"Cubernetes/pkg/controllermanager/types"
 	"Cubernetes/pkg/object"
 	"log"
 	"time"
@@ -77,7 +77,7 @@ func (i *cmActorInformer) tryListAndWatchActors() {
 		return
 	} else {
 		for _, actor := range allActors {
-			if actor.Status != nil && !phase.ActorNotHandle(actor.Status.Phase) {
+			if actor.Status != nil && !phase.NotHandle(actor.Status.Phase) {
 				i.actorCache[actor.UID] = actor
 			}
 		}
@@ -98,7 +98,7 @@ func (i *cmActorInformer) tryListAndWatchActors() {
 				return
 			}
 			actor := actorEvent.Actor
-			if (actor.Status == nil || phase.ActorNotHandle(actor.Status.Phase)) &&
+			if (actor.Status == nil || phase.NotHandle(actor.Status.Phase)) &&
 				actorEvent.EType != watchobj.EVENT_DELETE {
 				continue
 			}
@@ -134,7 +134,7 @@ func (i *cmActorInformer) informActor(newActor object.Actor, eType watchobj.Even
 	}
 
 	if eType == watchobj.EVENT_PUT {
-		if !exist && phase.ActorRunning(newActor.Status.Phase) {
+		if !exist && phase.Running(newActor.Status.Phase) {
 			i.actorCache[newActor.UID] = newActor
 			i.informAll(types.ActorEvent{
 				Type:  types.ActorCreate,

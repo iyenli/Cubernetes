@@ -1,4 +1,4 @@
-package action_controller
+package controller
 
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
@@ -11,7 +11,7 @@ import (
 func (ac *actionController) handleActorCreate(actor *object.Actor) error {
 	action := ac.actionInformer.GetMatchedAction(actor.Spec.ActionName)
 	if action == nil {
-		return fmt.Errorf("action %s not found in cache\n", actor.Spec.ActionName)
+		return fmt.Errorf("action %s not found in cache", actor.Spec.ActionName)
 	}
 
 	if _, found := ac.actorUIDAppearedIndex(actor.UID, action.Status.Actors); !found {
@@ -20,7 +20,7 @@ func (ac *actionController) handleActorCreate(actor *object.Actor) error {
 	}
 
 	if idx, found := ac.actorUIDAppearedIndex(actor.UID, action.Status.ToRun); found {
-		action.Status.ToRun = 
+		action.Status.ToRun =
 			append(action.Status.ToRun[:idx], action.Status.ToRun[idx+1:]...)
 	} else {
 		log.Printf("[FATAL] unexpected actor %s add to Action %s when create\n", actor.Name, action.Name)
@@ -38,17 +38,17 @@ func (ac *actionController) handleActorCreate(actor *object.Actor) error {
 func (ac *actionController) handleActorRemove(actor *object.Actor) error {
 	action := ac.actionInformer.GetMatchedAction(actor.Spec.ActionName)
 	if action == nil {
-		return fmt.Errorf("action %s not found in cache\n", actor.Spec.ActionName)
+		return fmt.Errorf("action %s not found in cache", actor.Spec.ActionName)
 	}
 
 	if idx, found := ac.actorUIDAppearedIndex(actor.UID, action.Status.ToKill); found {
-		action.Status.ToKill = 
+		action.Status.ToKill =
 			append(action.Status.ToKill[:idx], action.Status.ToKill[idx+1:]...)
 	}
 
 	if idx, found := ac.actorUIDAppearedIndex(actor.UID, action.Status.Actors); found {
 		action.Status.ActualReplicas -= 1
-		action.Status.Actors = 
+		action.Status.Actors =
 			append(action.Status.Actors[:idx], action.Status.Actors[idx+1:]...)
 	} else {
 		log.Printf("actor %s killed but not in running\n", actor.Name)
