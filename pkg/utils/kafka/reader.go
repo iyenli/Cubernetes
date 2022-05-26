@@ -18,7 +18,7 @@ import (
 		}
 	}
 
-  Or two phase
+  Or two phases
 	ctx := context.Background()
 	for {
     	m, err := r.FetchMessage(ctx)

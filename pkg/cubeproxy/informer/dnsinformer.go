@@ -110,7 +110,7 @@ func (p *ProxyDNSInformer) informDNS(new object.Dns, eType watchobj.EventType) e
 				DNS:  new,
 			}
 		} else {
-			log.Printf("[INFO]: pod %s not exist, delete do nothing\n", new.UID)
+			log.Printf("[INFO]: DNS %s not exist, delete do nothing\n", new.UID)
 		}
 	} else {
 		// Any way update cache

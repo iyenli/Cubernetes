@@ -276,3 +276,10 @@ func ComputeDNSCriticalChange(new *Dns, old *Dns) bool {
 
 	return false
 }
+
+func ComputeIngressCriticalChange(new *Ingress, old *Ingress) bool {
+	if new.Spec.TriggerPath != old.Spec.TriggerPath || new.Spec.HTTPType != old.Spec.HTTPType {
+		return true
+	}
+	return false
+}

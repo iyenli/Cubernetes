@@ -2,6 +2,13 @@ package object
 
 const IngressEtcdPrefix = "/apis/ingress/"
 
+type IngressPhase string
+
+const (
+	IngressCreating IngressPhase = "Creating"
+	IngressReady    IngressPhase = "Ready"
+)
+
 type Ingress struct {
 	TypeMeta   `json:",inline" yaml:",inline"`
 	ObjectMeta `json:"metadata" yaml:"metadata"`
@@ -13,11 +20,12 @@ type IngressSpec struct {
 	// Http trigger used to call this Ingress
 	TriggerPath string `json:"trigger" yaml:"trigger"`
 	// Put json payload into this topic
-	FeedChan string `json:"feed" yaml:"feed"`
-	// Then wait json response from this topic
-	ListenChan string `json:"listen" yaml:"listen"`
+	InvokeAction string `json:"feed" yaml:"feed"`
+	// http request type
+	HTTPType string `json:"HTTPType" yaml:"HTTPType"`
 }
 
 type IngressStatus struct {
 	// nothing for now
+	Phase IngressPhase `yaml:"phase" json:"phase"`
 }
