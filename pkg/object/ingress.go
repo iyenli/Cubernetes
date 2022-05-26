@@ -22,10 +22,10 @@ type IngressSpec struct {
 	// Put json payload into this topic
 	InvokeAction string `json:"invokeAction" yaml:"invokeAction"`
 	// http request type
-	HTTPType string `json:"httpType" yaml:"httpType"`
+	HTTPType string `json:"httpType,omitempty" yaml:"httpType,omitempty"`
 }
 
 type IngressStatus struct {
 	// nothing for now
-	Phase IngressPhase `yaml:"phase" json:"phase"`
+	Phase IngressPhase `yaml:"phase,omitempty" json:"phase,omitempty"`
 }

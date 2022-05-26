@@ -3,6 +3,7 @@ package gateway
 import (
 	"Cubernetes/pkg/gateway/informer/types"
 	"Cubernetes/pkg/object"
+	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 )
@@ -49,6 +50,22 @@ func (rg *RuntimeGateway) AddIngress(ingress *object.Ingress) {
 }
 
 func (rg *RuntimeGateway) DeleteIngress(ingress *object.Ingress) {
-	log.Panicln("[Fatal]: unsupported type of ingress")
-	// TODO: Not support delete now
+	log.Printf("[INFO]: Delete Ingress")
+	switch ingress.Spec.HTTPType {
+	case http.MethodPut:
+		rg.router.PUT(ingress.Spec.TriggerPath, ResourceNotFound)
+	case http.MethodGet:
+		rg.router.GET(ingress.Spec.TriggerPath, ResourceNotFound)
+	case http.MethodDelete:
+		rg.router.DELETE(ingress.Spec.TriggerPath, ResourceNotFound)
+	case http.MethodPost:
+		rg.router.POST(ingress.Spec.TriggerPath, ResourceNotFound)
+	default:
+		log.Printf("[Warn]: unsupported type of http, discard it")
+		return
+	}
+}
+
+func ResourceNotFound(ctx *gin.Context) {
+	ctx.String(http.StatusNotFound, "404 Resource Not Found")
 }

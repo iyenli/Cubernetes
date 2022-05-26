@@ -33,6 +33,7 @@ func (rg *RuntimeGateway) GetHandlerByIngress(ingress *object.Ingress) func(ctx 
 				ctx.String(http.StatusBadRequest, "One param has more than two values is not allowed")
 				return
 			}
+
 			log.Printf("[INFO]: Get param key is %v, value is %v", key, val[0])
 			msg.Params[key] = val[0]
 		}

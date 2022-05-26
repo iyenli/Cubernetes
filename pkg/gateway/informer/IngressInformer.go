@@ -115,11 +115,11 @@ func (p *ProxyIngressInformer) informIngress(new object.Ingress, eType watchobj.
 
 	if eType == watchobj.EVENT_DELETE {
 		if exist {
-			delete(p.IngressCache, new.UID)
 			p.IngressChannel <- types.IngressEvent{
 				Type:    types.IngressRemove,
-				Ingress: new,
+				Ingress: oldIngress,
 			}
+			delete(p.IngressCache, new.UID)
 		} else {
 			log.Printf("[INFO]: Ingress %s not exist, delete do nothing\n", new.UID)
 		}
