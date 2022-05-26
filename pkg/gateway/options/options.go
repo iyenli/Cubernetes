@@ -4,5 +4,5 @@ const (
 	name        = "gateway"
 	GatewayPort = 6810
 
-	TopicPrefix = "ReturnGateway-"
+	ListenTopicPrefix = "ReturnGateway-"
 )

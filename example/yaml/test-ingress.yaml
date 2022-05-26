@@ -1,8 +1,15 @@
 apiVersion: v1
-kind: ingress
+kind: Ingress
 metadata:
-  name: test-ingress
+  name: ingress-test
 spec:
   trigger: "/path/test"
   invokeAction: "test-function1"
-  httpType: "POST"
+  httpType: "GET"
+
+# curl "127.0.0.1:6810/path/test?hello=world&kounijiwa=bagayalu"
+# consume information:
+#  /usr/local/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic tes
+#t-function1 --from-beginning
+# check response:
+# /usr/local/kafka/bin/kafka-console-producer.sh  --broker-list localhost:9092  --topic ReturnGateway-e18ddcce-8e6f-4425-b01f-76b0693701e5

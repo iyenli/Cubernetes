@@ -1,8 +1,9 @@
 package gateway
 
 import (
-	"Cubernetes/pkg/gateway/informer/types"
+	"Cubernetes/pkg/gateway/types"
 	"Cubernetes/pkg/object"
+	kafka2 "Cubernetes/pkg/utils/kafka"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -28,6 +29,8 @@ func (rg *RuntimeGateway) HandleIngress() {
 }
 
 func (rg *RuntimeGateway) AddIngress(ingress *object.Ingress) {
+	// TODO: Just test, DELETE IT!
+	_ = kafka2.CreateTopic("127.0.0.1", ingress.Spec.InvokeAction)
 	switch ingress.Spec.HTTPType {
 	case http.MethodPut:
 		rg.router.PUT(ingress.Spec.TriggerPath, rg.GetHandlerByIngress(ingress))
@@ -42,24 +45,25 @@ func (rg *RuntimeGateway) AddIngress(ingress *object.Ingress) {
 		return
 	}
 
-	log.Println("[INF]: Install ingress successfully")
+	log.Println("[INFO]: Install ingress successfully")
 	if ingress.Status == nil {
 		ingress.Status = &object.IngressStatus{}
 	}
 	ingress.Status.Phase = object.IngressReady
 }
 
+// DeleteIngress Test failed: gin not support deleting route on-the-fly
 func (rg *RuntimeGateway) DeleteIngress(ingress *object.Ingress) {
 	log.Printf("[INFO]: Delete Ingress")
 	switch ingress.Spec.HTTPType {
-	case http.MethodPut:
-		rg.router.PUT(ingress.Spec.TriggerPath, ResourceNotFound)
-	case http.MethodGet:
-		rg.router.GET(ingress.Spec.TriggerPath, ResourceNotFound)
-	case http.MethodDelete:
-		rg.router.DELETE(ingress.Spec.TriggerPath, ResourceNotFound)
-	case http.MethodPost:
-		rg.router.POST(ingress.Spec.TriggerPath, ResourceNotFound)
+	//case http.MethodPut:
+	//	rg.router.PUT(ingress.Spec.TriggerPath, ResourceNotFound)
+	//case http.MethodGet:
+	//	rg.router.GET(ingress.Spec.TriggerPath, ResourceNotFound)
+	//case http.MethodDelete:
+	//	rg.router.DELETE(ingress.Spec.TriggerPath, ResourceNotFound)
+	//case http.MethodPost:
+	//	rg.router.POST(ingress.Spec.TriggerPath, ResourceNotFound)
 	default:
 		log.Printf("[Warn]: unsupported type of http, discard it")
 		return

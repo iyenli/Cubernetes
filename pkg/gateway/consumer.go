@@ -1,7 +1,7 @@
 package gateway
 
 import (
-	"Cubernetes/pkg/object"
+	"Cubernetes/pkg/gateway/types"
 	"context"
 	"encoding/json"
 	"log"
@@ -16,7 +16,7 @@ func (rg *RuntimeGateway) ListenReturnTopic() {
 			continue
 		}
 
-		msg := object.MQMessage{}
+		msg := types.MQMessage{}
 		err = json.Unmarshal(msgByte.Value, &msg)
 		if err != nil {
 			log.Printf("[Error]: parse return message failed, msg: %v", string(msgByte.Value))

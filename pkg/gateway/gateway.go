@@ -4,7 +4,7 @@ import (
 	"Cubernetes/pkg/gateway/httpserver"
 	"Cubernetes/pkg/gateway/informer"
 	"Cubernetes/pkg/gateway/options"
-	"Cubernetes/pkg/object"
+	"Cubernetes/pkg/gateway/types"
 	kafka2 "Cubernetes/pkg/utils/kafka"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -17,7 +17,7 @@ type RuntimeGateway struct {
 	router          *gin.Engine
 	ingressInformer informer.IngressInformer
 
-	channelMap map[string]chan object.MQMessage
+	channelMap map[string]chan types.MQMessage
 	mapMutex   sync.Mutex
 
 	returnTopic string
@@ -27,7 +27,7 @@ type RuntimeGateway struct {
 }
 
 func NewRuntimeGateway() *RuntimeGateway {
-	returnTopic := options.TopicPrefix + uuid.NewString()
+	returnTopic := options.ListenTopicPrefix + uuid.NewString()
 	// Create relevant topic
 	err := kafka2.CreateTopic("127.0.0.1", returnTopic)
 	if err != nil {
@@ -40,7 +40,7 @@ func NewRuntimeGateway() *RuntimeGateway {
 		router:          httpserver.GetGatewayRouter(),
 		ingressInformer: informer.NewIngressInformer(),
 
-		channelMap: make(map[string]chan object.MQMessage),
+		channelMap: make(map[string]chan types.MQMessage),
 		mapMutex:   sync.Mutex{},
 
 		returnTopic: returnTopic,

@@ -3,7 +3,7 @@ package informer
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/apiserver/watchobj"
-	"Cubernetes/pkg/gateway/informer/types"
+	"Cubernetes/pkg/gateway/types"
 	"Cubernetes/pkg/object"
 	"log"
 	"sync"
@@ -23,13 +23,15 @@ func NewIngressInformer() IngressInformer {
 	return &ProxyIngressInformer{
 		IngressChannel: make(chan types.IngressEvent),
 		IngressCache:   make(map[string]object.Ingress),
+		mtx:            sync.RWMutex{},
+		PathSet:        map[string]string{},
 	}
 }
 
 type ProxyIngressInformer struct {
 	IngressChannel chan types.IngressEvent
 	IngressCache   map[string]object.Ingress
-	PathSet        map[string]struct{}
+	PathSet        map[string]string
 
 	mtx sync.RWMutex
 }
@@ -115,18 +117,18 @@ func (p *ProxyIngressInformer) informIngress(new object.Ingress, eType watchobj.
 
 	if eType == watchobj.EVENT_DELETE {
 		if exist {
+			delete(p.IngressCache, new.UID)
 			p.IngressChannel <- types.IngressEvent{
 				Type:    types.IngressRemove,
-				Ingress: oldIngress,
+				Ingress: new,
 			}
-			delete(p.IngressCache, new.UID)
 		} else {
 			log.Printf("[INFO]: Ingress %s not exist, delete do nothing\n", new.UID)
 		}
 	} else {
 		// Duplicate Ingress trigger path detect
 		if !exist {
-			if _, ok := p.PathSet[new.Spec.TriggerPath]; ok {
+			if method, ok := p.PathSet[new.Spec.TriggerPath]; ok && method == new.Spec.HTTPType {
 				log.Printf("[Warn]: UID is different but trigger path duplicate")
 				return nil
 			}
@@ -134,6 +136,8 @@ func (p *ProxyIngressInformer) informIngress(new object.Ingress, eType watchobj.
 
 		// Any way update cache
 		p.IngressCache[new.UID] = new
+		// avoid duplicate trigger path and method to trigger an error
+		p.PathSet[new.Spec.TriggerPath] = new.Spec.HTTPType
 		if !exist {
 			p.IngressChannel <- types.IngressEvent{
 				Type:    types.IngressCreate,
