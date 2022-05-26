@@ -29,7 +29,10 @@ func PostAction(ctx *gin.Context) {
 		utils.BadRequest(ctx)
 		return
 	}
+
 	action.UID = uuid.New().String()
+	action.Status.Phase = object.ActionCreating
+
 	buf, _ := json.Marshal(action)
 	err = etcdrw.PutObj(object.ActionEtcdPrefix+action.UID, string(buf))
 	if err != nil {
