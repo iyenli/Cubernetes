@@ -107,7 +107,7 @@ func (i *ProxyServiceInformer) informService(newService object.Service, eType wa
 		if exist {
 			delete(i.ServiceCache, newService.UID)
 			i.ServiceChannel <- types.ServiceEvent{
-				Type:    types.ServiceRemove,
+				Type:    types.Remove,
 				Service: newService,
 			}
 		} else {
@@ -127,15 +127,16 @@ func (i *ProxyServiceInformer) informService(newService object.Service, eType wa
 		i.ServiceCache[newService.UID] = newService
 		if !exist {
 			i.ServiceChannel <- types.ServiceEvent{
-				Type:    types.ServiceCreate,
+				Type:    types.Create,
 				Service: newService}
 		} else {
 			// compute Service change: IP / Label
 			if object.ComputeServiceCriticalChange(&newService, &oldService) {
 				log.Println("[INFO]: Service changed, Service ID is:", newService.UID)
 				i.ServiceChannel <- types.ServiceEvent{
-					Type:    types.ServiceUpdate,
-					Service: newService}
+					Type:    types.Update,
+					Service: newService,
+				}
 			} else {
 				log.Println("[INFO]: Service not changed, Service ID is:", newService.Name)
 			}

@@ -62,7 +62,7 @@ func (i *cubePodInformer) tryListAndWatchPods() {
 	// then watch pod status change
 	ch, cancel, err := watchobj.WatchPods()
 	if err != nil {
-		log.Printf("fail to watch pods from apiserver: %v\n", err)
+		log.Printf("[Error]: fail to watch pods from apiserver: %v\n", err)
 		return
 	}
 	defer cancel()
