@@ -1,6 +1,8 @@
 package gateway
 
 import (
+	"Cubernetes/pkg/actionbrain/monitor/message"
+	"Cubernetes/pkg/actionbrain/monitor/options"
 	"Cubernetes/pkg/gateway/types"
 	"Cubernetes/pkg/object"
 	"context"
@@ -11,12 +13,22 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func (rg *RuntimeGateway) GetHandlerByIngress(ingress *object.Ingress) func(ctx *gin.Context) {
 	return func(ctx *gin.Context) {
 		log.Printf("[INFO]: Function called, ingress path: %v, input topic %v",
 			ingress.Spec.TriggerPath, ingress.Spec.InvokeAction)
+
+		// Send information to action monitor
+		go func(action string) {
+			err := rg.SendMonitorInfo(action)
+			if err != nil {
+				log.Printf("[Error]: send info to monitor failed\n")
+				return
+			}
+		}(ingress.Spec.InvokeAction)
 
 		msg := types.MQMessage{
 			RequestUID:  uuid.NewString(),
@@ -101,4 +113,31 @@ func (rg *RuntimeGateway) GetHandlerByIngress(ingress *object.Ingress) func(ctx 
 		ctx.Header("Content-Type", resp.ContentType)
 		ctx.String(code, resp.Payload)
 	}
+}
+
+func (rg *RuntimeGateway) SendMonitorInfo(action string) error {
+	msg := message.MonitorMessage{
+		InvokeTimeUnix: time.Now().Unix(),
+		Action:         action,
+	}
+
+	log.Printf("[INFO]: Sending invoke info to monitor, action name is %v\n", action)
+	msgBytes, err := json.Marshal(msg)
+	if err != nil {
+		log.Printf("[Error]: Marshal monitor message failed\n")
+		return err
+	}
+
+	err = rg.writer.WriteMessages(context.Background(),
+		kafka.Message{
+			Topic: options.MonitorTopic,
+			Key:   []byte(msg.Action),
+			Value: msgBytes,
+		})
+	if err != nil {
+		log.Printf("[Error]: Write into monitor MQ failed\n")
+		return err
+	}
+
+	return nil
 }
