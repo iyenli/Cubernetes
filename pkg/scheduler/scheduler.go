@@ -1,11 +1,11 @@
 package scheduler
 
 import (
-	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/scheduler/RR"
 	"Cubernetes/pkg/scheduler/types"
 	"log"
 	"sync"
+	"time"
 )
 
 const WatchRetryIntervalSec = 10
@@ -32,16 +32,18 @@ func NewScheduler() *ScheduleRuntime {
 }
 
 func (sr *ScheduleRuntime) Run() {
-	// Init sr first
-	sr.Init()
+	log.Println("[INFO]: Init Scheduler with current nodes, it may take 2 seconds...")
 
 	wg := sync.WaitGroup{}
-	wg.Add(3)
+	wg.Add(4)
 
 	go func() {
 		defer wg.Done()
 		sr.WatchNode()
 	}()
+
+	// Get all nodes in sr
+	time.Sleep(2 * time.Second)
 
 	go func() {
 		defer wg.Done()
@@ -53,25 +55,11 @@ func (sr *ScheduleRuntime) Run() {
 		sr.WatchJob()
 	}()
 
+	go func() {
+		defer wg.Done()
+		sr.WatchActor()
+	}()
+
 	wg.Wait()
 	log.Fatalln("Unreachable here")
-}
-
-func (sr *ScheduleRuntime) Init() {
-	log.Println("[INFO]: Init scheduler using exist jobs and pods...")
-	pods, err := crudobj.GetPods()
-	if err != nil {
-		log.Println("[Error]: when init scheduler and ask for pods,", err.Error())
-	}
-	for _, pod := range pods {
-		sr.SchedulePod(&pod)
-	}
-
-	jobs, err := crudobj.GetGpuJobs()
-	if err != nil {
-		log.Println("[Error]: when init scheduler and ask for jobs", err.Error())
-	}
-	for _, job := range jobs {
-		sr.ScheduleJob(&job)
-	}
 }

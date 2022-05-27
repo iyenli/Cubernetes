@@ -4,7 +4,7 @@ type NodeInfo struct {
 	NodeUUID string
 }
 
-type PodInfo struct {
+type ScheduleInfo struct {
 	NodeUUID string
 }
 
@@ -15,5 +15,5 @@ type Scheduler interface {
 
 	RemoveNode(Info *NodeInfo) error
 
-	Schedule() (PodInfo, error)
+	Schedule() (ScheduleInfo, error)
 }

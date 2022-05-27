@@ -23,7 +23,7 @@ func (sr *ScheduleRuntime) ScheduleJob(job *object.GpuJob) {
 	}
 }
 
-func (sr *ScheduleRuntime) SendJobScheduleInfoBack(jobToSchedule *object.GpuJob, info *types.PodInfo) error {
+func (sr *ScheduleRuntime) SendJobScheduleInfoBack(jobToSchedule *object.GpuJob, info *types.ScheduleInfo) error {
 	jobToSchedule.Status.NodeUID = info.NodeUUID
 
 	_, err := crudobj.UpdateGpuJob(*jobToSchedule)

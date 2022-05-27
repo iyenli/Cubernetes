@@ -17,8 +17,9 @@ func (sr *ScheduleRuntime) SchedulePod(pod *object.Pod) {
 			}
 		}
 
-		podInfo := types.PodInfo{NodeUUID: ""}
+		podInfo := types.ScheduleInfo{NodeUUID: ""}
 		var err error
+		// Patch: easiest advanced scheduler implementation
 		if len(pod.Spec.Selector) != 0 {
 			nodes, err := crudobj.GetNodes()
 			if err != nil {
@@ -28,7 +29,7 @@ func (sr *ScheduleRuntime) SchedulePod(pod *object.Pod) {
 
 			for _, node := range nodes {
 				if object.MatchLabelSelector(pod.Spec.Selector, node.Labels) {
-					podInfo = types.PodInfo{NodeUUID: node.UID}
+					podInfo = types.ScheduleInfo{NodeUUID: node.UID}
 					break
 				}
 			}
@@ -51,7 +52,7 @@ func (sr *ScheduleRuntime) SchedulePod(pod *object.Pod) {
 	}
 }
 
-func (sr *ScheduleRuntime) SendPodScheduleInfoBack(podToSchedule *object.Pod, info *types.PodInfo) error {
+func (sr *ScheduleRuntime) SendPodScheduleInfoBack(podToSchedule *object.Pod, info *types.ScheduleInfo) error {
 	podToSchedule.Status.NodeUID = info.NodeUUID
 	podToSchedule.Status.Phase = object.PodBound
 
@@ -85,7 +86,7 @@ func (sr *ScheduleRuntime) tryWatchPod() {
 
 	ch, cancel, err := watchobj.WatchPods()
 	if err != nil {
-		log.Printf("Error occurs when watching pods: %v", err)
+		log.Printf("[Error]: Error occurs when watching pods: %v", err)
 		return
 	}
 	defer cancel()
@@ -101,7 +102,7 @@ func (sr *ScheduleRuntime) tryWatchPod() {
 				case watchobj.EVENT_PUT:
 					sr.SchedulePod(&podEvent.Pod)
 				case watchobj.EVENT_DELETE:
-					log.Println("[Info]: Delete pod, do nothing")
+					log.Println("[Info]: Delete Pod, do nothing")
 				default:
 					log.Panic("[Fatal]: Unsupported types in watching pod.")
 				}
