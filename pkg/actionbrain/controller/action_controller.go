@@ -35,23 +35,25 @@ type actionController struct {
 	monitor        monitor.ActionMonitor
 
 	biglock sync.Mutex
-	wg      sync.WaitGroup
+	wg      *sync.WaitGroup
 }
 
 func NewActionController(
 	actorInformer informer.ActorInformer,
 	actionInformer informer.ActionInformer,
-	wg sync.WaitGroup) (ActionController, error) {
+	wg *sync.WaitGroup) (ActionController, error) {
 	wg.Add(1)
-	monitor, err := monitor.NewActionMonitor()
+
+	actionMonitor, err := monitor.NewActionMonitor()
 	if err != nil {
 		log.Printf("fail to create ActionMonitor: %v\n", err)
 		return nil, err
 	}
+
 	return &actionController{
 		actorInformer:  actorInformer,
 		actionInformer: actionInformer,
-		monitor:        monitor,
+		monitor:        actionMonitor,
 		biglock:        sync.Mutex{},
 		wg:             wg,
 	}, nil
