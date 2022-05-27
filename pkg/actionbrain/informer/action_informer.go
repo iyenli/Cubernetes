@@ -80,7 +80,9 @@ func (i *cmActionInformer) tryListAndWatchActions() {
 		return
 	} else {
 		for _, action := range allActions {
-			i.actionCache[action.UID] = action
+			if action.Status != nil && action.Status.Phase == object.ActionCreated {
+				i.actionCache[action.UID] = action
+			}
 		}
 	}
 
@@ -127,13 +129,17 @@ func (i *cmActionInformer) informAction(newAction object.Action, eType watchobj.
 	}
 
 	if eType == watchobj.EVENT_PUT {
-		if !exist {
+		if !exist && newAction.Status != nil &&
+			newAction.Status.Phase == object.ActionCreated {
+			log.Printf("create Action %s informed\n", newAction.Name)
 			i.actionCache[newAction.UID] = newAction
 			i.informAll(types.ActionEvent{
 				Type:   types.ActionCreate,
 				Action: newAction,
 			})
-		} else {
+		} else if exist && !object.ComputeActionSpecChange(&newAction, &oldAction) {
+			i.actionCache[newAction.UID] = newAction
+		} else if exist {
 			log.Printf("[Error] update action not supported!\n")
 		}
 	}

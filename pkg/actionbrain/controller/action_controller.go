@@ -245,6 +245,11 @@ func (ac *actionController) checkAndUpdateActionStatus(action *object.Action) {
 	}
 	toKill = utils.RemoveMultiIndex(toKill, noExist)
 
+	log.Println("desired:  ", desired)
+	log.Println("runnings: ", runnings)
+	log.Println("toRun:    ", toRun)
+	log.Println("toKill:   ", toKill)
+
 	action.Status = &object.ActionStatus{
 		LastScaleTime:   lastScale,
 		LastUpdateTime:  time.Now(),
@@ -258,6 +263,8 @@ func (ac *actionController) checkAndUpdateActionStatus(action *object.Action) {
 
 	if _, err := crudobj.UpdateAction(*action); err != nil {
 		log.Printf("fail to update action status of %s: %v\n", action.Name, err)
+	} else {
+		log.Printf("update action status of %s\n", action.Name)
 	}
 }
 

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Action
+metadata:
+  name: add
+spec:
+  scriptPath: /root/Cubernetes/example/serverless/add/add.py
+  invokeActions: []

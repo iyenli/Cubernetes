@@ -109,19 +109,28 @@ func (c *cubeActorInformer) tryListandWatchActors() {
 }
 
 func (c *cubeActorInformer) informActor(actor object.Actor, eType watchobj.EventType) {
-	_, exist := c.actorCache[actor.UID]
-	if eType == watchobj.EVENT_DELETE && exist {
-		delete(c.actorCache, actor.UID)
-		c.actorEventChan <- types.ActorEvent{
-			Type:  types.Remove,
-			Actor: actor,
+	old, exist := c.actorCache[actor.UID]
+	if eType == watchobj.EVENT_DELETE {
+		if exist {
+			delete(c.actorCache, actor.UID)
+			c.actorEventChan <- types.ActorEvent{
+				Type:  types.Remove,
+				Actor: actor,
+			}
 		}
-	} else if eType == watchobj.EVENT_PUT && !exist {
-		c.actorEventChan <- types.ActorEvent{
-			Type:  types.Create,
-			Actor: actor,
+	}
+	
+	if eType == watchobj.EVENT_PUT {
+		if !exist {
+			c.actorCache[actor.UID] = actor
+			c.actorEventChan <- types.ActorEvent{
+				Type:  types.Create,
+				Actor: actor,
+			}
+		} else if exist && !object.ComputeActorSpecChange(&actor, &old) {
+			c.actorCache[actor.UID] = actor
+		} else {
+			log.Printf("update actor not supported\n")
 		}
-	} else if !exist {
-		log.Printf("[Error] put actor %s not exist\n", actor.Name)
 	}
 }

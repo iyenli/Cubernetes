@@ -1,7 +1,7 @@
 package options
 
 const (
-	ActorImageName     = "empty"
+	ActorImageName     = "yiyanleee/python-runtime:v1"
 	ScriptRegistryPath = "/etc/cubernetes/scripts"
 	ScriptDirMountPath = "./userland"
 )

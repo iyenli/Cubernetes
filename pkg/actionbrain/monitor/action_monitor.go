@@ -6,6 +6,7 @@ import (
 	kafkautil "Cubernetes/pkg/utils/kafka"
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"time"
 
@@ -62,6 +63,7 @@ func (kam *kafkaActionMonitor) Run() {
 
 		action := msg.Action
 		time := msg.InvokeTimeUnix
+		log.Printf("received invoke to action %s\n", action)
 		if err = kam.insertActionEvoke(action, time); err != nil {
 			log.Printf("fail to storage action evoke: %v", err)
 		}
@@ -87,6 +89,9 @@ func (kam *kafkaActionMonitor) QueryRecentEvoke(action string, period time.Durat
 		now-int64(period.Seconds()), now,
 	)
 	if err != nil {
+		if errors.Is(err, tstorage.ErrNoDataPoints) {
+			return 0, nil
+		}
 		log.Printf("fail to query evoke of action %s: %v", action, err)
 		return 0, err
 	}

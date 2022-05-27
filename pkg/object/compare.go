@@ -286,6 +286,34 @@ func ComputeActorSpecChange(new *Actor, old *Actor) bool {
 		return true
 	}
 
+	if len(new.Spec.InvokeActions) != len(old.Spec.InvokeActions) {
+		return true
+	}
+
+	for idx, oldInvoke := range old.Spec.InvokeActions {
+		if new.Spec.InvokeActions[idx] != oldInvoke {
+			return true
+		}
+	}
+
+	return false
+}
+
+func ComputeActionSpecChange(new, old *Action) bool {
+	if new.Spec.ScriptPath != old.Spec.ScriptPath {
+		return true
+	}
+
+	if len(new.Spec.InvokeActions) != len(old.Spec.InvokeActions) {
+		return true
+	}
+
+	for idx, oldInvoke := range old.Spec.InvokeActions {
+		if new.Spec.InvokeActions[idx] != oldInvoke {
+			return true
+		}
+	}
+
 	return false
 }
 
