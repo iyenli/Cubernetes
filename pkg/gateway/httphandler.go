@@ -4,6 +4,7 @@ import (
 	"Cubernetes/pkg/actionbrain/monitor/message"
 	"Cubernetes/pkg/actionbrain/monitor/options"
 	"Cubernetes/pkg/gateway/types"
+	"Cubernetes/pkg/gateway/utils"
 	"Cubernetes/pkg/object"
 	"context"
 	"encoding/json"
@@ -87,12 +88,12 @@ func (rg *RuntimeGateway) GetHandlerByIngress(ingress *object.Ingress) func(ctx 
 
 		err = rg.writer.WriteMessages(context.Background(),
 			kafka.Message{
-				Topic: ingress.Spec.InvokeAction,
+				Topic: utils.GetActionTopic(ingress.Spec.InvokeAction),
 				Key:   []byte(msg.RequestUID),
 				Value: msgBytes,
 			})
 		if err != nil {
-			log.Printf("[Error]: Write into MQ %v failed", ingress.Spec.InvokeAction)
+			log.Printf("[Error]: Write into MQ %v failed", utils.GetActionTopic(ingress.Spec.InvokeAction))
 			ctx.String(http.StatusInternalServerError, "Kafka Error")
 			return
 		}
