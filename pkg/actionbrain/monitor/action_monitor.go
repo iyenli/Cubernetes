@@ -110,7 +110,13 @@ func (kam *kafkaActionMonitor) WatchActionEvoke() <-chan string {
 }
 
 func (kam *kafkaActionMonitor) Close() {
-	kam.reader.Close()
-	kam.storage.Close()
+	err := kam.reader.Close()
+	if err != nil {
+		return
+	}
+	err = kam.storage.Close()
+	if err != nil {
+		return
+	}
 	close(kam.evokeChan)
 }
