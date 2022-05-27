@@ -7,6 +7,7 @@ import (
 	"Cubernetes/pkg/object"
 	"log"
 	"net"
+	"strings"
 	"time"
 
 	dockertypes "github.com/docker/docker/api/types"
@@ -16,6 +17,7 @@ import (
 type ActorRuntime interface {
 	CreateActor(actor *object.Actor) error
 	KillActor(UID string) error
+	InspectActor(UID string) (object.ActorPhase, error)
 }
 
 func NewActorRuntime() (ActorRuntime, error) {
@@ -105,4 +107,34 @@ func (arm *actorRuntimeManager) KillActor(UID string) error {
 	}
 
 	return nil
+}
+
+func (arm *actorRuntimeManager) InspectActor(UID string) (object.ActorPhase, error) {
+	filter := dockertypes.ContainerListOptions{
+		Filters: filters.NewArgs(
+			filters.Arg("label", buildLabelSelector(ActorUIDLabel, UID)),
+		),
+	}
+
+	// list both sandbox and container
+	containers, err := arm.dockerRuntime.ListContainers(filter)
+	if err != nil {
+		log.Printf("fail to list actor sandbox and container %s: %v\n", UID, err)
+		return object.ActorUnknown, err
+	}
+
+	running := 0
+	for _, container := range containers {
+		if strings.HasPrefix(container.Status, "Up") {
+			running += 1
+		}
+	}
+
+	if running == 2 {
+		return object.ActorRunning, nil
+	} else if running < 2 {
+		return object.ActorFailed, nil
+	} else {
+		return object.ActorUnknown, nil
+	}
 }

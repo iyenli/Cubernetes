@@ -1,9 +1,9 @@
 package informer
 
 import (
+	"Cubernetes/pkg/actionbrain/types"
 	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/apiserver/watchobj"
-	"Cubernetes/pkg/controllermanager/types"
 	"Cubernetes/pkg/object"
 	"log"
 	"time"

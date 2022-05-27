@@ -13,6 +13,7 @@ type ActorInformer interface {
 	ListAndWatchActorsWithRetry()
 	WatchActorEvent() <-chan types.ActorEvent
 	SetNodeUID(uid string)
+	ListActors() []object.Actor
 	CloseChan()
 }
 
@@ -50,6 +51,14 @@ func (c *cubeActorInformer) ListAndWatchActorsWithRetry() {
 		c.tryListandWatchActors()
 		time.Sleep(WatchRetryIntervalSec * time.Second)
 	}
+}
+
+func (c *cubeActorInformer) ListActors() []object.Actor {
+	actors := make([]object.Actor, 0)
+	for _, actor := range c.actorCache {
+		actors = append(actors, actor)
+	}
+	return actors
 }
 
 func (c *cubeActorInformer) tryListandWatchActors() {
@@ -102,6 +111,7 @@ func (c *cubeActorInformer) tryListandWatchActors() {
 func (c *cubeActorInformer) informActor(actor object.Actor, eType watchobj.EventType) {
 	_, exist := c.actorCache[actor.UID]
 	if eType == watchobj.EVENT_DELETE && exist {
+		delete(c.actorCache, actor.UID)
 		c.actorEventChan <- types.ActorEvent{
 			Type:  types.Remove,
 			Actor: actor,

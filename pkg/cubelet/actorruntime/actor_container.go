@@ -1,6 +1,7 @@
 package actor_runtime
 
 import (
+	cubeconfig "Cubernetes/config"
 	"Cubernetes/pkg/cubelet/actorruntime/options"
 	"Cubernetes/pkg/object"
 	"log"
@@ -17,8 +18,13 @@ func (arm *actorRuntimeManager) startContainer(actor *object.Actor, sandboxName 
 	config := &dockertypes.ContainerCreateConfig{
 		Name: makeContainerName(actor),
 		Config: &dockercontainer.Config{
-			Image:  options.ActorImageName,
-			Cmd:    []string{"reserved", "for", "later"},
+			Image: options.ActorImageName,
+			Cmd: append([]string{
+				"python3",
+				"./actionwrapper.py",
+				cubeconfig.APIServerIp + ":9092",
+				actor.Spec.ActionName},
+				actor.Spec.InvokeActions...),
 			Labels: newContainerLabels(actor),
 		},
 		HostConfig: &dockercontainer.HostConfig{

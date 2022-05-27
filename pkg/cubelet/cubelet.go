@@ -75,13 +75,21 @@ func (cl *Cubelet) Run() {
 	// push pod status to apiserver every 10 sec
 	// simply using for loop to achieve block timer
 	wg := sync.WaitGroup{}
-	wg.Add(7)
+	wg.Add(8)
 
 	go func() {
 		defer wg.Done()
 		for {
 			time.Sleep(time.Second * 7)
 			cl.updatePodsRoutine()
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		for {
+			time.Sleep(time.Second * 14)
+			cl.updateActorsRoutine()
 		}
 	}()
 
@@ -250,6 +258,44 @@ func (cl *Cubelet) updatePodsRoutine() {
 				log.Printf("[INFO]: push pod status %s: %s\n", rp.Name, podStatus.Phase)
 			}
 		}(pod, ip, nodeUID)
+	}
+
+	wg.Wait()
+}
+
+func (cl *Cubelet) updateActorsRoutine() {
+	cl.bigLock.Lock()
+	defer cl.bigLock.Unlock()
+
+	if !heartbeat.CheckConn() {
+		log.Printf("[FATAL] lost connection with apiserver: not update this time\n")
+		return
+	}
+
+	actors := cl.actorInformer.ListActors()
+	wg := sync.WaitGroup{}
+	wg.Add(len(actors))
+
+	for _, actor := range actors {
+		if actor.Status.IP == nil {
+			wg.Done()
+			continue
+		}
+
+		go func(a object.Actor) {
+			defer wg.Done()
+			phase, err := cl.actorRuntime.InspectActor(a.UID)
+			if err != nil {
+				log.Printf("fail to inspect actor %s: %v", a.Name, err)
+				return
+			}
+
+			a.Status.Phase = phase
+			a.Status.LastUpdatedTime = time.Now()
+			if _, err = crudobj.UpdateActor(a); err != nil {
+				log.Printf("fail to update actor %s status: %v", a.Name, err)
+			}
+		}(actor)
 	}
 
 	wg.Wait()

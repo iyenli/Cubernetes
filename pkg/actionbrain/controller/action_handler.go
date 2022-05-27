@@ -1,4 +1,4 @@
-package action_controller
+package controller
 
 import (
 	"Cubernetes/pkg/apiserver/crudobj"

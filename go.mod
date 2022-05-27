@@ -17,6 +17,7 @@ require (
 )
 
 require (
+	github.com/nakabonne/tstorage v0.3.5
 	github.com/otiai10/copy v1.7.0
 	github.com/pkg/sftp v1.13.4
 	github.com/segmentio/kafka-go v0.4.31

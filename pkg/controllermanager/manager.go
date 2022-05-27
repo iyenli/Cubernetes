@@ -13,11 +13,9 @@ type ControllerManager struct {
 	rsController replicaset_controller.ReplicaSetController
 	asController autoscaler_controller.AutoScalerController
 	// informer that watch from apiserver
-	podInformer    informer.PodInformer
-	rsInformer     informer.ReplicaSetInformer
-	asInformer     informer.AutoScalerInformer
-	actorInformer  informer.ActorInformer
-	actionInformer informer.ActionInformer
+	podInformer informer.PodInformer
+	rsInformer  informer.ReplicaSetInformer
+	asInformer  informer.AutoScalerInformer
 	// ensure watch order
 	wg sync.WaitGroup
 }
@@ -28,20 +26,16 @@ func NewControllerManager() ControllerManager {
 	podInformer, _ := informer.NewPodInformer()
 	rsInformer, _ := informer.NewReplicaSetInformer()
 	asInformer, _ := informer.NewAutoScalerInformer()
-	actorInformer, _ := informer.NewActorInformer()
-	actionInformer, _ := informer.NewActionInformer()
 	// controllers
 	rsController, _ := replicaset_controller.NewReplicaSetController(podInformer, rsInformer, wg)
 	asController, _ := autoscaler_controller.NewAutoScalerController(podInformer, rsInformer, asInformer, wg)
 	return ControllerManager{
-		rsController:   rsController,
-		asController:   asController,
-		podInformer:    podInformer,
-		rsInformer:     rsInformer,
-		asInformer:     asInformer,
-		actorInformer:  actorInformer,
-		actionInformer: actionInformer,
-		wg:             wg,
+		rsController: rsController,
+		asController: asController,
+		podInformer:  podInformer,
+		rsInformer:   rsInformer,
+		asInformer:   asInformer,
+		wg:           wg,
 	}
 }
 
@@ -58,8 +52,6 @@ func (cm *ControllerManager) Run() {
 	// watch resources (Pod, ReplicaSet, AutoScaler) from API Server
 	go cm.rsInformer.ListAndWatchReplicaSetsWithRetry()
 	go cm.asInformer.ListAndWatchAutoScalersWithRetry()
-	go cm.actorInformer.ListAndWatchActorsWithRetry()
-	go cm.actionInformer.ListAndWatchActionsWithRetry()
 	cm.podInformer.ListAndWatchPodsWithRetry()
 
 	log.Fatalln("Unreachable here")
