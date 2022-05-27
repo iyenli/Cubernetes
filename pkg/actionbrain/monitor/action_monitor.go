@@ -22,6 +22,12 @@ type ActionMonitor interface {
 }
 
 func NewActionMonitor() (ActionMonitor, error) {
+
+	if err := kafkautil.CreateTopic(options.KafkaHost, options.MonitorTopic); err != nil {
+		log.Printf("fail to create monitor topic: %v\n", err)
+		return nil, err
+	}
+
 	reader := kafkautil.NewReaderByConsumerGroup(
 		options.KafkaHost, options.MonitorTopic, options.MonitorConsumerGroup)
 

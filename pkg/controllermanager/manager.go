@@ -27,8 +27,8 @@ func NewControllerManager() ControllerManager {
 	rsInformer, _ := informer.NewReplicaSetInformer()
 	asInformer, _ := informer.NewAutoScalerInformer()
 	// controllers
-	rsController, _ := replicaset_controller.NewReplicaSetController(podInformer, rsInformer, wg)
-	asController, _ := autoscaler_controller.NewAutoScalerController(podInformer, rsInformer, asInformer, wg)
+	rsController, _ := replicaset_controller.NewReplicaSetController(podInformer, rsInformer, &wg)
+	asController, _ := autoscaler_controller.NewAutoScalerController(podInformer, rsInformer, asInformer, &wg)
 	return ControllerManager{
 		rsController: rsController,
 		asController: asController,

@@ -26,7 +26,7 @@ func NewActionBrain() (ActionBrain, error) {
 	actionInformer, _ := informer.NewActionInformer()
 
 	actionController, err := controller.NewActionController(
-		actorInformer, actionInformer, wg)
+		actorInformer, actionInformer, &wg)
 	if err != nil {
 		log.Printf("fail to create ActionController: %v\n", err)
 		return nil, err
