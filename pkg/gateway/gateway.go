@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	cubeconfig "Cubernetes/config"
 	"Cubernetes/pkg/gateway/httpserver"
 	"Cubernetes/pkg/gateway/informer"
 	"Cubernetes/pkg/gateway/options"
@@ -29,7 +30,7 @@ type RuntimeGateway struct {
 func NewRuntimeGateway() *RuntimeGateway {
 	returnTopic := options.ListenTopicPrefix + uuid.NewString()
 	// Create relevant topic
-	err := kafka2.CreateTopic("127.0.0.1", returnTopic)
+	err := kafka2.CreateTopic(cubeconfig.APIServerIp, returnTopic)
 	if err != nil {
 		log.Println("[Error]: create topic failed")
 		return nil
@@ -45,8 +46,8 @@ func NewRuntimeGateway() *RuntimeGateway {
 
 		returnTopic: returnTopic,
 
-		writer: kafka2.NewWriter("127.0.0.1"),
-		reader: kafka2.NewReaderByConsumerGroup("127.0.0.1", returnTopic, consumerGroupID),
+		writer: kafka2.NewWriter(cubeconfig.APIServerIp),
+		reader: kafka2.NewReaderByConsumerGroup(cubeconfig.APIServerIp, returnTopic, consumerGroupID),
 	}
 }
 

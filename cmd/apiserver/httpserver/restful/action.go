@@ -2,12 +2,15 @@ package restful
 
 import (
 	"Cubernetes/cmd/apiserver/httpserver/utils"
+	cubeconfig "Cubernetes/config"
 	"Cubernetes/pkg/object"
 	"Cubernetes/pkg/utils/etcdrw"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"net/http"
+	"os"
+	"path"
 )
 
 func GetAction(ctx *gin.Context) {
@@ -93,7 +96,32 @@ func PutAction(ctx *gin.Context) {
 }
 
 func DelAction(ctx *gin.Context) {
-	delObj(ctx, object.ActionEtcdPrefix+ctx.Param("uid"))
+	key := object.ActionEtcdPrefix + ctx.Param("uid")
+	oldBuf, err := etcdrw.GetObj(key)
+	if err != nil {
+		utils.ServerError(ctx)
+		return
+	}
+	if oldBuf == nil {
+		utils.NotFound(ctx)
+		return
+	}
+
+	err = etcdrw.DelObj(key)
+	if err != nil {
+		utils.ServerError(ctx)
+		return
+	}
+	ctx.String(http.StatusOK, "deleted")
+
+	var action object.Action
+	err = json.Unmarshal(oldBuf, &action)
+	if err != nil || action.Name == "" {
+		return
+	}
+
+	filename := path.Join(cubeconfig.ActionFileDir, action.Name)
+	_ = os.RemoveAll(filename + ".py")
 }
 
 func SelectActions(ctx *gin.Context) {

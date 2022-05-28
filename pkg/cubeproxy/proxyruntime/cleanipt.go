@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-// CleanIptables Just a util used in cuberoot
+// CleanIptables Just an util used in cuberoot
 func CleanIptables() error {
 	ipt, err := iptables.New(iptables.Timeout(3))
 
