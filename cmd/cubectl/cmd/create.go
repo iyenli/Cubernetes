@@ -6,7 +6,7 @@ package cmd
 
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
-	"Cubernetes/pkg/apiserver/jobfile"
+	"Cubernetes/pkg/apiserver/objfile"
 	"Cubernetes/pkg/object"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
@@ -113,7 +113,7 @@ for example:
 				log.Fatal("[FATAL] fail to create new GpuJob")
 			}
 
-			err = jobfile.PostJobFile(newJob.UID, job.Spec.Filename)
+			err = objfile.PostJobFile(newJob.UID, job.Spec.Filename)
 			if err != nil {
 				log.Fatal("[FATAL] fail to upload GpuJob file")
 			}
@@ -125,6 +125,42 @@ for example:
 			}
 
 			log.Printf("GpuJob UID=%s created\n", newJob.UID)
+
+		case object.KindAction:
+			var action object.Action
+			err = yaml.Unmarshal(file, &action)
+			if err != nil {
+				log.Fatal("[FATAL] fail to parse Action", err)
+			}
+			newAction, err := crudobj.CreateAction(action)
+			if err != nil {
+				log.Fatal("[FATAL] fail to create new Action, err: ", err)
+			}
+
+			err = objfile.PostActionFile(newAction.Name, action.Spec.ScriptPath)
+			if err != nil {
+				log.Fatal("[FATAL] fail to upload Action script")
+			}
+
+			newAction.Status.Phase = object.ActionCreated
+			newAction, err = crudobj.UpdateAction(newAction)
+			if err != nil {
+				log.Fatal("[FATAL] fail to update Action phase")
+			}
+
+			log.Printf("Action UID=%s created\n", newAction.UID)
+
+		case object.KindIngress:
+			var ingress object.Ingress
+			err = yaml.Unmarshal(file, &ingress)
+			if err != nil {
+				log.Fatal("[FATAL] fail to parse Ingress", err)
+			}
+			newIngress, err := crudobj.CreateIngress(ingress)
+			if err != nil {
+				log.Fatal("[FATAL] fail to create new Ingress")
+			}
+			log.Printf("Ingress UID=%s created\n", newIngress.UID)
 
 		default:
 			log.Fatal("[FATAL] Unknown kind: " + t.Kind)

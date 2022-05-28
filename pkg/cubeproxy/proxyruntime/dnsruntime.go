@@ -60,13 +60,38 @@ func (pr *ProxyRuntime) AddDNS(dns *object.Dns) error {
 
 	log.Printf("[INFO]: DNS %v has been built, containerID is %v", dns.UID, containerID)
 	pr.DNSMap[dns.UID] = DNSElement{ContainerID: containerID}
+
 	return nil
 }
 
 func (pr *ProxyRuntime) DeleteDNS(dns *object.Dns) error {
+	if _, ok := pr.DNSMap[dns.UID]; !ok {
+		log.Println("[Warn]: delete not-exist dns")
+		return errors.New("delete not-exist dns")
+	}
+
+	err := pr.DockerInstance.StopContainer(pr.DNSMap[dns.UID].ContainerID)
+	if err != nil {
+		log.Println("[Error]: delete dns & stop container failed")
+	}
+
+	err = pr.DockerInstance.RemoveContainer(pr.DNSMap[dns.UID].ContainerID, false)
+	if err != nil {
+		log.Println("[Error]: delete dns & remove container failed")
+	}
+
+	log.Printf("[INFO]: Clean dns, hostname is %v, DNS docker ID is %v",
+		dns.Spec.Host, pr.DNSMap[dns.UID].ContainerID)
 	return nil
 }
 
 func (pr *ProxyRuntime) ModifyDNS(dns *object.Dns) error {
+	// delete DNS and ignore error
+	_ = pr.DeleteDNS(dns)
+
+	err := pr.AddDNS(dns)
+	if err != nil {
+		log.Println("[Error]: when modify DNS, failed in creating new DNS")
+	}
 	return nil
 }

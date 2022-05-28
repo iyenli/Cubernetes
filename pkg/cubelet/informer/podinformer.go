@@ -6,6 +6,7 @@ import (
 	"Cubernetes/pkg/cubelet/informer/types"
 	"Cubernetes/pkg/object"
 	"log"
+	"sync"
 	"time"
 )
 
@@ -14,6 +15,7 @@ type PodInformer interface {
 	WatchPodEvent() <-chan types.PodEvent
 	SetNodeUID(uid string)
 	ListPods() []object.Pod
+	ForceRemove(uid string)
 }
 
 const WatchRetryIntervalSec = 10
@@ -29,6 +31,7 @@ type cubePodInformer struct {
 	nodeUID  string
 	podEvent chan types.PodEvent
 	podCache map[string]object.Pod
+	lock     sync.Mutex
 }
 
 func (i *cubePodInformer) ListAndWatchPodsWithRetry() {
@@ -120,6 +123,12 @@ func (i *cubePodInformer) ListPods() []object.Pod {
 	}
 
 	return pods
+}
+
+func (i *cubePodInformer) ForceRemove(uid string) {
+	i.lock.Lock()
+	defer i.lock.Unlock()
+	delete(i.podCache, uid)
 }
 
 func (i *cubePodInformer) informPod(newPod object.Pod, eType watchobj.EventType) error {

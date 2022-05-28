@@ -69,6 +69,20 @@ for example:
 			} else {
 				fmt.Printf("GpuJob UID=%s deleted\n", args[1])
 			}
+		case "action":
+			err := crudobj.DeleteAction(args[1])
+			if err != nil {
+				log.Fatal("[FATAL] fail to delete Action, err: ", err)
+			} else {
+				fmt.Printf("Action UID=%s deleted\n", args[1])
+			}
+		case "ingress", "igs":
+			err := crudobj.DeleteIngress(args[1])
+			if err != nil {
+				log.Fatal("[FATAL] fail to delete Ingress")
+			} else {
+				fmt.Printf("Ingress UID=%s deleted\n", args[1])
+			}
 		default:
 			log.Fatal("[FATAL] Unknown kind: " + args[0])
 		}

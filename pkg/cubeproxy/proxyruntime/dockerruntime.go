@@ -1,6 +1,8 @@
 package proxyruntime
 
 import (
+	"Cubernetes/pkg/cubelet/cuberuntime/options"
+	"Cubernetes/pkg/cubenetwork/weaveplugins"
 	"Cubernetes/pkg/cubeproxy/utils"
 	dockertypes "github.com/docker/docker/api/types"
 	dockercontainer "github.com/docker/docker/api/types/container"
@@ -40,10 +42,14 @@ func (pr *ProxyRuntime) StartDNSNginxDocker(host string, paths, serviceIPs, port
 	config := &dockertypes.ContainerCreateConfig{
 		Name: dockerName,
 		Config: &dockercontainer.Config{
-			Image: NginxImageName,
+			Image:    NginxImageName,
+			Hostname: weaveplugins.GetDNSHost(host),
 		},
 		HostConfig: &dockercontainer.HostConfig{
-			Binds: volumeBinds,
+			Binds:       volumeBinds,
+			DNS:         []string{options.WeaveDNSServer},
+			DNSSearch:   []string{options.WeaveDNSSearchDomain},
+			NetworkMode: options.WeaveNetwork,
 		},
 	}
 

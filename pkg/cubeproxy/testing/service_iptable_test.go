@@ -158,3 +158,19 @@ func TestDeleteService(t *testing.T) {
 		}
 	}(rt)
 }
+
+func TestListIptables(t *testing.T) {
+	ipt, err := iptables.New(iptables.Timeout(3))
+	assert.NoError(t, err)
+	chains, err := ipt.ListChains("nat")
+	assert.NoError(t, err)
+
+	for _, chain := range chains {
+		log.Println(chain)
+	}
+}
+
+func TestCleanIptables(t *testing.T) {
+	err := proxyruntime.CleanIptables()
+	assert.NoError(t, err)
+}

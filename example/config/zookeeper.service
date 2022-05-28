@@ -1,0 +1,11 @@
+[Unit]
+Description=Bootstrapped Zookeeper
+After=syslog.target network.target
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart=/usr/local/kafka/bin/zookeeper-server-start.sh /usr/local/kafka/config/zookeeper.properties
+ExecStop=/usr/local/kafka/bin/zookeeper-server-stop.sh
+[Install]
+WantedBy=multi-user.target

@@ -3,12 +3,14 @@ package cubelet
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/apiserver/heartbeat"
+	actruntime "Cubernetes/pkg/cubelet/actorruntime"
 	"Cubernetes/pkg/cubelet/container"
 	"Cubernetes/pkg/cubelet/cuberuntime"
 	"Cubernetes/pkg/cubelet/gpuserver"
 	"Cubernetes/pkg/cubelet/informer"
 	informertypes "Cubernetes/pkg/cubelet/informer/types"
 	"Cubernetes/pkg/object"
+	"encoding/json"
 	"log"
 	"net"
 	"sync"
@@ -24,7 +26,11 @@ type Cubelet struct {
 
 	jobInformer informer.JobInformer
 	jobRuntime  gpuserver.JobRuntime
-	bigLock     sync.Mutex
+
+	actorInformer informer.ActorInformer
+	actorRuntime  actruntime.ActorRuntime
+
+	bigLock sync.Mutex
 }
 
 func NewCubelet() *Cubelet {
@@ -34,8 +40,10 @@ func NewCubelet() *Cubelet {
 		panic(err)
 	}
 	jobRuntime := gpuserver.NewJobRuntime()
+	actorRuntime, _ := actruntime.NewActorRuntime()
 	podInformer, _ := informer.NewPodInformer()
 	jobInformer, _ := informer.NewJobInformer()
+	actorInformer, _ := informer.NewActorInformer()
 
 	log.Println("[INFO]: cubelet init ends")
 
@@ -45,7 +53,10 @@ func NewCubelet() *Cubelet {
 
 		jobInformer: jobInformer,
 		jobRuntime:  jobRuntime,
-		bigLock:     sync.Mutex{},
+
+		actorInformer: actorInformer,
+		actorRuntime:  actorRuntime,
+		bigLock:       sync.Mutex{},
 	}
 }
 
@@ -55,6 +66,7 @@ func (cl *Cubelet) InitCubelet(NodeUID string, ip net.IP) {
 	cl.WeaveIP = ip
 	cl.podInformer.SetNodeUID(NodeUID)
 	cl.jobInformer.SetNodeUID(NodeUID)
+	cl.actorInformer.SetNodeUID(NodeUID)
 }
 
 func (cl *Cubelet) Run() {
@@ -63,13 +75,21 @@ func (cl *Cubelet) Run() {
 	// push pod status to apiserver every 10 sec
 	// simply using for loop to achieve block timer
 	wg := sync.WaitGroup{}
-	wg.Add(5)
+	wg.Add(8)
 
 	go func() {
 		defer wg.Done()
 		for {
 			time.Sleep(time.Second * 7)
 			cl.updatePodsRoutine()
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		for {
+			time.Sleep(time.Second * 14)
+			cl.updateActorsRoutine()
 		}
 	}()
 
@@ -91,7 +111,17 @@ func (cl *Cubelet) Run() {
 
 	go func() {
 		defer wg.Done()
+		cl.actorInformer.ListAndWatchActorsWithRetry()
+	}()
+
+	go func() {
+		defer wg.Done()
 		cl.syncJobLoop()
+	}()
+
+	go func() {
+		defer wg.Done()
+		cl.syncActorLoop()
 	}()
 
 	wg.Wait()
@@ -109,13 +139,13 @@ func (cl *Cubelet) syncPodLoop() {
 
 		switch eType {
 		case informertypes.Create:
-			log.Printf("from podEvent: create pod %s\n", pod.UID)
+			log.Printf("[INFO]: podEvent coming: create pod %s\n", pod.UID)
 			err := cl.podRuntime.SyncPod(&pod, &container.PodStatus{})
 			if err != nil {
 				log.Printf("fail to create pod %s: %v\n", pod.Name, err)
 			}
 		case informertypes.Update:
-			log.Printf("from podEvent: update pod %s\n", pod.UID)
+			log.Printf("[INFO]: podEvent coming: update pod %s\n", pod.UID)
 			podStatus, err := cl.podRuntime.GetPodStatus(pod.UID)
 			if err != nil {
 				log.Printf("fail to get pod %s status: %v\n", pod.Name, err)
@@ -150,6 +180,29 @@ func (cl *Cubelet) syncJobLoop() {
 			}
 		default:
 			log.Printf("[WARN]: Job only support adding now\n")
+		}
+	}
+}
+
+func (cl *Cubelet) syncActorLoop() {
+	informEvent := cl.actorInformer.WatchActorEvent()
+
+	for actorEvent := range informEvent {
+		switch actorEvent.Type {
+		case informertypes.Create:
+			log.Printf("[INFO]: Event: create actor %s\n", actorEvent.Actor.UID)
+			err := cl.actorRuntime.CreateActor(&actorEvent.Actor)
+			if err != nil {
+				log.Printf("[Error]: fail to create actor: %v\n", err)
+			}
+		case informertypes.Remove:
+			log.Printf("[INFO]: Event: remove actor %s\n", actorEvent.Actor.UID)
+			err := cl.actorRuntime.KillActor(actorEvent.Actor.UID)
+			if err != nil {
+				log.Printf("[Error]: fail to remove actor: %v\n", err)
+			}
+		default:
+			log.Printf("[WARN]: Actor only support Create & Kill now\n")
 		}
 	}
 }
@@ -197,11 +250,52 @@ func (cl *Cubelet) updatePodsRoutine() {
 
 			rp, err := crudobj.UpdatePodStatus(p.UID, *podStatus)
 			if err != nil {
-				log.Printf("fail to push pod status %s: %v\n", p.UID, err)
+				status, _ := json.Marshal(*podStatus)
+				log.Printf("[Error]: updating pod status, %v", string(status))
+				log.Printf("[Error]: fail to push pod status %s: %v\n", p.UID, err)
+				cl.podInformer.ForceRemove(p.UID)
 			} else {
 				log.Printf("[INFO]: push pod status %s: %s\n", rp.Name, podStatus.Phase)
 			}
 		}(pod, ip, nodeUID)
+	}
+
+	wg.Wait()
+}
+
+func (cl *Cubelet) updateActorsRoutine() {
+	cl.bigLock.Lock()
+	defer cl.bigLock.Unlock()
+
+	if !heartbeat.CheckConn() {
+		log.Printf("[FATAL] lost connection with apiserver: not update this time\n")
+		return
+	}
+
+	actors := cl.actorInformer.ListActors()
+	wg := sync.WaitGroup{}
+	wg.Add(len(actors))
+
+	for _, actor := range actors {
+		if actor.Status.IP == nil {
+			wg.Done()
+			continue
+		}
+
+		go func(a object.Actor) {
+			defer wg.Done()
+			phase, err := cl.actorRuntime.InspectActor(a.UID)
+			if err != nil {
+				log.Printf("fail to inspect actor %s: %v", a.Name, err)
+				return
+			}
+
+			a.Status.Phase = phase
+			a.Status.LastUpdatedTime = time.Now()
+			if _, err = crudobj.UpdateActor(a); err != nil {
+				log.Printf("fail to update actor %s status: %v", a.Name, err)
+			}
+		}(actor)
 	}
 
 	wg.Wait()

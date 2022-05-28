@@ -48,13 +48,19 @@ func InitProxyRuntime() (*ProxyRuntime, error) {
 	/* Check env ends */
 
 	// Clear all service chain:
-	for exist, err := pr.Ipt.Exists(NatTable, PreRouting, "-j", ServiceChain); err != nil && exist; {
-		err := pr.Ipt.Delete(NatTable, PreRouting, "-j", ServiceChain)
+	for {
+		if exist, err := pr.Ipt.Exists(NatTable, PreRouting, "-j", ServiceChain); err != nil || !exist {
+			break
+		}
+		err = pr.Ipt.Delete(NatTable, PreRouting, "-j", ServiceChain)
 		if err != nil {
 			return nil, err
 		}
 	}
-	for exist, err := pr.Ipt.Exists(NatTable, OutputChain, "-j", ServiceChain); err != nil && exist; {
+	for {
+		if exist, err := pr.Ipt.Exists(NatTable, OutputChain, "-j", ServiceChain); err != nil || !exist {
+			break
+		}
 		err := pr.Ipt.Delete(NatTable, OutputChain, "-j", ServiceChain)
 		if err != nil {
 			return nil, err

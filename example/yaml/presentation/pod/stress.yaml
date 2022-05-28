@@ -1,0 +1,16 @@
+# If you're not testing load balance, use test-replicaset.yaml
+# sudo apt-get install nginx
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-pod-stress-resource-limit
+  labels:
+    app: stress
+spec:
+  containers:
+    - name: test-cpu-limit
+      image: polinux/stress
+      resources:
+        cpus: 1 # 1 core
+        memory: 1000000000 # 128 MB
+      command: [ "stress", "--cpu", "2" ]

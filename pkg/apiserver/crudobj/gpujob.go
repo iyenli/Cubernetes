@@ -108,7 +108,7 @@ func DeleteGpuJob(UID string) error {
 
 	err := deleteRequest(url)
 	if err != nil {
-		log.Println("postRequest fail")
+		log.Println("deleteRequest fail")
 		return err
 	}
 

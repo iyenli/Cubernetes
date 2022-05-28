@@ -16,8 +16,9 @@ type Pod struct {
 }
 
 type PodSpec struct {
-	Containers []Container `json:"containers" yaml:"containers"`
-	Volumes    []Volume    `json:"volumes,omitempty" yaml:"volumes,omitempty"`
+	Selector   map[string]string `json:"selector,omitempty" yaml:"selector,omitempty"`
+	Containers []Container       `json:"containers" yaml:"containers"`
+	Volumes    []Volume          `json:"volumes,omitempty" yaml:"volumes,omitempty"`
 }
 
 // PodPhase is a label for the condition of a pod at the current time.

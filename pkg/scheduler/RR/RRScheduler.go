@@ -30,7 +30,7 @@ func (rr *SchedulerRR) Init() error {
 
 	for _, node := range nodes {
 		if node.Status.Condition.Ready == true {
-			log.Println("[INFO] Init scheduler, add node ", node.UID)
+			log.Println("[INFO] Init scheduler, add node", node.UID)
 			rr.NameOfNodes = append(rr.NameOfNodes, node.UID)
 			rr.NumOfNodes++
 		}
@@ -69,11 +69,11 @@ func (rr *SchedulerRR) RemoveNode(info *types.NodeInfo) error {
 	return nil
 }
 
-func (rr *SchedulerRR) Schedule() (types.PodInfo, error) {
+func (rr *SchedulerRR) Schedule() (types.ScheduleInfo, error) {
 	if rr.NumOfNodes == 0 {
-		return types.PodInfo{NodeUUID: ""}, ErrNoNodesToSchedule
+		return types.ScheduleInfo{NodeUUID: ""}, ErrNoNodesToSchedule
 	}
 
 	n := atomic.AddInt32(&rr.Next, 1)
-	return types.PodInfo{NodeUUID: rr.NameOfNodes[((n - 1) % rr.NumOfNodes)]}, nil
+	return types.ScheduleInfo{NodeUUID: rr.NameOfNodes[((n - 1) % rr.NumOfNodes)]}, nil
 }

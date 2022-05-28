@@ -149,6 +149,8 @@ func (pr *ProxyRuntime) ModifyPod(pod *object.Pod) error {
 
 	for _, service := range services {
 		if object.MatchLabelSelector(service.Spec.Selector, pod.Labels) {
+			log.Println("[INFO]: Service to be replaced due to pod changed, SVC ID is", service.UID)
+
 			err := pr.DeleteService(&service)
 			if err != nil {
 				log.Println("[Error]: error occurs when delete service:", err.Error())
@@ -160,6 +162,8 @@ func (pr *ProxyRuntime) ModifyPod(pod *object.Pod) error {
 				log.Println("[Error]: error occurs when add service:", err.Error())
 				return err
 			}
+
+			log.Println("[INFO]: Service has been replaced due to pod changed, SVC ID is", service.UID)
 		}
 	}
 

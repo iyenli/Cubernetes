@@ -276,3 +276,50 @@ func ComputeDNSCriticalChange(new *Dns, old *Dns) bool {
 
 	return false
 }
+
+func ComputeActorSpecChange(new *Actor, old *Actor) bool {
+	if new.Spec.ActionName != old.Spec.ActionName {
+		return true
+	}
+
+	if new.Spec.ScriptFile != old.Spec.ScriptFile {
+		return true
+	}
+
+	if len(new.Spec.InvokeActions) != len(old.Spec.InvokeActions) {
+		return true
+	}
+
+	for idx, oldInvoke := range old.Spec.InvokeActions {
+		if new.Spec.InvokeActions[idx] != oldInvoke {
+			return true
+		}
+	}
+
+	return false
+}
+
+func ComputeActionSpecChange(new, old *Action) bool {
+	if new.Spec.ScriptPath != old.Spec.ScriptPath {
+		return true
+	}
+
+	if len(new.Spec.InvokeActions) != len(old.Spec.InvokeActions) {
+		return true
+	}
+
+	for idx, oldInvoke := range old.Spec.InvokeActions {
+		if new.Spec.InvokeActions[idx] != oldInvoke {
+			return true
+		}
+	}
+
+	return false
+}
+
+func ComputeIngressCriticalChange(new *Ingress, old *Ingress) bool {
+	if new.Spec.TriggerPath != old.Spec.TriggerPath || new.Spec.HTTPType != old.Spec.HTTPType {
+		return true
+	}
+	return false
+}

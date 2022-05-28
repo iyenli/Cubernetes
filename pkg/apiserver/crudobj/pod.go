@@ -117,6 +117,7 @@ func UpdatePodStatus(UID string, status object.PodStatus) (object.Pod, error) {
 	}
 
 	var newPod object.Pod
+	log.Println(string(body))
 	err = json.Unmarshal(body, &newPod)
 	if err != nil {
 		log.Println("fail to parse Pod")
@@ -131,7 +132,7 @@ func DeletePod(UID string) error {
 
 	err := deleteRequest(url)
 	if err != nil {
-		log.Println("postRequest fail")
+		log.Println("deleteRequest fail")
 		return err
 	}
 

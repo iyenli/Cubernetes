@@ -13,10 +13,10 @@ type Cubeproxy struct {
 }
 
 func NewCubeProxy() *Cubeproxy {
-	log.Printf("[INFO]: creating cubeproxy\n")
+	log.Println("[INFO]: creating cubeproxy")
 	runtime, err := proxyruntime.InitProxyRuntime()
 	if err != nil {
-		log.Printf("[Fatal]: Create cube proxy runtime error: %v", err.Error())
+		log.Fatalf("[Fatal]: Create cube proxy runtime error: %v", err.Error())
 	}
 
 	cp := &Cubeproxy{
@@ -49,7 +49,7 @@ func (cp *Cubeproxy) Run() {
 	var wg sync.WaitGroup
 	wg.Add(6)
 
-	// sync pod and service
+	// sync pod and service and DNS
 	go func() {
 		defer wg.Done()
 		cp.syncService()
@@ -63,7 +63,7 @@ func (cp *Cubeproxy) Run() {
 		go cp.syncDNS()
 	}()
 
-	// watch pod and service
+	// watch pod and service and DNS
 	go func() {
 		defer wg.Done()
 		cp.Runtime.PodInformer.ListAndWatchPodsWithRetry()
@@ -87,20 +87,20 @@ func (cp *Cubeproxy) syncService() {
 	informEvent := cp.Runtime.ServiceInformer.WatchServiceEvent()
 
 	for serviceEvent := range informEvent {
-		log.Printf("[INFO]: [INFO]: Main loop working, types is %v,service id is %v", serviceEvent.Type, serviceEvent.Service.UID)
+		log.Printf("[INFO]: Main loop working, types is %v,service id is %v", serviceEvent.Type, serviceEvent.Service.UID)
 		service := serviceEvent.Service
 		eType := serviceEvent.Type
 		cp.lock.Lock()
 
 		switch eType {
-		case types.ServiceCreate:
+		case types.Create:
 			log.Printf("[INFO]: create service %s\n", service.UID)
 			err := cp.Runtime.AddService(&service)
 			if err != nil {
 				log.Printf("[Error]: Add service error: %v", err.Error())
 				return
 			}
-		case types.ServiceUpdate:
+		case types.Update:
 			// critical update: simply delete and rebuild
 			log.Printf("[INFO]: update service %s\n", service.UID)
 			err := cp.Runtime.DeleteService(&service)
@@ -115,7 +115,7 @@ func (cp *Cubeproxy) syncService() {
 				return
 			}
 
-		case types.ServiceRemove:
+		case types.Remove:
 			log.Printf("[INFO]: delete service %s\n", service.UID)
 			err := cp.Runtime.DeleteService(&service)
 			if err != nil {
@@ -132,19 +132,18 @@ func (cp *Cubeproxy) syncPod() {
 	informEvent := cp.Runtime.PodInformer.WatchPodEvent()
 
 	for podEvent := range informEvent {
-		log.Printf("[INFO]: Main loop working, type is %v, pod id is %v", podEvent.Type, &podEvent.Pod.UID)
+		log.Printf("[INFO]: Main loop working, type is %v, pod id is %v", podEvent.Type, podEvent.Pod.UID)
 		pod := podEvent.Pod
 		eType := podEvent.Type
 		cp.lock.Lock()
 
-		switch eType {
-		case types.PodCreate, types.PodRemove, types.PodUpdate:
-			log.Printf("[INFO]: create pod %s\n", pod.UID)
-			err := cp.Runtime.ModifyPod(&(pod))
-			if err != nil {
-				log.Fatalln("[Fatal]: error when modify pod")
-				return
-			}
+		log.Printf("[INFO]: %v pod, podID is %s\n", eType, pod.UID)
+		err := cp.Runtime.ModifyPod(&(pod))
+		if err != nil {
+			cp.lock.Unlock()
+
+			log.Fatalln("[Fatal]: error when modify pod")
+			return
 		}
 
 		cp.lock.Unlock()
@@ -155,13 +154,13 @@ func (cp *Cubeproxy) syncDNS() {
 	informEvent := cp.Runtime.DNSInformer.WatchDNSEvent()
 
 	for podEvent := range informEvent {
-		log.Printf("[INFO]: Main loop working, type is %v, DNS id is %v", podEvent.Type, &podEvent.DNS.UID)
+		log.Printf("[INFO]: Main loop working, type is %v, DNS id is %v", podEvent.Type, podEvent.DNS.UID)
 		dns := podEvent.DNS
 		eType := podEvent.Type
 		cp.lock.Lock()
 
 		switch eType {
-		case types.DNSCreate:
+		case types.Create:
 			log.Printf("[INFO] DNS Created, DnsID %s\n", dns.UID)
 			err := cp.Runtime.AddDNS(&dns)
 			if err != nil {
@@ -169,7 +168,7 @@ func (cp *Cubeproxy) syncDNS() {
 				return
 			}
 
-		case types.DNSRemove:
+		case types.Remove:
 			log.Printf("[INFO] DNS Removed, DnsID %s\n", dns.UID)
 			err := cp.Runtime.DeleteDNS(&dns)
 			if err != nil {
@@ -177,9 +176,9 @@ func (cp *Cubeproxy) syncDNS() {
 				return
 			}
 
-		case types.DNSUpdate:
+		case types.Update:
 			log.Printf("[INFO] DNS Update, DnsID %s\n", dns.UID)
-			err := cp.Runtime.AddDNS(&dns)
+			err := cp.Runtime.ModifyDNS(&dns)
 			if err != nil {
 				log.Fatalln("[Fatal]: error when modify DNS")
 				return

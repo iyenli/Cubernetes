@@ -2,6 +2,7 @@ package cuberuntime
 
 import (
 	cubecontainer "Cubernetes/pkg/cubelet/container"
+	"Cubernetes/pkg/cubelet/cuberuntime/options"
 	"Cubernetes/pkg/cubelet/dockershim"
 	"Cubernetes/pkg/object"
 	"log"
@@ -115,6 +116,9 @@ func generatePodSandboxConfig(pod *object.Pod) *dockertypes.ContainerCreateConfi
 		HostConfig: &dockercontainer.HostConfig{
 			IpcMode:      dockercontainer.IpcMode("shareable"),
 			PortBindings: portBindings,
+			DNS:          []string{options.WeaveDNSServer},
+			DNSSearch:    []string{options.WeaveDNSSearchDomain},
+			NetworkMode:  options.WeaveNetwork,
 		},
 	}
 

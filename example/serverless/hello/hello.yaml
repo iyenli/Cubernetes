@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Action
+metadata:
+  name: hello
+spec:
+  scriptPath: ./example/serverless/hello/action.py
+  invokeActions: []

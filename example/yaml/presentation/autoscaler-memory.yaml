@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: AutoScaler
+metadata:
+  name: test-autoscaler
+spec:
+  workload: Pod
+  minReplicas: 1
+  maxReplicas: 4
+  targetUtilization:
+    memory:
+      minBytes: 128000000 # 128 MB
+      maxBytes: 512000000 # 1 GB
+  template:
+    metadata:
+      labels:
+        thisis: useless
+    spec:
+      containers:
+        - name: test-as-pod
+          image: polinux/stress
+          command: ["stress", "--vm", "1", "--vm-bytes", "800000000", "--vm-hang", "60"]

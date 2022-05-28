@@ -17,8 +17,10 @@ require (
 )
 
 require (
+	github.com/nakabonne/tstorage v0.3.5
 	github.com/otiai10/copy v1.7.0
 	github.com/pkg/sftp v1.13.4
+	github.com/segmentio/kafka-go v0.4.31
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -38,6 +40,7 @@ require (
 	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/klauspost/compress v1.14.2 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -45,6 +48,7 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.3-0.20211202183452-c5a74bcca799 // indirect
+	github.com/pierrec/lz4/v4 v4.1.14 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect

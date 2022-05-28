@@ -22,7 +22,7 @@ func toPortProtocol(protocol string) string {
 		return "/sctp"
 	}
 
-	log.Printf("Unknown protocol %s, defaulting to TCP.\n", protocol)
+	log.Printf("Unknown protocol%s, defaulting to TCP.\n", protocol)
 	return "/tcp"
 }
 

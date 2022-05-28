@@ -77,7 +77,7 @@ func (m *cubeRuntimeManager) SyncPod(pod *object.Pod, podStatus *cubecontainer.P
 		newSandboxStatuses, _ := m.getSandboxStatusesByPodUID(pod.UID)
 		podStatus.UpdateSandboxStatuses(newSandboxStatuses)
 
-		ip, err := weaveplugins.AddPodToNetwork(podSandboxID)
+		ip, err := weaveplugins.GetPodIPByID(podSandboxID)
 		if err != nil || ip == nil {
 			log.Printf("[Error]: add pod to weave network failed")
 			return err
@@ -238,19 +238,21 @@ func (m *cubeRuntimeManager) killPodByStatus(status *cubecontainer.PodStatus, re
 	// kill pod sandbox
 	for _, sandbox := range status.SandboxStatuses {
 		log.Printf("start to kill sandbox %s\n", sandbox.Id)
-		err := weaveplugins.DeletePodFromNetwork(sandbox.Id)
-		if err != nil {
-			return err
-		}
+
+		// New cube network doesn't need explicit release
+		// err := weaveplugins.DeletePodFromNetwork(sandbox.Id)
+		// if err != nil {
+		// 	return err
+		// }
 
 		if err := m.dockerRuntime.StopContainer(sandbox.Id); err != nil {
-			log.Printf("fail to stop sandbox %s: %v\n", sandbox.Id, err)
+			log.Printf("[Error]: fail to stop sandbox %s: %v\n", sandbox.Id, err)
 			return err
 		}
 
 		if remove {
 			if err := m.dockerRuntime.RemoveContainer(sandbox.Id, false); err != nil {
-				log.Printf("fail to remove sandbox %s: %v\n", sandbox.Id, err)
+				log.Printf("[Error]: fail to remove sandbox %s: %v\n", sandbox.Id, err)
 				return err
 			}
 		}
@@ -280,7 +282,6 @@ func (m *cubeRuntimeManager) InspectPod(pod *object.Pod) (*object.PodStatus, err
 		return nil, fmt.Errorf("no sandbox for pod %s found", pod.Name)
 	}
 
-	// TODO: get sandbox IP from Network Plugin (Weave)
 	var sandboxIP []byte
 	podPhase := cubecontainer.ComputePodPhase(containerStatuses, sandboxStatus[0], &pod.Spec)
 

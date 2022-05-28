@@ -13,7 +13,12 @@ import (
 	"time"
 )
 
-type JobRuntime struct {
+type JobRuntime interface {
+	AddGPUJob(job *object.GpuJob) error
+	ReleaseContainerResource()
+}
+
+type jobRuntimeManager struct {
 	// Job UID -> Container ID
 	jobMap         map[string]string
 	dockerInstance dockershim.DockerRuntime
@@ -27,14 +32,14 @@ func NewJobRuntime() JobRuntime {
 		log.Println("[Error]: Init docker runtime error")
 	}
 
-	return JobRuntime{
+	return &jobRuntimeManager{
 		jobMap:         make(map[string]string),
 		dockerInstance: dockerInstance,
 		mutex:          sync.Mutex{},
 	}
 }
 
-func (jr *JobRuntime) AddGPUJob(job *object.GpuJob) error {
+func (jr *jobRuntimeManager) AddGPUJob(job *object.GpuJob) error {
 	jr.mutex.Lock()
 	defer jr.mutex.Unlock()
 
@@ -72,15 +77,26 @@ func (jr *JobRuntime) AddGPUJob(job *object.GpuJob) error {
 	return nil
 }
 
-func (jr *JobRuntime) ReleaseContainerResource() {
+func (jr *jobRuntimeManager) ReleaseContainerResource() {
 	for {
-		log.Println("[INFO]: Inspecting exist docker resources")
 		jr.mutex.Lock()
+		log.Println("[INFO]: Inspecting docker status and release exited docker every 2 minutes...")
 		for job, container := range jr.jobMap {
-			log.Println("[INFO]: Inspecting docker status and release exited docker")
-			// TODO: Inspecting
-			if container == "" {
-				delete(jr.jobMap, job)
+			//if container == "" {
+			//	delete(jr.jobMap, job)
+			//}
+			log.Printf("[INFO]: Clearing job %v, corresponding containerID is %v",
+				job, container)
+
+			inspectContainer, err := jr.dockerInstance.InspectContainer(container)
+			if err != nil {
+				log.Printf("[INFO]: Inspect container ID %v failed", container)
+				continue
+			}
+
+			if inspectContainer.State.Status == "exited" {
+				log.Printf("[INFO]: container ID %v exited, it would be removed soon...", container)
+				// Not actually do by now:)
 			}
 		}
 		jr.mutex.Unlock()

@@ -25,7 +25,7 @@ func NewAutoScalerController(
 	podInformer informer.PodInformer,
 	rsInformer informer.ReplicaSetInformer,
 	asInformer informer.AutoScalerInformer,
-	wg sync.WaitGroup) (AutoScalerController, error) {
+	wg *sync.WaitGroup) (AutoScalerController, error) {
 	wg.Add(1)
 	return &autoScalerController{
 		podInformer: podInformer,
@@ -40,7 +40,7 @@ type autoScalerController struct {
 	rsInformer  informer.ReplicaSetInformer
 	asInformer  informer.AutoScalerInformer
 	biglock     sync.Mutex
-	wg          sync.WaitGroup
+	wg          *sync.WaitGroup
 }
 
 func (asc *autoScalerController) Run() {
@@ -61,6 +61,9 @@ func (asc *autoScalerController) syncLoop() {
 
 	asEventChan := asc.asInformer.WatchASEvent()
 	defer asc.asInformer.CloseChan(asEventChan)
+
+	podEvenChan := asc.podInformer.WatchPodEvent()
+	defer asc.podInformer.CloseChan(podEvenChan)
 
 	asc.wg.Done()
 
@@ -92,6 +95,13 @@ func (asc *autoScalerController) syncLoop() {
 				asc.handleAutoScalerRemove(&autoScaler)
 			default:
 				log.Fatal("[FATAL] Unknown asInformer event types: " + asEvent.Type)
+			}
+			asc.biglock.Unlock()
+		case podEvent := <-podEvenChan:
+			asc.biglock.Lock()
+			pod := podEvent.Pod
+			if podEvent.Type == types.PodCreate {
+				asc.handlePodCreate(&pod)
 			}
 			asc.biglock.Unlock()
 		default:
