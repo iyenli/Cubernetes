@@ -1,6 +1,7 @@
 package testing
 
 import (
+	cubeconfig "Cubernetes/config"
 	"Cubernetes/pkg/utils/kafka"
 	"context"
 	kafka2 "github.com/segmentio/kafka-go"
@@ -62,6 +63,6 @@ func TestNewKafkaClient(t *testing.T) {
 
 // go test pkg/utils/kafka/testing/kafkaUtils_test.go -test.run TestClean
 func TestClean(t *testing.T) {
-	err := kafka.DeleteAllTopics("127.0.0.1")
+	err := kafka.DeleteAllTopics(cubeconfig.APIServerIp)
 	assert.NoError(t, err)
 }

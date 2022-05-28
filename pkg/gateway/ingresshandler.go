@@ -3,7 +3,6 @@ package gateway
 import (
 	"Cubernetes/pkg/gateway/types"
 	"Cubernetes/pkg/object"
-	kafka2 "Cubernetes/pkg/utils/kafka"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -29,8 +28,6 @@ func (rg *RuntimeGateway) HandleIngress() {
 }
 
 func (rg *RuntimeGateway) AddIngress(ingress *object.Ingress) {
-	// TODO: Just test, DELETE IT!
-	_ = kafka2.CreateTopic("127.0.0.1", ingress.Spec.InvokeAction)
 	switch ingress.Spec.HTTPType {
 	case http.MethodPut:
 		rg.router.PUT(ingress.Spec.TriggerPath, rg.GetHandlerByIngress(ingress))
