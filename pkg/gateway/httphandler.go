@@ -13,7 +13,6 @@ import (
 	"github.com/segmentio/kafka-go"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -101,7 +100,6 @@ func (rg *RuntimeGateway) GetHandlerByIngress(ingress *object.Ingress) func(ctx 
 		log.Printf("[INFO]: Request %v has been put into MQ, waiting for resp...\n", msg.RequestUID)
 		resp := <-channel
 		log.Printf("[INFO]: Req has got the resp! ID is %v", msg.RequestUID)
-		code, err := strconv.Atoi(resp.StatusCode)
 		if err != nil {
 			log.Printf("[Error]: return code is invalid")
 			ctx.String(http.StatusInternalServerError, "HttpCode error")
@@ -111,7 +109,7 @@ func (rg *RuntimeGateway) GetHandlerByIngress(ingress *object.Ingress) func(ctx 
 		log.Printf("[INFO]: Resp received, body is %v, return type is %v",
 			resp.Payload, resp.ContentType)
 		ctx.Header("Content-Type", resp.ContentType)
-		ctx.String(code, resp.Payload)
+		ctx.String(resp.StatusCode, resp.Payload)
 	}
 }
 

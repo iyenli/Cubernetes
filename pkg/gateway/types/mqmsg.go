@@ -13,7 +13,7 @@ type MQMessageResponse struct {
 	RequestUID string `json:"requestUID" yaml:"requestUID"`
 
 	ContentType string `json:"contentType" yaml:"contentType"`
-	StatusCode  string `json:"statusCode" yaml:"statusCode"`
+	StatusCode  int    `json:"statusCode" yaml:"statusCode"`
 
 	Payload string `json:"payload" yaml:"payload"`
 }

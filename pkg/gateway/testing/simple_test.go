@@ -21,10 +21,10 @@ func TestGin(t *testing.T) {
 }
 
 func TestJSON(t *testing.T) {
-	resp := types.MQMessage{
+	resp := types.MQMessageResponse{
 		RequestUID:  "1d8fa4dd-216d-4c68-ab91-9c698144469a",
 		ContentType: "application/json",
-		StatusCode:  "200",
+		StatusCode:  200,
 		Payload:     "\"p\": \"a\"",
 	}
 	a, _ := json.Marshal(resp)
@@ -32,8 +32,8 @@ func TestJSON(t *testing.T) {
 }
 
 func TestParseReturn(t *testing.T) {
-	s := "\"requestUID\": \"d32d4b93-fd6d-40a9-a8f7-ef68f9a66ee4\", \"statusCode\": 200, \"contentType\": \"text/plain\", \"payload\": \"60\"}"
-	msg := types.MQMessage{}
+	s := "{\"requestUID\": \"d32d4b93-fd6d-40a9-a8f7-ef68f9a66ee4\", \"statusCode\": 200, \"contentType\": \"text/plain\", \"payload\": \"60\"}"
+	msg := types.MQMessageResponse{}
 	err := json.Unmarshal([]byte(s), &msg)
 	assert.NoError(t, err)
 

@@ -3,5 +3,5 @@ kind: Action
 metadata:
   name: add
 spec:
-  scriptPath: /root/Cubernetes/example/serverless/add/action.py
+  scriptPath: ./example/serverless/add/action.py
   invokeActions: []

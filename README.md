@@ -222,8 +222,13 @@ curl serviceIP
 
 ### Serverless
 
+需要保证所有机器上拥有镜像：`yiyanleee/python-runtime:v1.5`
+
 ```shell
-./build/cubectl apply -f ./example/yaml/test-ingress.yaml
+./build/cubectl apply -f example/serverless/hello/hello.yaml
+./build/cubectl apply -f example/serverless/hello/ingress.yaml
+
+curl "127.0.0.1:6810/hello?name=serverless"
 ```
 
 ### Finally
