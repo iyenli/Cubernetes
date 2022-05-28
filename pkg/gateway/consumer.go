@@ -16,7 +16,7 @@ func (rg *RuntimeGateway) ListenReturnTopic() {
 			continue
 		}
 
-		msg := types.MQMessage{}
+		msg := types.MQMessageResponse{}
 		err = json.Unmarshal(msgByte.Value, &msg)
 		if err != nil {
 			log.Printf("[Error]: parse return message failed, msg: %v", string(msgByte.Value))

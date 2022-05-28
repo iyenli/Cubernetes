@@ -31,11 +31,10 @@ func (rg *RuntimeGateway) GetHandlerByIngress(ingress *object.Ingress) func(ctx 
 			}
 		}(ingress.Spec.InvokeAction)
 
-		msg := types.MQMessage{
+		msg := types.MQMessageRequest{
 			RequestUID:  uuid.NewString(),
 			TriggerPath: ingress.Spec.TriggerPath,
 			ReturnTopic: rg.returnTopic,
-			ContentType: "", // wait for filling
 			Params:      make(map[string]string),
 			Payload:     "",
 		}
@@ -81,7 +80,7 @@ func (rg *RuntimeGateway) GetHandlerByIngress(ingress *object.Ingress) func(ctx 
 			return
 		}
 
-		channel := make(chan types.MQMessage, 1)
+		channel := make(chan types.MQMessageResponse, 1)
 		rg.mapMutex.Lock()
 		rg.channelMap[msg.RequestUID] = channel
 		rg.mapMutex.Unlock()
@@ -132,7 +131,6 @@ func (rg *RuntimeGateway) SendMonitorInfo(action string) error {
 	err = rg.writer.WriteMessages(context.Background(),
 		kafka.Message{
 			Topic: options.MonitorTopic,
-			Key:   []byte(msg.Action),
 			Value: msgBytes,
 		})
 	if err != nil {

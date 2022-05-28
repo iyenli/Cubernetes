@@ -3,6 +3,7 @@ package testing
 import (
 	"Cubernetes/pkg/gateway/types"
 	"encoding/json"
+	"github.com/stretchr/testify/assert"
 	"log"
 	"testing"
 	"time"
@@ -28,4 +29,12 @@ func TestJSON(t *testing.T) {
 	}
 	a, _ := json.Marshal(resp)
 	log.Printf("%v", string(a))
+}
+
+func TestParseReturn(t *testing.T) {
+	s := "\"requestUID\": \"d32d4b93-fd6d-40a9-a8f7-ef68f9a66ee4\", \"statusCode\": 200, \"contentType\": \"text/plain\", \"payload\": \"60\"}"
+	msg := types.MQMessage{}
+	err := json.Unmarshal([]byte(s), &msg)
+	assert.NoError(t, err)
+
 }

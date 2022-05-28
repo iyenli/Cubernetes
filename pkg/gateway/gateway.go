@@ -18,7 +18,7 @@ type RuntimeGateway struct {
 	router          *gin.Engine
 	ingressInformer informer.IngressInformer
 
-	channelMap map[string]chan types.MQMessage
+	channelMap map[string]chan types.MQMessageResponse
 	mapMutex   sync.Mutex
 
 	returnTopic string
@@ -41,7 +41,7 @@ func NewRuntimeGateway() *RuntimeGateway {
 		router:          httpserver.GetGatewayRouter(),
 		ingressInformer: informer.NewIngressInformer(),
 
-		channelMap: make(map[string]chan types.MQMessage),
+		channelMap: make(map[string]chan types.MQMessageResponse),
 		mapMutex:   sync.Mutex{},
 
 		returnTopic: returnTopic,
