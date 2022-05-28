@@ -16,7 +16,9 @@ func main() {
 		log.Fatal("[FATAL] Lack arguments")
 	}
 
-	if len(os.Args) == 4 {
+	if len(os.Args) == 3 {
+		nodenetwork.SetMasterIP(os.Args[2])
+	} else if len(os.Args) == 4 {
 		nodenetwork.SetMasterIP(os.Args[3])
 	}
 
