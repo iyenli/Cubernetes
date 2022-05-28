@@ -53,6 +53,7 @@ func ListTopics(host string) (mp map[string]struct{}) {
 	}(conn)
 
 	partitions, err := conn.ReadPartitions()
+	mp = make(map[string]struct{})
 	if err != nil {
 		log.Println("[Fatal]: Get Partition failed")
 		return

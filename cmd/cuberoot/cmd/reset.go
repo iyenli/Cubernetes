@@ -4,7 +4,9 @@ import (
 	"Cubernetes/cmd/cuberoot/utils"
 	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/cubenetwork/nodenetwork"
+	"Cubernetes/pkg/cubeproxy/proxyruntime"
 	"Cubernetes/pkg/object"
+	"Cubernetes/pkg/utils/kafka"
 	"Cubernetes/pkg/utils/localstorage"
 	"github.com/spf13/cobra"
 	"log"
@@ -45,7 +47,17 @@ usage:
 
 		err = localstorage.ClearMeta()
 		if err != nil {
-			log.Fatal("[FATAL] fail to clear local metadata, err: ", err)
+			log.Println("[FATAL] fail to clear local metadata, err: ", err)
+		}
+
+		err = kafka.DeleteAllTopics("127.0.0.1")
+		if err != nil {
+			log.Println("[Error]: fail to clean kafka topics and msg")
+		}
+
+		err = proxyruntime.CleanIptables()
+		if err != nil {
+			log.Println("[Error]: fail to clean iptables chain and rules")
 		}
 	},
 }

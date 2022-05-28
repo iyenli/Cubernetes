@@ -9,10 +9,10 @@ import (
 	"log"
 	"net"
 	"os"
-	"time"
 )
 
 func InitNodeNetwork(args []string) net.IP {
+	log.Println("[INFO]: Starting node network...")
 	var err error
 	if len(args) == 3 {
 		// master
@@ -28,9 +28,6 @@ func InitNodeNetwork(args []string) net.IP {
 		log.Panicf("Init weave network failed, err: %v", err.Error())
 		return nil
 	}
-
-	// wait for weave starting (may include downloading)
-	time.Sleep(12 * time.Second)
 
 	err = weaveplugins.SetWeaveEnv()
 	if err != nil {
