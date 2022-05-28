@@ -25,7 +25,7 @@ func NewAutoScalerController(
 	podInformer informer.PodInformer,
 	rsInformer informer.ReplicaSetInformer,
 	asInformer informer.AutoScalerInformer,
-	wg sync.WaitGroup) (AutoScalerController, error) {
+	wg *sync.WaitGroup) (AutoScalerController, error) {
 	wg.Add(1)
 	return &autoScalerController{
 		podInformer: podInformer,
@@ -40,7 +40,7 @@ type autoScalerController struct {
 	rsInformer  informer.ReplicaSetInformer
 	asInformer  informer.AutoScalerInformer
 	biglock     sync.Mutex
-	wg          sync.WaitGroup
+	wg          *sync.WaitGroup
 }
 
 func (asc *autoScalerController) Run() {

@@ -21,9 +21,15 @@ type ActionMonitor interface {
 	Close()
 }
 
-func NewActionMonitor() (ActionMonitor, error) {
+func NewActionMonitor(kafkaHost string) (ActionMonitor, error) {
+
+	if err := kafkautil.CreateTopic(kafkaHost, options.MonitorTopic); err != nil {
+		log.Printf("fail to create monitor topic: %v\n", err)
+		return nil, err
+	}
+
 	reader := kafkautil.NewReaderByConsumerGroup(
-		options.KafkaHost, options.MonitorTopic, options.MonitorConsumerGroup)
+		kafkaHost, options.MonitorTopic, options.MonitorConsumerGroup)
 
 	storage, err := tstorage.NewStorage(tstorage.WithPartitionDuration(30 * time.Second))
 	if err != nil {

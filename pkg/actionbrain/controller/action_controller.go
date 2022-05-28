@@ -20,8 +20,8 @@ import (
 )
 
 const (
-	actionUpdateWaitTime = time.Second * 30
-	actionScaleWaitTime  = time.Second * 60
+	actionUpdateWaitTime = time.Second * 600
+	actionScaleWaitTime  = time.Second * 6000
 	statusUpdateTime     = time.Second * 20
 )
 
@@ -33,6 +33,7 @@ type actionController struct {
 	actorInformer  informer.ActorInformer
 	actionInformer informer.ActionInformer
 	monitor        monitor.ActionMonitor
+	kafkaHost      string
 
 	biglock sync.Mutex
 	wg      *sync.WaitGroup
@@ -41,10 +42,11 @@ type actionController struct {
 func NewActionController(
 	actorInformer informer.ActorInformer,
 	actionInformer informer.ActionInformer,
+	kafkaHost string,
 	wg *sync.WaitGroup) (ActionController, error) {
 	wg.Add(1)
 
-	actionMonitor, err := monitor.NewActionMonitor()
+	actionMonitor, err := monitor.NewActionMonitor(kafkaHost)
 	if err != nil {
 		log.Printf("fail to create ActionMonitor: %v\n", err)
 		return nil, err
@@ -54,6 +56,7 @@ func NewActionController(
 		actorInformer:  actorInformer,
 		actionInformer: actionInformer,
 		monitor:        actionMonitor,
+		kafkaHost:      kafkaHost,
 		biglock:        sync.Mutex{},
 		wg:             wg,
 	}, nil
@@ -70,6 +73,8 @@ func (ac *actionController) Run() {
 	}()
 
 	go ac.handleRequest()
+	go ac.monitor.Run()
+
 	ac.syncLoop()
 }
 

@@ -9,6 +9,7 @@ import (
 )
 
 func (ac *actionController) handleActorCreate(actor *object.Actor) error {
+	log.Printf("handle actor %s created\n", actor.Name)
 	action := ac.actionInformer.GetMatchedAction(actor.Spec.ActionName)
 	if action == nil {
 		return fmt.Errorf("action %s not found in cache", actor.Spec.ActionName)

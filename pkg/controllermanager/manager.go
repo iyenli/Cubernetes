@@ -17,7 +17,7 @@ type ControllerManager struct {
 	rsInformer  informer.ReplicaSetInformer
 	asInformer  informer.AutoScalerInformer
 	// ensure watch order
-	wg sync.WaitGroup
+	wg *sync.WaitGroup
 }
 
 func NewControllerManager() ControllerManager {
@@ -27,15 +27,15 @@ func NewControllerManager() ControllerManager {
 	rsInformer, _ := informer.NewReplicaSetInformer()
 	asInformer, _ := informer.NewAutoScalerInformer()
 	// controllers
-	rsController, _ := replicaset_controller.NewReplicaSetController(podInformer, rsInformer, wg)
-	asController, _ := autoscaler_controller.NewAutoScalerController(podInformer, rsInformer, asInformer, wg)
+	rsController, _ := replicaset_controller.NewReplicaSetController(podInformer, rsInformer, &wg)
+	asController, _ := autoscaler_controller.NewAutoScalerController(podInformer, rsInformer, asInformer, &wg)
 	return ControllerManager{
 		rsController: rsController,
 		asController: asController,
 		podInformer:  podInformer,
 		rsInformer:   rsInformer,
 		asInformer:   asInformer,
-		wg:           wg,
+		wg:           &wg,
 	}
 }
 

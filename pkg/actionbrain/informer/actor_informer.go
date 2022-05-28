@@ -135,6 +135,7 @@ func (i *cmActorInformer) informActor(newActor object.Actor, eType watchobj.Even
 
 	if eType == watchobj.EVENT_PUT {
 		if !exist && phase.Running(newActor.Status.Phase) {
+			log.Printf("new actor %s start to run...\n", newActor.Name)
 			i.actorCache[newActor.UID] = newActor
 			i.informAll(types.ActorEvent{
 				Type:  types.ActorCreate,
@@ -142,6 +143,7 @@ func (i *cmActorInformer) informActor(newActor object.Actor, eType watchobj.Even
 			})
 		} else if exist && !object.ComputeActorSpecChange(&newActor, &oldActor) {
 			// just update status
+			log.Printf("update status of actor %s: %s\n", newActor.Name, newActor.Status.Phase)
 			i.actorCache[newActor.UID] = newActor
 		} else {
 			log.Printf("[Error] something bad happend!\n")
