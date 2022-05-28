@@ -119,7 +119,7 @@ func (c *cubeActorInformer) informActor(actor object.Actor, eType watchobj.Event
 			}
 		}
 	}
-	
+
 	if eType == watchobj.EVENT_PUT {
 		if !exist {
 			c.actorCache[actor.UID] = actor

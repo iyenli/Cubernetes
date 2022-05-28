@@ -15,9 +15,11 @@ type ScriptManager interface {
 }
 
 func NewScriptManager() ScriptManager {
-	return &scriptManager{
-		scriptRegistryPath: options.ScriptRegistryPath,
+	regDir := options.ScriptRegistryPath
+	if _, err := os.Stat(regDir); err != nil && os.IsNotExist(err) {
+		os.Mkdir(regDir, 0666)
 	}
+	return &scriptManager{scriptRegistryPath: regDir}
 }
 
 type scriptManager struct {

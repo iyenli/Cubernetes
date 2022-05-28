@@ -89,7 +89,7 @@ func (rg *RuntimeGateway) GetHandlerByIngress(ingress *object.Ingress) func(ctx 
 		err = rg.writer.WriteMessages(context.Background(),
 			kafka.Message{
 				Topic: utils.GetActionTopic(ingress.Spec.InvokeAction),
-				Key:   []byte(msg.RequestUID),
+				Key:   []byte("\"" + msg.RequestUID + "\""),
 				Value: msgBytes,
 			})
 		if err != nil {

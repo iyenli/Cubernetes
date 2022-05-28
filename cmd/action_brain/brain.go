@@ -1,9 +1,17 @@
 package main
 
-import brain "Cubernetes/pkg/actionbrain"
+import (
+	brain "Cubernetes/pkg/actionbrain"
+	"log"
+	"os"
+)
 
 func main() {
-	brainRuntime, err := brain.NewActionBrain()
+	if len(os.Args) < 2 {
+		log.Fatal("[FATAL] Lack arguments")
+	}
+
+	brainRuntime, err := brain.NewActionBrain(os.Args[1])
 	if err != nil {
 		panic(err)
 	}

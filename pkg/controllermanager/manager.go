@@ -17,7 +17,7 @@ type ControllerManager struct {
 	rsInformer  informer.ReplicaSetInformer
 	asInformer  informer.AutoScalerInformer
 	// ensure watch order
-	wg sync.WaitGroup
+	wg *sync.WaitGroup
 }
 
 func NewControllerManager() ControllerManager {
@@ -35,7 +35,7 @@ func NewControllerManager() ControllerManager {
 		podInformer:  podInformer,
 		rsInformer:   rsInformer,
 		asInformer:   asInformer,
-		wg:           wg,
+		wg:           &wg,
 	}
 }
 

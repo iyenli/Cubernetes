@@ -20,8 +20,6 @@ func (arm *actorRuntimeManager) startContainer(actor *object.Actor, sandboxName 
 		Config: &dockercontainer.Config{
 			Image: options.ActorImageName,
 			Cmd: append([]string{
-				"python3",
-				"./actionwrapper.py",
 				cubeconfig.APIServerIp + ":9092",
 				actor.Spec.ActionName},
 				actor.Spec.InvokeActions...),

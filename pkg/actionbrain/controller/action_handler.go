@@ -3,11 +3,17 @@ package controller
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/object"
+	"Cubernetes/pkg/utils/kafka"
 	"log"
 )
 
 func (ac *actionController) handleActionCreate(action *object.Action) error {
-	// copy script to apiserver
+	// create action topic
+	topicName := action.Name + "_TOPIC"
+	if err := kafka.CreateTopic(ac.kafkaHost, topicName); err != nil {
+		log.Printf("fail to create receive-topic for Action %s\n", action.Name)
+		return err
+	}
 
 	return nil
 }

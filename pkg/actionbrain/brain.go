@@ -16,17 +16,17 @@ type actionBrainManager struct {
 	actorInformer    informer.ActorInformer
 	actionInformer   informer.ActionInformer
 
-	wg sync.WaitGroup
+	wg *sync.WaitGroup
 }
 
-func NewActionBrain() (ActionBrain, error) {
+func NewActionBrain(kafkaHost string) (ActionBrain, error) {
 	wg := sync.WaitGroup{}
 
 	actorInformer, _ := informer.NewActorInformer()
 	actionInformer, _ := informer.NewActionInformer()
 
 	actionController, err := controller.NewActionController(
-		actorInformer, actionInformer, &wg)
+		actorInformer, actionInformer, kafkaHost, &wg)
 	if err != nil {
 		log.Printf("fail to create ActionController: %v\n", err)
 		return nil, err
@@ -36,7 +36,7 @@ func NewActionBrain() (ActionBrain, error) {
 		actionController: actionController,
 		actorInformer:    actorInformer,
 		actionInformer:   actionInformer,
-		wg:               wg,
+		wg:               &wg,
 	}, nil
 }
 
