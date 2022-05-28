@@ -67,6 +67,16 @@ func StartMaster(IP string, NodeUID string) error {
 		log.Println("[FATAL] fail to start scheduler")
 		return err
 	}
+	err = StartDaemonProcess(options.GATEWAYLOG, options.GATEWAY, IP)
+	if err != nil {
+		log.Println("[FATAL] fail to start gateway")
+		return err
+	}
+	err = StartDaemonProcess(options.BRAINLOG, options.BRAIN, IP)
+	if err != nil {
+		log.Println("[FATAL] fail to start action brain")
+		return err
+	}
 	return nil
 }
 

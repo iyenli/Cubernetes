@@ -8,6 +8,9 @@ const (
 	KindDns        = "Dns"
 	KindAutoScaler = "AutoScaler"
 	KindGpuJob     = "GpuJob"
+	KindAction     = "Action"
+	KindActor      = "Actor"
+	KindIngress    = "Ingress"
 )
 
 type TypeMeta struct {

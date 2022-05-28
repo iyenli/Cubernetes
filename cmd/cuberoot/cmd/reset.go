@@ -4,7 +4,9 @@ import (
 	"Cubernetes/cmd/cuberoot/utils"
 	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/cubenetwork/nodenetwork"
+	"Cubernetes/pkg/cubeproxy/proxyruntime"
 	"Cubernetes/pkg/object"
+	"Cubernetes/pkg/utils/kafka"
 	"Cubernetes/pkg/utils/localstorage"
 	"github.com/spf13/cobra"
 	"log"
@@ -35,6 +37,12 @@ usage:
 				log.Println("[INFO] Reset before you stop the master")
 			}
 		} else {
+			// only master clear all topics
+			err = kafka.DeleteAllTopics(meta.Node.Status.Addresses.InternalIP)
+			if err != nil {
+				log.Println("[Error]: fail to clean kafka topics and msg")
+			}
+
 			err = utils.ClearData()
 			if err != nil {
 				log.Println("[INFO] fail to remove etcd data, err: ", err)
@@ -45,7 +53,12 @@ usage:
 
 		err = localstorage.ClearMeta()
 		if err != nil {
-			log.Fatal("[FATAL] fail to clear local metadata, err: ", err)
+			log.Println("[FATAL] fail to clear local metadata, err: ", err)
+		}
+
+		err = proxyruntime.CleanIptables()
+		if err != nil {
+			log.Println("[Error]: fail to clean iptables chain and rules")
 		}
 	},
 }

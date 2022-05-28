@@ -108,7 +108,7 @@ func (i *ProxyPodInformer) informPod(newPod object.Pod, eType watchobj.EventType
 		if exist {
 			delete(i.podCache, newPod.UID)
 			i.podChannel <- types.PodEvent{
-				Type: types.PodRemove,
+				Type: types.Remove,
 				Pod:  newPod,
 			}
 		} else {
@@ -128,7 +128,7 @@ func (i *ProxyPodInformer) informPod(newPod object.Pod, eType watchobj.EventType
 
 		if !exist {
 			i.podChannel <- types.PodEvent{
-				Type: types.PodCreate,
+				Type: types.Create,
 				Pod:  newPod,
 			}
 		} else {
@@ -136,7 +136,7 @@ func (i *ProxyPodInformer) informPod(newPod object.Pod, eType watchobj.EventType
 			if object.ComputePodNetworkChange(&newPod, &oldPod) {
 				log.Println("[INFO]: pod changed, pod ID is:", newPod.UID)
 				i.podChannel <- types.PodEvent{
-					Type: types.PodUpdate,
+					Type: types.Update,
 					Pod:  newPod}
 			} else {
 				log.Println("[INFO]: pod not changed, pod ID is:", newPod.Name)

@@ -1,7 +1,5 @@
 #!/bin/bash
 
-
-
 start_cluster() {
     etcd > .test_log/etcd.txt &
     sleep 3

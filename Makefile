@@ -1,5 +1,5 @@
 build_path = build
-targets = cubectl apiserver cubelet cuberoot cubeproxy manager scheduler gpuserver
+targets = cubectl apiserver cubelet cuberoot cubeproxy manager scheduler gpuserver gateway brain
 
 all: ${targets} gpuexamples
 
@@ -31,6 +31,12 @@ scheduler: cmd/scheduler/scheduler.go
 
 gpuserver: cmd/gpujobserver/gpujobserver.go
 	go build -o ${build_path}/gpuserver cmd/gpujobserver/gpujobserver.go
+
+gateway: cmd/gateway/gateway.go
+	go build -o ${build_path}/gateway cmd/gateway/gateway.go
+
+brain: cmd/action_brain/brain.go
+	go build -o ${build_path}/brain cmd/action_brain/brain.go
 
 gpu_path = example/gpujob
 gpu_files = cublashello matmult matadd

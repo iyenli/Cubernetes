@@ -106,25 +106,25 @@ func (p *ProxyDNSInformer) informDNS(new object.Dns, eType watchobj.EventType) e
 		if exist {
 			delete(p.DNSCache, new.UID)
 			p.DNSChannel <- types.DNSEvent{
-				Type: types.DNSRemove,
+				Type: types.Remove,
 				DNS:  new,
 			}
 		} else {
-			log.Printf("[INFO]: pod %s not exist, delete do nothing\n", new.UID)
+			log.Printf("[INFO]: DNS %s not exist, delete do nothing\n", new.UID)
 		}
 	} else {
 		// Any way update cache
 		p.DNSCache[new.UID] = new
 		if !exist {
 			p.DNSChannel <- types.DNSEvent{
-				Type: types.DNSCreate,
+				Type: types.Create,
 				DNS:  new,
 			}
 		} else {
 			if object.ComputeDNSCriticalChange(&new, &oldDns) {
 				log.Println("[INFO]: DNS critical change, UID is", new.UID)
 				p.DNSChannel <- types.DNSEvent{
-					Type: types.DNSUpdate,
+					Type: types.Update,
 					DNS:  new,
 				}
 			} else {

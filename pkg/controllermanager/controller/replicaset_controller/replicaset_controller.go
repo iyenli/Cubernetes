@@ -25,13 +25,13 @@ type replicaSetController struct {
 	podInformer informer.PodInformer
 	rsInformer  informer.ReplicaSetInformer
 	biglock     sync.Mutex
-	wg          sync.WaitGroup
+	wg          *sync.WaitGroup
 }
 
 func NewReplicaSetController(
 	podInformer informer.PodInformer,
 	rsInformer informer.ReplicaSetInformer,
-	wg sync.WaitGroup) (ReplicaSetController, error) {
+	wg *sync.WaitGroup) (ReplicaSetController, error) {
 	wg.Add(1)
 	return &replicaSetController{
 		podInformer: podInformer,
@@ -99,7 +99,7 @@ func (rsc *replicaSetController) syncLoop() {
 			}
 			rsc.biglock.Unlock()
 		default:
-			time.Sleep(time.Second * 4)
+			time.Sleep(time.Second * 2)
 		}
 	}
 

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Ingress
+metadata:
+  name: add-ingress
+spec:
+  trigger: "/path/add"
+  invokeAction: "add"
+  httpType: "GET"

@@ -6,7 +6,7 @@ package cmd
 
 import (
 	"Cubernetes/pkg/apiserver/crudobj"
-	"Cubernetes/pkg/apiserver/jobfile"
+	"Cubernetes/pkg/apiserver/objfile"
 	"Cubernetes/pkg/object"
 	"fmt"
 	"gopkg.in/yaml.v3"
@@ -103,7 +103,7 @@ for example:
 
 			res := string(str)
 			if job.Status.Phase == object.JobSucceeded || job.Status.Phase == object.JobFailed {
-				output, err := jobfile.GetJobOutput(UID)
+				output, err := objfile.GetJobOutput(UID)
 				if err != nil {
 					log.Println("[Warning] fail to get GpuJob output")
 				} else {
@@ -111,6 +111,26 @@ for example:
 				}
 			}
 			fmt.Print(res)
+		case "action":
+			action, err := crudobj.GetAction(UID)
+			if err != nil {
+				log.Fatal("[FATAL] fail to get Action")
+			}
+			str, err := yaml.Marshal(action)
+			if err != nil {
+				log.Fatal("[FATAL] fail to marshall Action")
+			}
+			fmt.Print(string(str))
+		case "ingress":
+			ingress, err := crudobj.GetIngress(UID)
+			if err != nil {
+				log.Fatal("[FATAL] fail to get Ingress")
+			}
+			str, err := yaml.Marshal(ingress)
+			if err != nil {
+				log.Fatal("[FATAL] fail to marshall Ingress")
+			}
+			fmt.Print(string(str))
 		default:
 			log.Fatal("[FATAL] Unknown kind: " + args[0])
 		}

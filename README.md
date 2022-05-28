@@ -8,6 +8,26 @@ Course project for SE3356.
 
 在开始之前，您需要安装ETCD, 放到合适的目录下(Suggest: `/usr/local/bin`). 建议安装Nginx以获取默认的配置作为Volume. 安装`apt-get install resolvconf`
 
+此外，需要安装Kafka. (在Master)
+
+```shell
+wget https://dlcdn.apache.org/kafka/3.2.0/kafka_2.13-3.2.0.tgz
+tar -xzvf kafka_2.13-3.2.0.tgz
+cp -r ./kafka_2.13-3.2.0/* /usr/local/kafka/
+# copy config *service to 
+vim /etc/systemd/system/kafka.service
+vim /etc/systemd/system/zookeeper.service
+
+systemctl daemon-reload
+systemctl restart zookeeper
+systemctl status zookeeper
+systemctl restart kafka
+systemctl status kafka
+
+systemctl enable kafka
+systemctl enable zookeeper
+```
+
 Worker1作为master, Worker2作为slave. 假设Worker1 的IP为192.168.1.9, Worker2的IP为192.168.1.5. 首次启动, 位于 ./Cubernetes目录下。
 
 ```shell
@@ -55,8 +75,6 @@ bash ./scripts/clear.sh
 # 由RS中的Pod为Service提供服务
 ./build/cubectl apply -f ./example/yaml/service-rs.yaml
 ```
-
-如果想测试负载均衡，可以修改Nginx config. 将`example/html`下的`nginx.conf`copy到运行环境的`/etc/nginx/nginx.conf`. 再将两个HTML文件copy到`/var/www/html/`下。启动`test-pod(2).yaml`，并启动`service.yaml`. 然后访问Cluster IP，就可以发现是哪个Pod提供的服务。
 
 测试DNS时，建议启动两个Pod和Service.
 
@@ -204,8 +222,13 @@ curl serviceIP
 
 ### Serverless
 
-```shell
+需要保证所有机器上拥有镜像：`yiyanleee/python-runtime:v1.5`
 
+```shell
+./build/cubectl apply -f example/serverless/hello/hello.yaml
+./build/cubectl apply -f example/serverless/hello/ingress.yaml
+
+curl "127.0.0.1:6810/hello?name=serverless"
 ```
 
 ### Finally
@@ -219,5 +242,5 @@ curl serviceIP
 
 Delete RS不成功
 
-<img src="C:/Users/11796/AppData/Roaming/Typora/typora-user-images/image-20220522111638328.png" alt="image-20220522111638328" style="zoom: 50%;" />
+<img src="https://s2.loli.net/2022/05/23/GCL7goy9HXOA1Sr.png" alt="image-20220522111638328" style="zoom: 50%;" />
 
