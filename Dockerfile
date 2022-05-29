@@ -17,12 +17,17 @@ RUN go mod vendor
 
 RUN apk add dos2unix
 RUN find . -type f -print0 | xargs -0 dos2unix
-RUN go build  -ldflags "-s -w" -o ./build/gpuserver cmd/gpujobserver/gpujobserver.go
 
-ENTRYPOINT [ "./build/gpuserver" ]
+# GPU Server build
+#RUN go build  -ldflags "-s -w" -o ./build/gpuserver cmd/gpujobserver/gpujobserver.go
+#ENTRYPOINT [ "./build/gpuserver" ]
+
+# Gateway build
+RUN go build  -ldflags "-s -w" -o ./build/gateway cmd/gateway/gateway.go
+ENTRYPOINT [ "./build/gateway" ]
 
 # TODO: Smaller image:)
-#-ldflags "-s -w"
+# -ldflags "-s -w"
 # FROM scratch As prod
 #
 # WORKDIR /bin/

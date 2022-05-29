@@ -222,7 +222,7 @@ curl serviceIP
 
 ### Serverless
 
-需要保证所有机器上拥有镜像：`yiyanleee/python-runtime:v1.5`
+需要保证所有机器上拥有镜像：`yiyanleee/python-runtime:v1.5` & `yiyanleee/serverless-gateway:v1`
 
 ```shell
 ./build/cubectl apply -f example/serverless/hello/hello.yaml
