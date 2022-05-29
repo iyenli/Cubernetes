@@ -29,9 +29,9 @@ func EnableServerlessGateway(meta *localstorage.Metadata) error {
 				Spec: object.PodSpec{
 					Containers: []object.Container{
 						{
-							Name:  "ServerlessGatewayContainer",
-							Image: options.GatewayImage,
-							Args:  []string{meta.Node.Status.Addresses.InternalIP},
+							Name:    "ServerlessGatewayContainer",
+							Image:   options.GatewayImage,
+							Command: []string{meta.Node.Status.Addresses.InternalIP},
 						},
 					},
 				},

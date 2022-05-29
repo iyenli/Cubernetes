@@ -128,7 +128,8 @@ func (i *ProxyServiceInformer) informService(newService object.Service, eType wa
 		if !exist {
 			i.ServiceChannel <- types.ServiceEvent{
 				Type:    types.Create,
-				Service: newService}
+				Service: newService,
+			}
 		} else {
 			// compute Service change: IP / Label
 			if object.ComputeServiceCriticalChange(&newService, &oldService) {

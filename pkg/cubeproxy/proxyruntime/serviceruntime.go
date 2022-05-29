@@ -138,6 +138,9 @@ func (pr *ProxyRuntime) DeleteService(service *object.Service) error {
 	}
 
 	// update endpoint(but not write into etcd)
+	if service.Status == nil {
+		service.Status = &object.ServiceStatus{}
+	}
 	service.Status.Endpoints = []net.IP{}
 	// finally...
 	delete(pr.ServiceChainMap, service.UID)
