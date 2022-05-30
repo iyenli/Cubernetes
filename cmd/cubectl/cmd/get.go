@@ -131,9 +131,18 @@ for example:
 				return
 			}
 			fmt.Printf("%d AutoScalers Found\n", len(autoScalers))
-			fmt.Printf("%-30s\t%-40s\t(%-v ~ %-v)\n", "Name", "UID", "min", "max")
+			fmt.Printf("%-30s\t%-40s\t(%-v/%-v)\n", "Name", "UID", "running", "expected")
 			for _, as := range autoScalers {
-				fmt.Printf("%-30s\t%-40s\t(%-v ~ %-v)\n", as.Name, as.UID, as.Spec.MinReplicas, as.Spec.MaxReplicas)
+				var running int
+				var expected int
+				if as.Status != nil {
+					running = as.Status.ActualReplicas
+					expected = as.Status.DesiredReplicas
+				} else {
+					running = 0
+					expected = 0
+				}
+				fmt.Printf("%-30s\t%-40s\t(%-v/%-v)\n", as.Name, as.UID, running, expected)
 			}
 
 		case "job", "jobs", "gpujob", "gpujobs":
@@ -151,6 +160,7 @@ for example:
 			for _, job := range jobs {
 				fmt.Printf("%-30s\t%-40s\t%-v\n", job.Name, job.UID, job.Status.Phase)
 			}
+
 		case "action", "actions":
 			actions, err := crudobj.GetActions()
 			if err != nil {
@@ -162,10 +172,20 @@ for example:
 				return
 			}
 			fmt.Printf("%d Actions found\n", len(actions))
-			fmt.Printf("%-30s\t%-40s\t%-v\n", "Name", "UID", "Phase")
+			fmt.Printf("%-30s\t%-40s\t(%-v/%-v)\n", "Name", "UID", "running", "expected")
 			for _, action := range actions {
-				fmt.Printf("%-30s\t%-40s\t%-v\n", action.Name, action.UID, action.Status.Phase)
+				var running int
+				var expected int
+				if action.Status != nil {
+					running = action.Status.ActualReplicas
+					expected = action.Status.DesiredReplicas
+				} else {
+					running = 0
+					expected = 0
+				}
+				fmt.Printf("%-30s\t%-40s\t(%-v/%-v)\n", action.Name, action.UID, running, expected)
 			}
+
 		case "ingress", "ingresses", "igs":
 			ingresses, err := crudobj.GetIngresses()
 			if err != nil {
