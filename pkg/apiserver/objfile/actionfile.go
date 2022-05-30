@@ -5,12 +5,12 @@ import (
 	"strconv"
 )
 
-func GetActionFile(ActionName string, filename string) error {
-	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/action/file/" + ActionName
+func GetActionFile(ScriptUID string, filename string) error {
+	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/action/file/" + ScriptUID
 	return getFile(url, filename)
 }
 
-func PostActionFile(ActionName string, filename string) error {
-	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/action/file/" + ActionName
+func PostActionFile(ScriptUID string, filename string) error {
+	url := "http://" + cubeconfig.APIServerIp + ":" + strconv.Itoa(cubeconfig.APIServerPort) + "/apis/action/file/" + ScriptUID
 	return postFile(url, filename)
 }

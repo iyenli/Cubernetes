@@ -8,6 +8,7 @@ import (
 	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/apiserver/objfile"
 	"Cubernetes/pkg/object"
+	"github.com/google/uuid"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"log"
@@ -127,28 +128,29 @@ for example:
 			log.Printf("GpuJob UID=%s created\n", newJob.UID)
 
 		case object.KindAction:
+			scriptPath, err := cmd.Flags().GetString("script")
+			if err != nil {
+				log.Fatal("[FATAL] missing action script file")
+			}
+
+			scriptUID := uuid.New().String()
+			err = objfile.PostActionFile(scriptUID, scriptPath)
+			if err != nil {
+				log.Fatal("[FATAL] fail to upload Action script")
+			}
+
 			var action object.Action
 			err = yaml.Unmarshal(file, &action)
 			if err != nil {
 				log.Fatal("[FATAL] fail to parse Action", err)
 			}
+			action.Spec.ScriptUID = scriptUID
+
 			newAction, err := crudobj.CreateAction(action)
 			if err != nil {
 				log.Fatal("[FATAL] fail to create new Action, err: ", err)
 			}
-
-			err = objfile.PostActionFile(newAction.Name, action.Spec.ScriptPath)
-			if err != nil {
-				log.Fatal("[FATAL] fail to upload Action script")
-			}
-
-			newAction.Status.Phase = object.ActionCreated
-			newAction, err = crudobj.UpdateAction(newAction)
-			if err != nil {
-				log.Fatal("[FATAL] fail to update Action phase")
-			}
-
-			log.Printf("Action UID=%s created\n", newAction.UID)
+			log.Printf("Action UID=%s created (or updated)\n", newAction.UID)
 
 		case object.KindIngress:
 			var ingress object.Ingress
@@ -177,6 +179,7 @@ func init() {
 	// and all subcommands, e.g.:
 	// createCmd.PersistentFlags().String("foo", "", "A help for foo")
 	createCmd.Flags().StringP("file", "f", "", "path of your config yaml file")
+	applyCmd.Flags().StringP("script", "s", "", "path of your action script file")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
