@@ -13,6 +13,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"log"
+	"os"
 )
 
 // applyCmd represents the apply command
@@ -23,7 +24,9 @@ var applyCmd = &cobra.Command{
 Apply a yaml configuration file to Cubernetes
 for example:
 	cubectl apply -f pod.yaml
-	cubectl apply -f [file path]`,
+	cubectl apply -f action.yaml -s ./myaction.py
+	cubectl apply -f gpujob.yaml -j ./myjob.tar.gz
+	cubectl apply -f [file path] [options]`,
 	Run: func(cmd *cobra.Command, args []string) {
 		f, err := cmd.Flags().GetString("file")
 		if err != nil {
@@ -103,6 +106,16 @@ for example:
 			log.Printf("AutoScaler UID=%s created\n", newAs.UID)
 
 		case object.KindGpuJob:
+			// Host path of corresponding gpu job file
+			filePath, err := cmd.Flags().GetString("job")
+			if err != nil {
+				log.Fatal("[FATAL] missing gpu job file")
+			}
+
+			if _, err = os.Stat(filePath); err != nil && os.IsNotExist(err) {
+				log.Fatal("[FATAL] cannot open gpu job file")
+			}
+
 			var job object.GpuJob
 			err = yaml.Unmarshal(file, &job)
 			if err != nil {
@@ -113,7 +126,7 @@ for example:
 				log.Fatal("[FATAL] fail to create new GpuJob")
 			}
 
-			err = objfile.PostJobFile(newJob.UID, job.Spec.Filename)
+			err = objfile.PostJobFile(newJob.UID, filePath)
 			if err != nil {
 				log.Fatal("[FATAL] fail to upload GpuJob file")
 			}
@@ -184,4 +197,5 @@ func init() {
 	// applyCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	applyCmd.Flags().StringP("file", "f", "", "path of your config yaml file")
 	applyCmd.Flags().StringP("script", "s", "", "path of your action script file")
+	applyCmd.Flags().StringP("job", "j", "", "path of your gpu job file")
 }

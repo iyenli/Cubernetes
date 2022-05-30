@@ -12,6 +12,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -24,7 +25,9 @@ var createCmd = &cobra.Command{
 Create objects from a config file
 for example:
 	cubectl create -f pod.yaml
-	cubectl create -f [file path]`,
+	cubectl create -f action.yaml -s ./myaction.py
+	cubectl create -f gpujob.yaml -j ./myjob.tar.gz
+	cubectl create -f [file path] [options]`,
 	Run: func(cmd *cobra.Command, args []string) {
 		f, err := cmd.Flags().GetString("file")
 		if err != nil {
@@ -104,6 +107,16 @@ for example:
 			log.Printf("AutoScaler UID=%s created\n", newAs.UID)
 
 		case object.KindGpuJob:
+			// Host path of corresponding gpu job file
+			filePath, err := cmd.Flags().GetString("job")
+			if err != nil {
+				log.Fatal("[FATAL] missing gpu job file")
+			}
+
+			if _, err = os.Stat(filePath); err != nil && os.IsNotExist(err) {
+				log.Fatal("[FATAL] cannot open gpu job file")
+			}
+
 			var job object.GpuJob
 			err = yaml.Unmarshal(file, &job)
 			if err != nil {
@@ -114,7 +127,7 @@ for example:
 				log.Fatal("[FATAL] fail to create new GpuJob")
 			}
 
-			err = objfile.PostJobFile(newJob.UID, job.Spec.Filename)
+			err = objfile.PostJobFile(newJob.UID, filePath)
 			if err != nil {
 				log.Fatal("[FATAL] fail to upload GpuJob file")
 			}
@@ -180,6 +193,7 @@ func init() {
 	// createCmd.PersistentFlags().String("foo", "", "A help for foo")
 	createCmd.Flags().StringP("file", "f", "", "path of your config yaml file")
 	applyCmd.Flags().StringP("script", "s", "", "path of your action script file")
+	applyCmd.Flags().StringP("job", "j", "", "path of your gpu job file")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
