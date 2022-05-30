@@ -192,8 +192,8 @@ func init() {
 	// and all subcommands, e.g.:
 	// createCmd.PersistentFlags().String("foo", "", "A help for foo")
 	createCmd.Flags().StringP("file", "f", "", "path of your config yaml file")
-	applyCmd.Flags().StringP("script", "s", "", "path of your action script file")
-	applyCmd.Flags().StringP("job", "j", "", "path of your gpu job file")
+	createCmd.Flags().StringP("script", "s", "", "path of your action script file")
+	createCmd.Flags().StringP("job", "j", "", "path of your gpu job file")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
