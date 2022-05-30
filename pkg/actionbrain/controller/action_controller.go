@@ -11,7 +11,6 @@ import (
 	"Cubernetes/pkg/controllermanager/utils"
 	"Cubernetes/pkg/object"
 	"log"
-	"path"
 	"strings"
 	"sync"
 	"time"
@@ -115,6 +114,11 @@ func (ac *actionController) syncLoop() {
 				err := ac.handleActionCreate(&action)
 				if err != nil {
 					log.Printf("fail to handle action create: %v", err)
+				}
+			case types.ActionUpdate:
+				err := ac.handleActionUpdate(&action)
+				if err != nil {
+					log.Printf("fail to handle action update: %v", err)
 				}
 			case types.ActionRemove:
 				err := ac.handleActionRemove(&action)
@@ -289,7 +293,7 @@ func (ac *actionController) buildNewActor(action *object.Action) object.Actor {
 		},
 		Spec: object.ActorSpec{
 			ActionName:    action.Name,
-			ScriptFile:    path.Base(action.Spec.ScriptPath),
+			ScriptUID:     action.Spec.ScriptUID,
 			InvokeActions: action.Spec.InvokeActions,
 		},
 		Status: &object.ActorStatus{

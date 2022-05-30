@@ -6,6 +6,7 @@ type ActionEventType string
 
 const (
 	ActionCreate ActionEventType = "create"
+	ActionUpdate ActionEventType = "update"
 	ActionRemove ActionEventType = "remove"
 )
 
@@ -18,6 +19,7 @@ type ActorEventType string
 
 const (
 	ActorCreate ActorEventType = "create"
+	ActorUpdate ActorEventType = "update"
 	ActorRemove ActorEventType = "remove"
 )
 
