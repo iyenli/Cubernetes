@@ -141,9 +141,9 @@ func (i *cmActorInformer) informActor(newActor object.Actor, eType watchobj.Even
 				Type:  types.ActorCreate,
 				Actor: newActor,
 			})
-		} else if exist && !object.ComputeActorSpecChange(&newActor, &oldActor) {
+		} else if exist && (!object.ComputeActorSpecChange(&newActor, &oldActor) ||
+			object.ActorSpecOnlyScriptChange(&newActor, &oldActor)) {
 			// just update status
-			log.Printf("update status of actor %s: %s\n", newActor.Name, newActor.Status.Phase)
 			i.actorCache[newActor.UID] = newActor
 		} else {
 			log.Printf("[Error] something bad happend!\n")
