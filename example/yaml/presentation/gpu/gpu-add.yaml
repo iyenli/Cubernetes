@@ -2,5 +2,3 @@ apiVersion: v1
 kind: GpuJob
 metadata:
   name: test-gpu
-spec:
-  filename: /root/C8s/build/matadd.tar.gz

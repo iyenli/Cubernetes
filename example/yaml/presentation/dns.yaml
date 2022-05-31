@@ -7,9 +7,9 @@ spec:
   host: "example.cubernetes"
   paths:
     "/test/cubernetes/nb":
-        serviceUID: "8dbc5d2a-7a76-41dc-aa41-12fedb03468f" # svc1
+        serviceUID: "f69ecec5-7fc2-467f-be47-658bc482acbd" # svc1
         servicePort: 8080 # Fill in temporarily
     "/test/cubernetes/very/nb":
-        serviceUID: "baa35fbf-3255-4e50-8756-666f89d09187" # svc2
+        serviceUID: "297dd7a7-5a28-4e1a-9729-cdf974a60496" # svc2
         servicePort: 80 # Fill in temporarily
 
