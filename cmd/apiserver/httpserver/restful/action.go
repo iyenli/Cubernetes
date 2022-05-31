@@ -173,9 +173,41 @@ type action struct {
 }
 
 func GetWorkflow(ctx *gin.Context) {
+	actions := make([]action, 0)
+	buf, err := etcdrw.GetObjs(object.ActionEtcdPrefix)
+	if err != nil {
+		utils.ServerError(ctx)
+		return
+	}
+	for _, actStr := range buf {
+		var act object.Action
+		err = json.Unmarshal(actStr, &act)
+		if err != nil {
+			utils.ServerError(ctx)
+			return
+		}
+		actions = append(actions, action{Src: act.Name, Dest: act.Spec.InvokeActions})
+	}
+
+	ingresses := make([]ingress, 0)
+	buf, err = etcdrw.GetObjs(object.IngressEtcdPrefix)
+	if err != nil {
+		utils.ServerError(ctx)
+		return
+	}
+	for _, igsStr := range buf {
+		var igs object.Ingress
+		err = json.Unmarshal(igsStr, &igs)
+		if err != nil {
+			utils.ServerError(ctx)
+			return
+		}
+		ingresses = append(ingresses, ingress{Src: igs.Name, Dest: igs.Spec.InvokeAction, Path: igs.Spec.TriggerPath})
+	}
+
 	wf := workflow{
-		Ingresses: []ingress{{Src: "in", Dest: "a", Path: "/path"}},
-		Actions:   []action{{Src: "a", Dest: []string{"b", "c", "d"}}},
+		Ingresses: ingresses,
+		Actions:   actions,
 	}
 
 	ctx.JSON(http.StatusOK, wf)
