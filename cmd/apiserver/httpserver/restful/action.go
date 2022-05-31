@@ -4,8 +4,10 @@ import (
 	"Cubernetes/cmd/apiserver/httpserver/utils"
 	cubeconfig "Cubernetes/config"
 	"Cubernetes/pkg/object"
+	"Cubernetes/pkg/utils/dag"
 	"Cubernetes/pkg/utils/etcdrw"
 	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"net/http"
@@ -33,8 +35,14 @@ func PostAction(ctx *gin.Context) {
 		return
 	}
 
-	existed := false
 	actions, err := etcdrw.GetObjs(object.ActionEtcdPrefix)
+	if err != nil {
+		utils.ServerError(ctx)
+		return
+	}
+
+	existed := false
+	nodes := make(map[string][]string)
 	for _, buf := range actions {
 		var action object.Action
 		err = json.Unmarshal(buf, &action)
@@ -47,8 +55,16 @@ func PostAction(ctx *gin.Context) {
 			newAction.UID = action.UID
 			newAction.Status = action.Status
 			existed = true
-			break
+			continue
 		}
+		nodes[action.Name] = action.Spec.InvokeActions
+	}
+	nodes[newAction.Name] = newAction.Spec.InvokeActions
+	containCircle, cycle := dag.CheckCycle(nodes)
+	if containCircle {
+		ret := fmt.Sprintf("new action will form a cycle: %v", cycle)
+		ctx.String(http.StatusBadRequest, ret)
+		return
 	}
 
 	if !existed {
@@ -77,13 +93,38 @@ func PutAction(ctx *gin.Context) {
 		return
 	}
 
-	oldBuf, err := etcdrw.GetObj(object.ActionEtcdPrefix + newAct.UID)
+	actions, err := etcdrw.GetObjs(object.ActionEtcdPrefix)
 	if err != nil {
 		utils.ServerError(ctx)
 		return
 	}
-	if oldBuf == nil {
+
+	existed := false
+	nodes := make(map[string][]string)
+	for _, buf := range actions {
+		var action object.Action
+		err = json.Unmarshal(buf, &action)
+		if err != nil {
+			utils.ServerError(ctx)
+			return
+		}
+		if newAct.UID == action.UID {
+			existed = true
+			continue
+		}
+		nodes[action.Name] = action.Spec.InvokeActions
+	}
+
+	if !existed {
 		utils.NotFound(ctx)
+		return
+	}
+
+	nodes[newAct.Name] = newAct.Spec.InvokeActions
+	containCircle, cycle := dag.CheckCycle(nodes)
+	if containCircle {
+		ret := fmt.Sprintf("new action will form a cycle: %v", cycle)
+		ctx.String(http.StatusBadRequest, ret)
 		return
 	}
 
@@ -123,7 +164,7 @@ func DelAction(ctx *gin.Context) {
 		return
 	}
 
-	filename := path.Join(cubeconfig.ActionFileDir, action.Name)
+	filename := path.Join(cubeconfig.ActionFileDir, action.Spec.ScriptUID)
 	_ = os.RemoveAll(filename + ".py")
 }
 
@@ -154,4 +195,61 @@ func SelectActions(ctx *gin.Context) {
 		}
 		return true
 	})
+}
+
+type workflow struct {
+	Ingresses []ingress `json:"ingresses"`
+	Actions   []action  `json:"actions"`
+}
+
+type ingress struct {
+	Src  string `json:"s"`
+	Dest string `json:"d"`
+	Path string `json:"p"`
+}
+
+type action struct {
+	Src  string   `json:"s"`
+	Dest []string `json:"d"`
+}
+
+func GetWorkflow(ctx *gin.Context) {
+	actions := make([]action, 0)
+	buf, err := etcdrw.GetObjs(object.ActionEtcdPrefix)
+	if err != nil {
+		utils.ServerError(ctx)
+		return
+	}
+	for _, actStr := range buf {
+		var act object.Action
+		err = json.Unmarshal(actStr, &act)
+		if err != nil {
+			utils.ServerError(ctx)
+			return
+		}
+		actions = append(actions, action{Src: act.Name, Dest: act.Spec.InvokeActions})
+	}
+
+	ingresses := make([]ingress, 0)
+	buf, err = etcdrw.GetObjs(object.IngressEtcdPrefix)
+	if err != nil {
+		utils.ServerError(ctx)
+		return
+	}
+	for _, igsStr := range buf {
+		var igs object.Ingress
+		err = json.Unmarshal(igsStr, &igs)
+		if err != nil {
+			utils.ServerError(ctx)
+			return
+		}
+		ingresses = append(ingresses, ingress{Src: igs.Name, Dest: igs.Spec.InvokeAction, Path: igs.Spec.TriggerPath})
+	}
+
+	wf := workflow{
+		Ingresses: ingresses,
+		Actions:   actions,
+	}
+
+	ctx.JSON(http.StatusOK, wf)
 }

@@ -120,7 +120,16 @@ for example:
 			if err != nil {
 				log.Fatal("[FATAL] fail to marshall Action")
 			}
-			fmt.Print(string(str))
+
+			res := string(str)
+			script, err := objfile.GetActionFileStr(action.Spec.ScriptUID)
+			if err != nil {
+				log.Println("[Warning] fail to get action script")
+			} else {
+				res = res + "\nScript:\n" + script
+			}
+			fmt.Print(res)
+
 		case "ingress":
 			ingress, err := crudobj.GetIngress(UID)
 			if err != nil {
