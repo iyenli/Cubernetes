@@ -46,4 +46,4 @@ gpuexamples: $(addprefix ${gpu_path}/, ${gpu_files})
 	$(foreach file, ${gpu_files}, tar zcvf ${build_path}/${file}.tar.gz -C ${gpu_path} ${file};)
 
 static: ./static/*
-	cp -r ./static ./build
+	cp -r ./static ${static_path}
