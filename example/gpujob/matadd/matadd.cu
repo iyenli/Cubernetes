@@ -6,7 +6,7 @@
 #define IDX2C(i, j, ld) (((j) * (ld)) + (i))
 #define BLOCK_SIZE 8
 
-__global__ void matrixAdd(const float* A, const float* B, float* C,
+__global__ void matrixAdd(const float** A, const float** B, float** C,
     int M, int N)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
