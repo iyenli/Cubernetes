@@ -60,7 +60,7 @@ func PostAction(ctx *gin.Context) {
 		nodes[action.Name] = action.Spec.InvokeActions
 	}
 	nodes[newAction.Name] = newAction.Spec.InvokeActions
-	containCircle, cycle := dag.CheckCycle(nodes)
+	containCircle, cycle := dag.CheckLoop(nodes)
 	if containCircle {
 		ret := fmt.Sprintf("new action will form a cycle: %v", cycle)
 		ctx.String(http.StatusBadRequest, ret)
@@ -121,7 +121,7 @@ func PutAction(ctx *gin.Context) {
 	}
 
 	nodes[newAct.Name] = newAct.Spec.InvokeActions
-	containCircle, cycle := dag.CheckCycle(nodes)
+	containCircle, cycle := dag.CheckLoop(nodes)
 	if containCircle {
 		ret := fmt.Sprintf("new action will form a cycle: %v", cycle)
 		ctx.String(http.StatusBadRequest, ret)
