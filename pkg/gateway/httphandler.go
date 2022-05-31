@@ -115,7 +115,7 @@ func (rg *RuntimeGateway) GetHandlerByIngress(ingress *object.Ingress) func(ctx 
 
 func (rg *RuntimeGateway) SendMonitorInfo(action string) error {
 	msg := message.MonitorMessage{
-		InvokeTimeUnix: time.Now().Unix(),
+		InvokeTimeUnix: time.Now().UnixMilli(),
 		Action:         action,
 	}
 
