@@ -2,7 +2,8 @@ package main
 
 import (
 	"Cubernetes/pkg/actionbrain/monitor"
-	"fmt"
+	"log"
+	"time"
 )
 
 func main() {
@@ -13,13 +14,14 @@ func main() {
 	defer actionMonitor.Close()
 
 	go actionMonitor.Run()
-	ch := actionMonitor.WatchActionEvoke()
+	
+	log.Printf("you can start to send")
+	time.Sleep(time.Second * 40)
 
-	for action := range ch {
-		fmt.Printf("receive Action: %s\n", action)
-
-		if action == "quit" {
-			fmt.Printf("quit monitor test...\n")
-		}
+	count, err := actionMonitor.QueryRecentEvoke("fuck-you", time.Hour)
+	if err != nil {
+		panic(err)
 	}
+
+	log.Printf("total %d records counted", count)
 }
