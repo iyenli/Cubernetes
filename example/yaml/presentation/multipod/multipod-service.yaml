@@ -8,9 +8,9 @@ spec:
   ports:
     - name: nginx-port
       protocol: TCP
-      port: 8080
-      targetPort: nginx-port
+      port: 80
+      targetPortName: nginx-port
     - name: tomcat-port
       protocol: TCP
       port: 8080
-      targetPort: tomcat-port
+      targetPortName: tomcat-port
