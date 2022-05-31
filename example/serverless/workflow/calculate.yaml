@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: Action
+metadata:
+  name: calculate
+spec:
+  invokeActions: ["addition", "multiplication"]
