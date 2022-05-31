@@ -1,12 +1,14 @@
 build_path = build
+static_path = /etc/cubernetes/static
 targets = cubectl apiserver cubelet cuberoot cubeproxy manager scheduler gpuserver gateway brain
 
-all: ${targets} gpuexamples
+all: ${targets} gpuexamples static
 
 .PHONY:clean
 clean:
 	rm -f $(addprefix ${build_path}/, ${targets})
 	rm -f ${build_path}/*.tar.gz
+	rm -rf ${static_path}
 
 cubectl: cmd/cubectl/cubectl.go
 	go build -o ${build_path}/cubectl cmd/cubectl/cubectl.go
@@ -42,3 +44,6 @@ gpu_path = example/gpujob
 gpu_files = cublashello matmult matadd
 gpuexamples: $(addprefix ${gpu_path}/, ${gpu_files})
 	$(foreach file, ${gpu_files}, tar zcvf ${build_path}/${file}.tar.gz -C ${gpu_path} ${file};)
+
+static: ./static/*
+	cp -r ./static ./build

@@ -19,6 +19,7 @@ const CubeVersion = "v1.0"
 const (
 	JobFileDir    = "/etc/cubernetes/apiserver/jobs/"
 	ActionFileDir = "/etc/cubernetes/apiserver/actions/"
+	StaticDir     = "/etc/cubernetes/static"
 	MetaDir       = "/etc/cubernetes/cubernetes/"
 	MetaFile      = MetaDir + "meta"
 )

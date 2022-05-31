@@ -155,3 +155,28 @@ func SelectActions(ctx *gin.Context) {
 		return true
 	})
 }
+
+type workflow struct {
+	Ingresses []ingress `json:"ingresses"`
+	Actions   []action  `json:"actions"`
+}
+
+type ingress struct {
+	Src  string `json:"s"`
+	Dest string `json:"d"`
+	Path string `json:"p"`
+}
+
+type action struct {
+	Src  string   `json:"s"`
+	Dest []string `json:"d"`
+}
+
+func GetWorkflow(ctx *gin.Context) {
+	wf := workflow{
+		Ingresses: []ingress{{Src: "in", Dest: "a", Path: "/path"}},
+		Actions:   []action{{Src: "a", Dest: []string{"b", "c", "d"}}},
+	}
+
+	ctx.JSON(http.StatusOK, wf)
+}
