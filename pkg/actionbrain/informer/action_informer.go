@@ -12,7 +12,7 @@ import (
 type ActionInformer interface {
 	ListAndWatchActionsWithRetry()
 	WatchActionEvent() <-chan types.ActionEvent
-	GetMatchedAction(actionName string) *object.Action
+	GetMatchedAction(actionName string) (object.Action, bool)
 	ListActions() []object.Action
 	CloseChan(<-chan types.ActionEvent)
 }
@@ -58,13 +58,13 @@ func (i *cmActionInformer) ListAndWatchActionsWithRetry() {
 	}
 }
 
-func (i *cmActionInformer) GetMatchedAction(actionName string) *object.Action {
+func (i *cmActionInformer) GetMatchedAction(actionName string) (object.Action, bool) {
 	for _, action := range i.actionCache {
 		if action.Name == actionName {
-			return &action
+			return action, true
 		}
 	}
-	return nil
+	return object.Action{}, false
 }
 
 func (i *cmActionInformer) ListActions() []object.Action {
@@ -80,9 +80,7 @@ func (i *cmActionInformer) tryListAndWatchActions() {
 		return
 	} else {
 		for _, action := range allActions {
-			if action.Status != nil && action.Status.Phase == object.ActionCreated {
-				i.actionCache[action.UID] = action
-			}
+			i.actionCache[action.UID] = action
 		}
 	}
 
@@ -129,8 +127,7 @@ func (i *cmActionInformer) informAction(newAction object.Action, eType watchobj.
 	}
 
 	if eType == watchobj.EVENT_PUT {
-		if !exist && newAction.Status != nil &&
-			newAction.Status.Phase == object.ActionCreated {
+		if !exist {
 			log.Printf("create Action %s informed\n", newAction.Name)
 			i.actionCache[newAction.UID] = newAction
 			i.informAll(types.ActionEvent{
@@ -139,7 +136,13 @@ func (i *cmActionInformer) informAction(newAction object.Action, eType watchobj.
 			})
 		} else if exist && !object.ComputeActionSpecChange(&newAction, &oldAction) {
 			i.actionCache[newAction.UID] = newAction
-		} else if exist {
+		} else if exist && object.ActionSpecOnlyScriptChange(&newAction, &oldAction) {
+			i.actionCache[newAction.UID] = newAction
+			i.informAll(types.ActionEvent{
+				Type:   types.ActionUpdate,
+				Action: newAction,
+			})
+		} else {
 			log.Printf("[Error] update action not supported!\n")
 		}
 	}

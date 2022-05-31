@@ -16,9 +16,6 @@ func TestGPUServer(t *testing.T) {
 		ObjectMeta: object.ObjectMeta{
 			Name: "test-gpu",
 		},
-		Spec: object.GpuJobSpec{
-			Filename: "../example/gpujob/GpuJobTest.tar.gz",
-		},
 		Status: object.GpuJobStatus{},
 	}
 

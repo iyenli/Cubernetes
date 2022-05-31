@@ -22,43 +22,46 @@ func GetActions(ctx *gin.Context) {
 }
 
 func PostAction(ctx *gin.Context) {
-	action := object.Action{}
-	err := ctx.BindJSON(&action)
+	newAction := object.Action{}
+	err := ctx.BindJSON(&newAction)
 	if err != nil {
 		utils.ParseFail(ctx)
 		return
 	}
-	if action.Name == "" {
+	if newAction.Name == "" {
 		utils.BadRequest(ctx)
 		return
 	}
 
-	acts, err := etcdrw.GetObjs(object.ActionEtcdPrefix)
-	for _, buf := range acts {
-		var act object.Action
-		err = json.Unmarshal(buf, &act)
+	existed := false
+	actions, err := etcdrw.GetObjs(object.ActionEtcdPrefix)
+	for _, buf := range actions {
+		var action object.Action
+		err = json.Unmarshal(buf, &action)
 		if err != nil {
 			utils.ServerError(ctx)
 			return
 		}
-		if act.Name == action.Name {
-			ctx.String(http.StatusBadRequest, "bad request: Action %s existed", action.Name)
-			return
+		if newAction.Name == action.Name {
+			// Action existed, update the action
+			newAction.UID = action.UID
+			newAction.Status = action.Status
+			existed = true
+			break
 		}
 	}
 
-	action.UID = uuid.New().String()
-	action.Status = &object.ActionStatus{
-		Phase: object.ActionCreating,
+	if !existed {
+		newAction.UID = uuid.New().String()
 	}
 
-	buf, _ := json.Marshal(action)
-	err = etcdrw.PutObj(object.ActionEtcdPrefix+action.UID, string(buf))
+	buf, _ := json.Marshal(newAction)
+	err = etcdrw.PutObj(object.ActionEtcdPrefix+newAction.UID, string(buf))
 	if err != nil {
 		utils.ServerError(ctx)
 		return
 	}
-	ctx.JSON(http.StatusOK, action)
+	ctx.JSON(http.StatusOK, newAction)
 }
 
 func PutAction(ctx *gin.Context) {

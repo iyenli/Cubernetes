@@ -10,8 +10,8 @@ import (
 
 func (ac *actionController) handleActorCreate(actor *object.Actor) error {
 	log.Printf("handle actor %s created\n", actor.Name)
-	action := ac.actionInformer.GetMatchedAction(actor.Spec.ActionName)
-	if action == nil {
+	action, found := ac.actionInformer.GetMatchedAction(actor.Spec.ActionName)
+	if !found {
 		return fmt.Errorf("action %s not found in cache", actor.Spec.ActionName)
 	}
 
@@ -28,7 +28,7 @@ func (ac *actionController) handleActorCreate(actor *object.Actor) error {
 	}
 
 	action.Status.LastUpdateTime = time.Now()
-	if _, err := crudobj.UpdateAction(*action); err != nil {
+	if _, err := crudobj.UpdateAction(action); err != nil {
 		log.Printf("fail to update Action status to apiserver\n")
 		return err
 	}
@@ -37,8 +37,8 @@ func (ac *actionController) handleActorCreate(actor *object.Actor) error {
 }
 
 func (ac *actionController) handleActorRemove(actor *object.Actor) error {
-	action := ac.actionInformer.GetMatchedAction(actor.Spec.ActionName)
-	if action == nil {
+	action, found := ac.actionInformer.GetMatchedAction(actor.Spec.ActionName)
+	if !found {
 		return fmt.Errorf("action %s not found in cache", actor.Spec.ActionName)
 	}
 
@@ -55,7 +55,7 @@ func (ac *actionController) handleActorRemove(actor *object.Actor) error {
 		log.Printf("actor %s killed but not in running\n", actor.Name)
 	}
 
-	if _, err := crudobj.UpdateAction(*action); err != nil {
+	if _, err := crudobj.UpdateAction(action); err != nil {
 		log.Printf("fail to update Action status to apiserver: %v\n", err)
 		return err
 	}

@@ -23,6 +23,7 @@ type DockerRuntime interface {
 	RemoveContainer(containerID string, force bool) error
 	InspectContainer(containerID string) (*dockertypes.ContainerJSON, error)
 	GetContainerStats(containerID string) (*dockertypes.StatsJSON, error)
+	SignalContainer(containerID, signal string) error
 
 	// PullImage Image Service
 	PullImage(imageName string) error
@@ -161,6 +162,19 @@ func (c *dockerClient) GetContainerStats(containerID string) (*dockertypes.Stats
 	}
 
 	return &stats, nil
+}
+
+func (c *dockerClient) SignalContainer(containerID, signal string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+	defer cancel()
+
+	err := c.client.ContainerKill(ctx, containerID, signal)
+	if err != nil {
+		log.Printf("fail to signal %s to container %s : %v\n", signal, containerID, err)
+		return err
+	}
+
+	return nil
 }
 
 func (c *dockerClient) PullImage(imageName string) error {

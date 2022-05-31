@@ -282,7 +282,7 @@ func ComputeActorSpecChange(new *Actor, old *Actor) bool {
 		return true
 	}
 
-	if new.Spec.ScriptFile != old.Spec.ScriptFile {
+	if new.Spec.ScriptUID != old.Spec.ScriptUID {
 		return true
 	}
 
@@ -299,8 +299,27 @@ func ComputeActorSpecChange(new *Actor, old *Actor) bool {
 	return false
 }
 
+// in case of handling script update
+func ActorSpecOnlyScriptChange(new *Actor, old *Actor) bool {
+	if new.Spec.ActionName != old.Spec.ActionName {
+		return false
+	}
+
+	if len(new.Spec.InvokeActions) != len(old.Spec.InvokeActions) {
+		return false
+	}
+
+	for idx, oldInvoke := range old.Spec.InvokeActions {
+		if new.Spec.InvokeActions[idx] != oldInvoke {
+			return false
+		}
+	}
+
+	return new.Spec.ScriptUID != old.Spec.ScriptUID
+}
+
 func ComputeActionSpecChange(new, old *Action) bool {
-	if new.Spec.ScriptPath != old.Spec.ScriptPath {
+	if new.Spec.ScriptUID != old.Spec.ScriptUID {
 		return true
 	}
 
@@ -315,6 +334,20 @@ func ComputeActionSpecChange(new, old *Action) bool {
 	}
 
 	return false
+}
+
+func ActionSpecOnlyScriptChange(new, old *Action) bool {
+	if len(new.Spec.InvokeActions) != len(old.Spec.InvokeActions) {
+		return false
+	}
+
+	for idx, oldInvoke := range old.Spec.InvokeActions {
+		if new.Spec.InvokeActions[idx] != oldInvoke {
+			return false
+		}
+	}
+
+	return new.Spec.ScriptUID != old.Spec.ScriptUID
 }
 
 func ComputeIngressCriticalChange(new *Ingress, old *Ingress) bool {
