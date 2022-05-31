@@ -101,6 +101,7 @@ func (kam *kafkaActionMonitor) QueryRecentEvoke(action string, period time.Durat
 		log.Printf("fail to query evoke of action %s: %v", action, err)
 		return 0, err
 	}
+	log.Printf("total %d evoke(s) for action %s found\n", len(points), action)
 
 	return len(points), nil
 }

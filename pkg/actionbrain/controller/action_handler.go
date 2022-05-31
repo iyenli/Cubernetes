@@ -17,6 +17,17 @@ func (ac *actionController) handleActionCreate(action *object.Action) error {
 		return err
 	}
 
+	action.Status = &object.ActionStatus{
+		LastUpdateTime: time.Now(),
+		Actors:         make([]string, 0),
+		ToRun:          make([]string, 0),
+		ToKill:         make([]string, 0),
+	}
+	if _, err := crudobj.UpdateAction(*action); err != nil {
+		log.Printf("fail to update action %s: %v\n", action.Name, err)
+		return err
+	}
+
 	return nil
 }
 

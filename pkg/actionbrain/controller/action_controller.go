@@ -19,8 +19,8 @@ import (
 )
 
 const (
-	actionUpdateWaitTime = time.Second * 600
-	actionScaleWaitTime  = time.Second * 6000
+	actionUpdateWaitTime = time.Second * 30
+	actionScaleWaitTime  = time.Second * 60
 	statusUpdateTime     = time.Second * 20
 )
 
@@ -142,15 +142,15 @@ func (ac *actionController) handleRequest() {
 	for req := range reqChan {
 		ac.biglock.Lock()
 
-		action := ac.actionInformer.GetMatchedAction(req)
-		if action == nil {
+		action, found := ac.actionInformer.GetMatchedAction(req)
+		if !found {
 			log.Printf("action %s not exist in cache!\n", req)
 			continue
 		}
 
 		if len(action.Status.ToRun)+len(action.Status.Actors) == 0 {
 			// create actor immediately if not exist
-			if actor, err := crudobj.CreateActor(ac.buildNewActor(action)); err != nil {
+			if actor, err := crudobj.CreateActor(ac.buildNewActor(&action)); err != nil {
 				log.Printf("fail to create actor for action %s: %v", req, err)
 			} else {
 				log.Printf("create actor %s for action %s", actor.Name, req)
@@ -159,7 +159,7 @@ func (ac *actionController) handleRequest() {
 				action.Status.LastScaleTime = time.Now()
 				action.Status.LastUpdateTime = time.Now()
 				action.Status.DesiredReplicas += 1
-				if _, err := crudobj.UpdateAction(*action); err != nil {
+				if _, err := crudobj.UpdateAction(action); err != nil {
 					log.Printf("fail to update action status: %v", err)
 				}
 			}
@@ -222,6 +222,7 @@ func (ac *actionController) checkAndUpdateActionStatus(action *object.Action) {
 		if err != nil {
 			log.Printf("fail to query most recent evoke for %s: %v", action.Name, err)
 		} else if target, scale := policy.CalculateScale(times, action.Status.ActualReplicas); scale {
+			log.Printf("[Scale] scale action %s to %d replica(s)\n", action.Name, target)
 			lastScale = time.Now()
 			desired = target
 		}

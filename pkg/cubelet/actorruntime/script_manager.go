@@ -46,7 +46,7 @@ func (sm *scriptManager) EnsureScriptExist(actor *object.Actor) error {
 	script := path.Join(dir, "action.py")
 	if _, err := os.Stat(script); err != nil && os.IsNotExist(err) {
 		// script not exist, pull file from apiserver
-		if err = objfile.GetActionFile(actor.Spec.ActionName, script); err != nil {
+		if err = objfile.GetActionFile(actor.Spec.ScriptUID, script); err != nil {
 			log.Printf("fail to pull file %s from APIServer: %v", script, err)
 			return err
 		}
@@ -67,7 +67,7 @@ func (sm *scriptManager) EnsureScriptExist(actor *object.Actor) error {
 	if uidBytes, err := os.ReadFile(meta); err == nil {
 		if string(uidBytes) != actor.Spec.ScriptUID {
 			// script updated, get script from apiserver
-			if err = objfile.GetActionFile(actor.Spec.ActionName, script); err != nil {
+			if err = objfile.GetActionFile(actor.Spec.ScriptUID, script); err != nil {
 				log.Printf("fail to pull file %s from APIServer: %v", script, err)
 				return err
 			}

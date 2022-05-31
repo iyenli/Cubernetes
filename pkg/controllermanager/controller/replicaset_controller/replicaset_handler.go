@@ -80,9 +80,16 @@ func (rsc *replicaSetController) handleReplicaSetUpdate(rs *object.ReplicaSet) e
 	return nil
 }
 
-func (rsc *replicaSetController) handleReplicaSetRemove(toKill *object.ReplicaSet) error {
-	toKill.Spec.Replicas = 0
-	return rsc.handleReplicaSetUpdate(toKill)
+func (rsc *replicaSetController) handleReplicaSetRemove(rs *object.ReplicaSet) error {
+	rs.Status.PodUIDsToKill = append(rs.Status.PodUIDsToKill, rs.Status.PodUIDsRunning...)
+	for _, uid := range rs.Status.PodUIDsRunning {
+		if err := crudobj.DeletePod(uid); err != nil {
+			log.Printf("fail to delete pod %s from API Server: %v\n", uid, err)
+		} else {
+			log.Printf("ReplicaSet %s remove pod from API Server: %s\n", rs.Name, uid)
+		}
+	}
+	return nil
 }
 
 func (rsc *replicaSetController) buildNewAPIPod(template *object.PodTemplate, scName string) *object.Pod {

@@ -12,7 +12,7 @@ import (
 type ActionInformer interface {
 	ListAndWatchActionsWithRetry()
 	WatchActionEvent() <-chan types.ActionEvent
-	GetMatchedAction(actionName string) *object.Action
+	GetMatchedAction(actionName string) (object.Action, bool)
 	ListActions() []object.Action
 	CloseChan(<-chan types.ActionEvent)
 }
@@ -58,13 +58,13 @@ func (i *cmActionInformer) ListAndWatchActionsWithRetry() {
 	}
 }
 
-func (i *cmActionInformer) GetMatchedAction(actionName string) *object.Action {
+func (i *cmActionInformer) GetMatchedAction(actionName string) (object.Action, bool) {
 	for _, action := range i.actionCache {
 		if action.Name == actionName {
-			return &action
+			return action, true
 		}
 	}
-	return nil
+	return object.Action{}, false
 }
 
 func (i *cmActionInformer) ListActions() []object.Action {
