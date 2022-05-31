@@ -2,7 +2,7 @@ build_path = build
 static_path = /etc/cubernetes/static
 targets = cubectl apiserver cubelet cuberoot cubeproxy manager scheduler gpuserver gateway brain
 
-all: ${targets} gpuexamples static
+all: ${targets} gpuexamples
 
 .PHONY:clean
 clean:
