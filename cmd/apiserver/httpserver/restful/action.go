@@ -45,6 +45,7 @@ func PostAction(ctx *gin.Context) {
 		if newAction.Name == action.Name {
 			// Action existed, update the action
 			newAction.UID = action.UID
+			newAction.Status = action.Status
 			existed = true
 			break
 		}
