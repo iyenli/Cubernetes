@@ -24,12 +24,15 @@ func (rg *RuntimeGateway) ListenReturnTopic() {
 		}
 
 		rg.mapMutex.Lock()
-		if channel, ok := rg.channelMap[msg.RequestUID]; ok {
+		channel, ok := rg.channelMap[msg.RequestUID]
+		delete(rg.channelMap, msg.RequestUID)
+		rg.mapMutex.Unlock()
+
+		if ok {
 			log.Printf("[INFO]: Get resp from MQ, UID is %v", msg.RequestUID)
 			channel <- msg
 		} else {
 			log.Printf("[Error]: return a resp and not found in channel map")
 		}
-		rg.mapMutex.Unlock()
 	}
 }

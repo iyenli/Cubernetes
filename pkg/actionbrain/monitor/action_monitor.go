@@ -31,7 +31,9 @@ func NewActionMonitor(kafkaHost string) (ActionMonitor, error) {
 	reader := kafkautil.NewReaderByConsumerGroup(
 		kafkaHost, options.MonitorTopic, options.MonitorConsumerGroup)
 
-	storage, err := tstorage.NewStorage(tstorage.WithPartitionDuration(30 * time.Second))
+	storage, err := tstorage.NewStorage(
+		tstorage.WithPartitionDuration(30000 * time.Second),
+	)
 	if err != nil {
 		log.Printf("fail to create in-memory storage: %v\n", err)
 		return nil, err
@@ -77,22 +79,22 @@ func (kam *kafkaActionMonitor) Run() {
 	}
 }
 
-func (kam *kafkaActionMonitor) insertActionEvoke(action string, time int64) error {
+func (kam *kafkaActionMonitor) insertActionEvoke(action string, t int64) error {
 	return kam.storage.InsertRows([]tstorage.Row{
 		{
 			Metric:    "action",
 			Labels:    []tstorage.Label{{Name: "action_name", Value: action}},
-			DataPoint: tstorage.DataPoint{Timestamp: time, Value: 0.0},
+			DataPoint: tstorage.DataPoint{Value: 0.0, Timestamp: time.Now().UnixMilli()},
 		},
 	})
 }
 
 func (kam *kafkaActionMonitor) QueryRecentEvoke(action string, period time.Duration) (int, error) {
-	now := time.Now().Unix()
+	now := time.Now().UnixMilli()
 	points, err := kam.storage.Select(
 		"action",
 		[]tstorage.Label{{Name: "action_name", Value: action}},
-		now-int64(period.Seconds()), now,
+		now-period.Milliseconds(), now,
 	)
 	if err != nil {
 		if errors.Is(err, tstorage.ErrNoDataPoints) {

@@ -12,13 +12,13 @@ func TestCheckCircle(t *testing.T) {
 	nodes["a"] = []string{"b", "c"}
 	nodes["b"] = []string{"c", "d"}
 
-	b, circle := dag.CheckCircle(nodes)
+	b, circle := dag.CheckLoop(nodes)
 	fmt.Println(b, circle)
 	assert.Equal(t, false, b)
 
 	nodes["d"] = []string{"c", "a"}
 	nodes["e"] = []string{"a", "b"}
-	b, circle = dag.CheckCircle(nodes)
+	b, circle = dag.CheckLoop(nodes)
 	fmt.Println(b, circle)
 	assert.Equal(t, true, b)
 }
