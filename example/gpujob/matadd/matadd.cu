@@ -6,13 +6,14 @@
 #define IDX2C(i, j, ld) (((j) * (ld)) + (i))
 #define BLOCK_SIZE 8
 
-__global__ void matrixAdd(const float** A, const float** B, float** C,
-    int M, int N)
+__global__ void matrixAdd(const float* A, const float* B, float* C, int M)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
-    if (i < N && j < N)
-        C[i][j] = A[i][j] + B[i][j];
+    int idx = j * M + i;
+
+    if (i < M && j < M)
+        C[idx] = A[idx] + B[idx];
 }
 
 void printfMatrix(float* a, int m, int n)
@@ -54,11 +55,11 @@ int main(void)
 
     dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
     dim3 dimGrid((int)ceil(N / BLOCK_SIZE), (int)ceil(N / BLOCK_SIZE));
-    matrixAdd<<<dimGrid, dimBlock>>>(devPtrA, devPtrB, devPtrC, N, N);
+    matrixAdd<<<dimGrid, dimBlock>>>(devPtrA, devPtrB, devPtrC, N);
 
     cudaMemcpy(c, devPtrC, sizeof(*c) * N * N, cudaMemcpyDeviceToHost);
 
-    printf("A x B = C\n");
+    printf("A + B = C\n");
     printf("\nA:\n");
     printfMatrix(a, N, N);
     printf("\nB:\n");
@@ -75,3 +76,4 @@ int main(void)
     free(c);
     return EXIT_SUCCESS;
 }
+
