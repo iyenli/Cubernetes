@@ -98,24 +98,31 @@ func (rg *RuntimeGateway) GetHandlerByIngress(ingress *object.Ingress) func(ctx 
 
 		// Just wait in go routine...
 		log.Printf("[INFO]: Request %v has been put into MQ, waiting for resp...\n", msg.RequestUID)
-		resp := <-channel
-		log.Printf("[INFO]: Req has got the resp! ID is %v", msg.RequestUID)
-		if err != nil {
-			log.Printf("[Error]: return code is invalid")
-			ctx.String(http.StatusInternalServerError, "HttpCode error")
-			return
-		}
 
-		log.Printf("[INFO]: Resp received, body is %v, return type is %v",
-			resp.Payload, resp.ContentType)
-		ctx.Header("Content-Type", resp.ContentType)
-		ctx.String(resp.StatusCode, resp.Payload)
+		select {
+		case <-time.After(90 * time.Second):
+			ctx.String(http.StatusGatewayTimeout, "Request timeout.")
+			log.Printf("[WARN] Req timeout, ReqMsg: %v\n", msg)
+
+		case resp := <-channel:
+			log.Printf("[INFO]: Req has got the resp! ID is %v", msg.RequestUID)
+			if err != nil {
+				log.Printf("[Error]: return code is invalid")
+				ctx.String(http.StatusInternalServerError, "HttpCode error")
+				return
+			}
+
+			log.Printf("[INFO]: Resp received, body is %v, return type is %v",
+				resp.Payload, resp.ContentType)
+			ctx.Header("Content-Type", resp.ContentType)
+			ctx.String(resp.StatusCode, resp.Payload)
+		}
 	}
 }
 
 func (rg *RuntimeGateway) SendMonitorInfo(action string) error {
 	msg := message.MonitorMessage{
-		InvokeTimeUnix: time.Now().Unix(),
+		InvokeTimeUnix: time.Now().UnixMilli(),
 		Action:         action,
 	}
 

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Ingress
+metadata:
+  name: calculate-ingress
+spec:
+  trigger: "/calculate"
+  invokeAction: "calculate"
+  httpType: "GET"

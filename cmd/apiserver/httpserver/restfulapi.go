@@ -88,4 +88,6 @@ var restfulList = []Handler{
 	{http.MethodPut, "/apis/ingress/:uid", restful.PutIngress},
 	{http.MethodDelete, "/apis/ingress/:uid", restful.DelIngress},
 	{http.MethodPost, "/apis/select/ingresses", restful.SelectIngresses},
+
+	{http.MethodGet, "/apis/workflow", restful.GetWorkflow},
 }

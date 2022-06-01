@@ -1,6 +1,6 @@
 package dag
 
-func CheckCircle(nodes map[string][]string) (bool, []string) {
+func CheckLoop(nodes map[string][]string) (bool, []string) {
 	indegrees := make(map[string]int)
 	for node := range nodes {
 		indegrees[node] = 0
@@ -29,12 +29,12 @@ func CheckCircle(nodes map[string][]string) (bool, []string) {
 	}
 
 	if len(indegrees) > 0 {
-		// has a circle
-		var circle []string
+		// has a loop
+		var loop []string
 		for node := range indegrees {
-			circle = append(circle, node)
+			loop = append(loop, node)
 		}
-		return true, circle
+		return true, loop
 	}
 	return false, nil
 }

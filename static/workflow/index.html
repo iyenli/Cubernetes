@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Serverless Workflow</title>
+    <script src="echarts.js"></script>
+  </head>
+  <body>
+    <button onclick="update()"
+            style="
+                cursor: pointer;
+                z-index: 1;
+                position: fixed;
+                top: 30px;
+                left: 50px;
+                background-color:darkorange;
+                color:white;
+	            width: 60px;
+	            height: 45px;
+	            border:0;
+	            font-size: 16px;
+	            box-sizing: content-box;
+                border-radius: 5px;">
+      refresh
+    </button>
+    <div id="main" style="width: 100vw; height :97vh; z-index: 0;"></div>
+    <script type="text/javascript">
+      const myChart = echarts.init(document.getElementById('main'));
+
+      const update = () => {
+        let opts = {
+          method: "GET",
+          credentials: "include"
+        };
+        fetch("http://localhost:8080/apis/workflow", opts)
+                .then((response) => {
+                  return response.json()
+                })
+                .then((data) => {
+                  render(data);
+                })
+                .catch((error) => {
+                  console.log(error);
+                });
+      }
+
+      const render = (json) => {
+        const ingress = json.ingresses
+        const actions = json.actions
+        // const ingress = [
+        //   {s: 'in', d: 'a', p: '/hello'}
+        // ]
+        //
+        // const actions = [
+        //   {s: 'a', d: ['b', 'c', 'd']}
+        // ]
+
+        let nodes = new Set
+        let links = []
+        let data = []
+
+        for (let action of actions) {
+          nodes.add(action.s)
+          for (let dst of action.d) {
+            nodes.add(dst)
+            links.push({source: action.s, target: dst})
+          }
+        }
+
+        for (let node of nodes) {
+          data.push({name: node, value: 'action'})
+        }
+
+        for (let igs of ingress) {
+          data.push({name: igs.s, value: igs.p})
+          links.push({source: igs.s, target: igs.d})
+        }
+
+        const option = {
+          tooltip: {},
+          series : [{
+            type: 'graph',
+            layout: 'force',
+            symbolSize: 60,
+            edgeSymbol: ['none', 'arrow'],
+            data: data,
+            links: links,
+            roam: true,
+            label: {
+              normal: {
+                show: true,
+                formatter: function (e) {
+                  return e['data']['name'];
+                }
+              }
+            },
+            edgeLabel: {
+              normal: { show: false }
+            },
+            force: {
+              repulsion: 1000,
+              edgeLength: 150
+            }
+          }]
+        };
+        myChart.setOption(option);
+      }
+
+      update()
+    </script>
+  </body>
+</html>
