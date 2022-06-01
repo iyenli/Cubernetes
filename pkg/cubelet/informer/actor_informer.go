@@ -129,8 +129,14 @@ func (c *cubeActorInformer) informActor(actor object.Actor, eType watchobj.Event
 			}
 		} else if exist && !object.ComputeActorSpecChange(&actor, &old) {
 			c.actorCache[actor.UID] = actor
+		} else if exist && object.ActorSpecOnlyScriptChange(&actor, &old) {
+			c.actorCache[actor.UID] = actor
+			c.actorEventChan <- types.ActorEvent{
+				Type:  types.Update,
+				Actor: actor,
+			}
 		} else {
-			log.Printf("update actor not supported\n")
+			log.Printf("update actor (not only script) not supported\n")
 		}
 	}
 }

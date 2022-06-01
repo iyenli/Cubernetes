@@ -9,8 +9,8 @@ import (
 var restfulList = []Handler{
 	{http.MethodGet, "/health", restful.GetHealth},
 
-	{http.MethodGet, "/apis/action/file/:name", file.GetActionFile},
-	{http.MethodPost, "/apis/action/file/:name", file.PostActionFile},
+	{http.MethodGet, "/apis/action/file/:uid", file.GetActionFile},
+	{http.MethodPost, "/apis/action/file/:uid", file.PostActionFile},
 
 	{http.MethodGet, "/apis/gpuJob/file/:uid", file.GetJobFile},
 	{http.MethodPost, "/apis/gpuJob/file/:uid", file.PostJobFile},
@@ -88,4 +88,6 @@ var restfulList = []Handler{
 	{http.MethodPut, "/apis/ingress/:uid", restful.PutIngress},
 	{http.MethodDelete, "/apis/ingress/:uid", restful.DelIngress},
 	{http.MethodPost, "/apis/select/ingresses", restful.SelectIngresses},
+
+	{http.MethodGet, "/apis/workflow", restful.GetWorkflow},
 }

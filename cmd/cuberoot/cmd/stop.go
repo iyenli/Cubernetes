@@ -52,10 +52,10 @@ usage:
 			//log.Printf("Error when killing process: %v", err.Error())
 		}
 
-		err = utils.KillDaemonProcess(options.GATEWAY)
-		if err != nil {
-			//log.Printf("Error when killing process: %v", err.Error())
-		}
+		//err = utils.KillDaemonProcess(options.GATEWAY)
+		//if err != nil {
+		//	//log.Printf("Error when killing process: %v", err.Error())
+		//}
 
 		err = utils.KillDaemonProcess(options.BRAIN)
 		if err != nil {

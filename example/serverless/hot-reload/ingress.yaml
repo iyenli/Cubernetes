@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Ingress
+metadata:
+  name: greeting-ingress
+spec:
+  trigger: "/greeting"
+  invokeAction: "greeting"
+  httpType: "GET"

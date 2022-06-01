@@ -22,3 +22,10 @@ const (
 	GATEWAYLOG   = LOGDIR + "gateway.log"
 	BRAINLOG     = LOGDIR + "brain.log"
 )
+
+const (
+	GatewayImage = "yiyanleee/serverless-gateway:v1.5"
+	Usage        = "usage"
+	UsageLabel   = "ServerlessGatewayPod"
+	GatewayIP    = "10.96.0.0"
+)

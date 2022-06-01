@@ -201,6 +201,12 @@ func (cl *Cubelet) syncActorLoop() {
 			if err != nil {
 				log.Printf("[Error]: fail to remove actor: %v\n", err)
 			}
+		case informertypes.Update:
+			log.Printf("[INFO]: Event: update actor %s\n", actorEvent.Actor.UID)
+			err := cl.actorRuntime.UpdateActionScript(&actorEvent.Actor)
+			if err != nil {
+				log.Printf("[Error]: fail to update actor: %v\n", err)
+			}
 		default:
 			log.Printf("[WARN]: Actor only support Create & Kill now\n")
 		}

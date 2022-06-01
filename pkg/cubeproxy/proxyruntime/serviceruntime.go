@@ -4,6 +4,7 @@ import (
 	"Cubernetes/pkg/apiserver/crudobj"
 	"Cubernetes/pkg/cubeproxy/proxyruntime/utils"
 	"Cubernetes/pkg/object"
+	"errors"
 	"log"
 	"net"
 	"strconv"
@@ -71,10 +72,44 @@ func (pr *ProxyRuntime) AddService(service *object.Service) error {
 	}
 
 	for idx, port := range service.Spec.Ports {
-		err := pr.MapPortToPods(service, podIPs, &port, idx)
-		if err != nil {
-			log.Println("[error]: map port to pods failed")
-			return err
+		if port.TargetPortName == "" {
+			err := pr.MapPortToPods(service, podIPs, &port, idx)
+			if err != nil {
+				log.Println("[error]: map port to pods failed")
+				return err
+			}
+		} else {
+			log.Println("[INFO]: Get a service using target name")
+			var podIPsByName []string
+			for _, pod := range pods {
+				for _, container := range pod.Spec.Containers {
+					for _, containerPort := range container.Ports {
+						if port.TargetPortName == containerPort.Name {
+							podIPsByName = append(podIPsByName, pod.Status.IP.String())
+							if port.TargetPort == 0 {
+								log.Println("[INFO]: First assign a container port to target port")
+								port.TargetPort = containerPort.ContainerPort
+							} else if port.TargetPort != containerPort.ContainerPort {
+								log.Println("[Fatal]: wrong service, multiple matched ports")
+								return errors.New("multiple matched ports")
+							}
+						}
+					}
+				}
+			}
+
+			// check and refill port again
+			for portIdx, _ := range service.Spec.Ports {
+				if service.Spec.Ports[portIdx].Port == 0 {
+					service.Spec.Ports[portIdx].Port = service.Spec.Ports[portIdx].TargetPort
+				}
+			}
+
+			err := pr.MapPortToPods(service, podIPsByName, &port, idx)
+			if err != nil {
+				log.Println("[error]: map port to pods failed")
+				return err
+			}
 		}
 	}
 
@@ -138,6 +173,9 @@ func (pr *ProxyRuntime) DeleteService(service *object.Service) error {
 	}
 
 	// update endpoint(but not write into etcd)
+	if service.Status == nil {
+		service.Status = &object.ServiceStatus{}
+	}
 	service.Status.Endpoints = []net.IP{}
 	// finally...
 	delete(pr.ServiceChainMap, service.UID)
