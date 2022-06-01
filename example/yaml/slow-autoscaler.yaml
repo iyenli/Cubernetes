@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: AutoScaler
+metadata:
+  name: slow-autoscaler
+spec:
+  workload: Pod
+  minReplicas: 1
+  maxReplicas: 3
+  targetUtilization:
+    cpu:
+      minPercentage: 50.0
+      maxPercentage: 80.0
+  minScaleInterval: 80
+  template:
+    metadata:
+      labels:
+        app: slow-as
+    spec:
+      containers:
+        - name: test-as-pod
+          image: jolynefr/stress-killer:v1.11
+          command: ["600", "--cpu", "1"]
+          volumeMounts:
+            - name: nodeInfo
+              mountPath: /app/info
+      volumes:
+        - name: nodeInfo
+          hostPath: /root/nodeInfo

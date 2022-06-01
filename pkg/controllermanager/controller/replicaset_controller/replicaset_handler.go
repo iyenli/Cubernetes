@@ -67,6 +67,7 @@ func (rsc *replicaSetController) handleReplicaSetUpdate(rs *object.ReplicaSet) e
 				log.Printf("fail to delete pod %s from API Server: %v\n", uid, err)
 			} else {
 				log.Printf("ReplicaSet %s remove pod from API Server: %s\n", rs.Name, uid)
+				rsc.podInformer.RecordRemove(uid)
 			}
 		}
 	}

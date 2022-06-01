@@ -15,7 +15,7 @@ type PodInformer interface {
 	WatchPodEvent() <-chan types.PodEvent
 	CloseChan(<-chan types.PodEvent)
 	SelectPods(selector map[string]string) []object.Pod
-	ForceRemove(uid string)
+	RecordRemove(uid string)
 }
 
 const (
@@ -28,12 +28,14 @@ func NewPodInformer() (PodInformer, error) {
 	return &cmPodInformer{
 		podEventChans: make([]chan types.PodEvent, 0),
 		podCache:      make(map[string]object.Pod),
+		rmCache:       make(map[string]interface{}),
 	}, nil
 }
 
 type cmPodInformer struct {
 	podEventChans []chan types.PodEvent
 	podCache      map[string]object.Pod
+	rmCache       map[string]interface{}
 }
 
 func (i *cmPodInformer) ListAndWatchPodsWithRetry() {
@@ -78,6 +80,9 @@ func (i *cmPodInformer) tryListAndWatchPods() {
 				podEvent.EType != watchobj.EVENT_DELETE {
 				continue
 			}
+			if _, ok := i.rmCache[pod.UID]; ok {
+				continue
+			}
 			switch podEvent.EType {
 			case watchobj.EVENT_DELETE, watchobj.EVENT_PUT:
 				err := i.informPod(pod, podEvent.EType)
@@ -89,14 +94,14 @@ func (i *cmPodInformer) tryListAndWatchPods() {
 				log.Panic("Unsupported types in watch pod.")
 			}
 		default:
-			time.Sleep(time.Second)
+			time.Sleep(time.Millisecond * 50)
 		}
 	}
 }
 
 func (i *cmPodInformer) WatchPodEvent() <-chan types.PodEvent {
 	log.Printf("pod informer make a new chan!\n")
-	newChan := make(chan types.PodEvent)
+	newChan := make(chan types.PodEvent, 10)
 	i.podEventChans = append(i.podEventChans, newChan)
 	return newChan
 }
@@ -179,7 +184,8 @@ func (i *cmPodInformer) SelectPods(selector map[string]string) []object.Pod {
 	return matchedPods
 }
 
-func (i *cmPodInformer) ForceRemove(uid string) {
+func (i *cmPodInformer) RecordRemove(uid string) {
+	i.rmCache[uid] = true
 	delete(i.podCache, uid)
 }
 
