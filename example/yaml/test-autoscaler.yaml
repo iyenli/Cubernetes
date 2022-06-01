@@ -4,8 +4,8 @@ metadata:
   name: test-autoscaler
 spec:
   workload: Pod
-  minReplicas: 2
-  maxReplicas: 4
+  minReplicas: 1
+  maxReplicas: 3
   targetUtilization:
     cpu:
       minPercentage: 50.0
@@ -13,9 +13,15 @@ spec:
   template:
     metadata:
       labels:
-        thisis: useless
+        app: stress-killer-as
     spec:
       containers:
         - name: test-as-pod
-          image: polinux/stress
-          command: ["stress", "--cpu", "1"]
+          image: jolynefr/stress-killer:v1.11
+          command: ["600", "--cpu", "1"]
+          volumeMounts:
+            - name: nodeInfo
+              mountPath: /app/info
+      volumes:
+        - name: nodeInfo
+          hostPath: /root/nodeInfo

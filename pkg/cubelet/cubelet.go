@@ -251,8 +251,8 @@ func (cl *Cubelet) updatePodsRoutine() {
 
 			podStatus.IP = ip
 			podStatus.NodeUID = nodeUID
-			log.Printf("[INFO]: updating pod status, ip is %v, status is %v",
-				podStatus.IP.String(), podStatus.Phase)
+			log.Printf("[INFO]: updating pod status, ip is %v, status is %v, cpu usage is %v",
+				podStatus.IP.String(), podStatus.Phase, podStatus.ActualResourceUsage.ActualCPUUsage)
 
 			rp, err := crudobj.UpdatePodStatus(p.UID, *podStatus)
 			if err != nil {

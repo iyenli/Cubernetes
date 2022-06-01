@@ -20,11 +20,11 @@ const (
 
 // sandboxName, sandboxID, err
 func (m *cubeRuntimeManager) createPodSandbox(pod *object.Pod) (string, string, error) {
-	err := m.dockerRuntime.PullImage(defaultPauseImage)
-	if err != nil {
-		log.Printf("ensure image for sandbox of pod %s failed\n", pod.Name)
-		return "", "", err
-	}
+	// err := m.dockerRuntime.PullImage(defaultPauseImage)
+	// if err != nil {
+	// 	log.Printf("ensure image for sandbox of pod %s failed\n", pod.Name)
+	// 	return "", "", err
+	// }
 
 	podSandboxConfig := generatePodSandboxConfig(pod)
 	log.Println("creating sandbox...")

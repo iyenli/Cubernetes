@@ -15,6 +15,7 @@ type PodInformer interface {
 	WatchPodEvent() <-chan types.PodEvent
 	CloseChan(<-chan types.PodEvent)
 	SelectPods(selector map[string]string) []object.Pod
+	ForceRemove(uid string)
 }
 
 const (
@@ -71,6 +72,7 @@ func (i *cmPodInformer) tryListAndWatchPods() {
 				return
 			}
 			pod := podEvent.Pod
+			log.Printf("manager pod informer get pod %s, event is %s\n", pod.UID, podEvent.EType)
 			// pod status not ready to handle by controller_manager
 			if (pod.Status == nil || phase.NotHandle(pod.Status.Phase)) &&
 				podEvent.EType != watchobj.EVENT_DELETE {
@@ -78,7 +80,6 @@ func (i *cmPodInformer) tryListAndWatchPods() {
 			}
 			switch podEvent.EType {
 			case watchobj.EVENT_DELETE, watchobj.EVENT_PUT:
-				log.Println("[INFO]: Delete or put an pod, pod ID is", pod.UID)
 				err := i.informPod(pod, podEvent.EType)
 				if err != nil {
 					log.Println("[INFO]: Delete or put an pod error", pod.UID)
@@ -124,6 +125,7 @@ func (i *cmPodInformer) informPod(newPod object.Pod, eType watchobj.EventType) e
 			})
 		} else if exist {
 			i.podCache[newPod.UID] = newPod
+			log.Printf("Pod %s cpu usage is %v\n", newPod.UID, newPod.Status.ActualResourceUsage.ActualCPUUsage)
 			newRunning := phase.Running(newPod.Status.Phase)
 			oldRunning := phase.Running(oldPod.Status.Phase)
 			if newRunning && oldRunning {
@@ -175,6 +177,10 @@ func (i *cmPodInformer) SelectPods(selector map[string]string) []object.Pod {
 		}
 	}
 	return matchedPods
+}
+
+func (i *cmPodInformer) ForceRemove(uid string) {
+	delete(i.podCache, uid)
 }
 
 func (i *cmPodInformer) informAll(event types.PodEvent) {
