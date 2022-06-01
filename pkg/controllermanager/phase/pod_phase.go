@@ -9,9 +9,9 @@ func NotHandle(p object.PodPhase) bool {
 }
 
 func Running(p object.PodPhase) bool {
-	return p == object.PodAccepted || p == object.PodPending || p == object.PodRunning
+	return p == object.PodAccepted || p == object.PodRunning
 }
 
 func Bad(p object.PodPhase) bool {
-	return p == object.PodSucceeded || p == object.PodFailed || p == object.PodUnknown
+	return p == object.PodSucceeded || p == object.PodFailed || p == object.PodUnknown || p == object.PodPending
 }
