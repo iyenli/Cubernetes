@@ -18,6 +18,7 @@ type ActorRuntime interface {
 	CreateActor(actor *object.Actor) error
 	KillActor(UID string) error
 	InspectActor(UID string) (object.ActorPhase, error)
+	UpdateActionScript(actor *object.Actor) error
 }
 
 func NewActorRuntime() (ActorRuntime, error) {
@@ -105,6 +106,31 @@ func (arm *actorRuntimeManager) KillActor(UID string) error {
 			return err
 		}
 	}
+
+	return nil
+}
+
+func (arm *actorRuntimeManager) UpdateActionScript(actor *object.Actor) error {
+	// pull script if necessary
+	if err := arm.scriptManager.EnsureScriptExist(actor); err != nil {
+		log.Printf("[Error]: fail to update script of  %s: %v\n", actor.Spec.ActionName, err)
+		return err
+	}
+
+	// get containerID
+	containerID, err := arm.getActorContainerID(actor.UID)
+	if err != nil {
+		return err
+	}
+
+	// send SIGINT to actor container,
+	// this will trigger wrapper.py to reload action module,
+	// which updates the `action` function in time
+	if err = arm.dockerRuntime.SignalContainer(containerID, "SIGINT"); err != nil {
+		return err
+	}
+
+	log.Printf("script of actor %s updated!\n", actor.Name)
 
 	return nil
 }

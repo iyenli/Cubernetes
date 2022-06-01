@@ -1,7 +1,0 @@
-syntax = "proto";
-
-package message;
-
-message Pod {
-	 required string podName=1;
-}

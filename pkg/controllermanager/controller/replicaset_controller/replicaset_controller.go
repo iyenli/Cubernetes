@@ -186,7 +186,7 @@ func (rsc *replicaSetController) checkAndUpdateReplicaSetStatus(rs *object.Repli
 	for idx, uid := range podsToKill {
 		if err := crudobj.DeletePod(uid); err != nil {
 			log.Printf("fail to delete pod %s from API Server: %v\n", uid, err)
-			if err.Error() == "fail to delete the obj" {
+			if err.Error() == "no objects found" {
 				noExist = append(noExist, idx)
 			}
 		} else {

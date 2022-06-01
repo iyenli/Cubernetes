@@ -3,7 +3,7 @@ kind: Node
 metadata:
   name: my-name-is-master
   labels:
-    gpu: RTX5090TiMaxProUltimateUltraPlus
+    gpu: RTX5090TiMaxPro
 spec:
   type: Master
   capacity:

@@ -16,5 +16,5 @@ ulimit -s unlimited
 ulimit -l unlimited
 
 module load gcc/8.3.0 cuda/10.1.243-gcc-8.3.0
-nvcc matmult.cu -o matmult
-./matmult
+nvcc matadd.cu -o matadd
+./matadd

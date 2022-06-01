@@ -3,5 +3,4 @@ kind: Action
 metadata:
   name: hello
 spec:
-  scriptPath: ./example/serverless/hello/action.py
   invokeActions: []

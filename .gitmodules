@@ -1,0 +1,3 @@
+[submodule "serverless/python"]
+	path = serverless/python
+	url = https://gitee.com/k9-s/Serverless-Python.git

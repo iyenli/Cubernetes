@@ -16,7 +16,7 @@ type Actor struct {
 
 type ActorSpec struct {
 	ActionName    string   `json:"actionName" yaml:"actionName"`
-	ScriptFile    string   `json:"file" yaml:"file"`
+	ScriptUID     string   `json:"file" yaml:"file"`
 	InvokeActions []string `json:"invokeActions" yaml:"invokeActions"`
 }
 

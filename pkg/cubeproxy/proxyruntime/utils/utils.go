@@ -21,6 +21,10 @@ func CheckService(service *object.Service) error {
 	}
 
 	for _, port := range service.Spec.Ports {
+		if port.TargetPortName == "" && port.TargetPort == 0 {
+			log.Println("[Fatal]: Wrong service")
+			return errors.New("illegal service port")
+		}
 		if port.Port == 0 {
 			port.Port = port.TargetPort
 		}

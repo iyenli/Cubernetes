@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-multipod-service-nginx-pod
+  labels:
+    svcname: proxy
+spec:
+  containers:
+    - name: test-pod-nginx-third-stage
+      image: nginx
+      ports:
+        - name: nginx-port
+          containerPort: 80
