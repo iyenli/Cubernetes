@@ -14,7 +14,7 @@ spec:
         app: tomcat-rs-onemore-tomcat
     spec:
       selector:
-        gpu: RTX5090TiMaxProUltimateUltraPlus
+        gpu: RTX5090TiMaxPro
       containers:
         - name: test-pod-tomcat-third-stage
           image: tomcat

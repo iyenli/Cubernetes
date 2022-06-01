@@ -164,7 +164,7 @@ func (cp *Cubeproxy) syncDNS() {
 			log.Printf("[INFO] DNS Created, DnsID %s\n", dns.UID)
 			err := cp.Runtime.AddDNS(&dns)
 			if err != nil {
-				log.Fatalln("[Fatal]: error when create DNS")
+				log.Println("[Fatal]: error when create DNS")
 				return
 			}
 
@@ -172,7 +172,7 @@ func (cp *Cubeproxy) syncDNS() {
 			log.Printf("[INFO] DNS Removed, DnsID %s\n", dns.UID)
 			err := cp.Runtime.DeleteDNS(&dns)
 			if err != nil {
-				log.Fatalln("[Fatal]: error when remove DNS")
+				log.Println("[Fatal]: error when remove DNS")
 				return
 			}
 
@@ -180,7 +180,7 @@ func (cp *Cubeproxy) syncDNS() {
 			log.Printf("[INFO] DNS Update, DnsID %s\n", dns.UID)
 			err := cp.Runtime.ModifyDNS(&dns)
 			if err != nil {
-				log.Fatalln("[Fatal]: error when modify DNS")
+				log.Println("[Fatal]: error when modify DNS")
 				return
 			}
 		}
