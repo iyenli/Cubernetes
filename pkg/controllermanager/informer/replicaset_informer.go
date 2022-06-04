@@ -78,7 +78,7 @@ func (i *rsInformer) tryListAndWatchReplicaSets() {
 
 func (i *rsInformer) WatchRSEvent() <-chan types.RsEvent {
 	log.Printf("replicaset informer make a new chan!\n")
-	newChan := make(chan types.RsEvent)
+	newChan := make(chan types.RsEvent, 10)
 	i.RsEventChans = append(i.RsEventChans, newChan)
 	return newChan
 }

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: AutoScaler
 metadata:
-  name: test-autoscaler
+  name: slow-autoscaler
 spec:
   workload: Pod
   minReplicas: 1
@@ -10,10 +10,11 @@ spec:
     cpu:
       minPercentage: 50.0
       maxPercentage: 80.0
+  minScaleInterval: 80
   template:
     metadata:
       labels:
-        app: stress-killer-as
+        app: slow-as
     spec:
       containers:
         - name: test-as-pod

@@ -191,6 +191,7 @@ func (rsc *replicaSetController) checkAndUpdateReplicaSetStatus(rs *object.Repli
 			}
 		} else {
 			log.Printf("ReplicaSet %s remove pod from API Server: %s\n", rs.Name, uid)
+			rsc.podInformer.RecordRemove(uid)
 		}
 	}
 	podsToKill = utils.RemoveMultiIndex(podsToKill, noExist)
