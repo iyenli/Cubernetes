@@ -205,7 +205,10 @@ func (asc *autoScalerController) getAutoScalerPods(as *object.AutoScaler) ([]obj
 // shouldScale, desiredReplicas
 func (asc *autoScalerController) computeScale(running int, as *object.AutoScaler) (bool, int) {
 	// maintain a certain time interval between 2 scales
-	if time.Since(as.Status.LastScaleTime) < minScaleInterval {
+	// both default value & user-defined value is used
+	since := time.Since(as.Status.LastScaleTime)
+	if since < minScaleInterval ||
+		since < time.Duration(as.Spec.MinScaleIntervalSec)*time.Second {
 		return false, -1
 	}
 

@@ -26,6 +26,9 @@ type AutoScalerSpec struct {
 	// target average CPU utilization & Memory bytes over all the pods.
 	// nil if not specified.
 	TargetUtilization UtilizationLimit `json:"targetUtilization" yaml:"targetUtilization"`
+
+	// minimal time interval between 2 scales, default & min to 20
+	MinScaleIntervalSec int `json:"minScaleInterval,omitempty" yaml:"minScaleInterval,omitempty"`
 }
 
 type AutoScalerStatus struct {
