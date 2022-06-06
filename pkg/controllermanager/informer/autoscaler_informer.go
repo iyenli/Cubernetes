@@ -75,7 +75,7 @@ func (i *cmAutoScalerInformer) tryListAndWatchAutoScalers() {
 }
 
 func (i *cmAutoScalerInformer) WatchASEvent() <-chan types.AsEvent {
-	newChan := make(chan types.AsEvent)
+	newChan := make(chan types.AsEvent, 10)
 	i.asEventChans = append(i.asEventChans, newChan)
 	return newChan
 }

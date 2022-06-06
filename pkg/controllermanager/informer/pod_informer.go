@@ -15,6 +15,7 @@ type PodInformer interface {
 	WatchPodEvent() <-chan types.PodEvent
 	CloseChan(<-chan types.PodEvent)
 	SelectPods(selector map[string]string) []object.Pod
+	RecordRemove(uid string)
 }
 
 const (
@@ -27,12 +28,14 @@ func NewPodInformer() (PodInformer, error) {
 	return &cmPodInformer{
 		podEventChans: make([]chan types.PodEvent, 0),
 		podCache:      make(map[string]object.Pod),
+		rmCache:       make(map[string]interface{}),
 	}, nil
 }
 
 type cmPodInformer struct {
 	podEventChans []chan types.PodEvent
 	podCache      map[string]object.Pod
+	rmCache       map[string]interface{}
 }
 
 func (i *cmPodInformer) ListAndWatchPodsWithRetry() {
@@ -71,14 +74,17 @@ func (i *cmPodInformer) tryListAndWatchPods() {
 				return
 			}
 			pod := podEvent.Pod
+			log.Printf("manager pod informer get pod %s, event is %s\n", pod.UID, podEvent.EType)
 			// pod status not ready to handle by controller_manager
 			if (pod.Status == nil || phase.NotHandle(pod.Status.Phase)) &&
 				podEvent.EType != watchobj.EVENT_DELETE {
 				continue
 			}
+			if _, ok := i.rmCache[pod.UID]; ok {
+				continue
+			}
 			switch podEvent.EType {
 			case watchobj.EVENT_DELETE, watchobj.EVENT_PUT:
-				log.Println("[INFO]: Delete or put an pod, pod ID is", pod.UID)
 				err := i.informPod(pod, podEvent.EType)
 				if err != nil {
 					log.Println("[INFO]: Delete or put an pod error", pod.UID)
@@ -88,14 +94,14 @@ func (i *cmPodInformer) tryListAndWatchPods() {
 				log.Panic("Unsupported types in watch pod.")
 			}
 		default:
-			time.Sleep(time.Second)
+			time.Sleep(time.Millisecond * 50)
 		}
 	}
 }
 
 func (i *cmPodInformer) WatchPodEvent() <-chan types.PodEvent {
 	log.Printf("pod informer make a new chan!\n")
-	newChan := make(chan types.PodEvent)
+	newChan := make(chan types.PodEvent, 10)
 	i.podEventChans = append(i.podEventChans, newChan)
 	return newChan
 }
@@ -124,6 +130,7 @@ func (i *cmPodInformer) informPod(newPod object.Pod, eType watchobj.EventType) e
 			})
 		} else if exist {
 			i.podCache[newPod.UID] = newPod
+			log.Printf("Pod %s cpu usage is %v\n", newPod.UID, newPod.Status.ActualResourceUsage.ActualCPUUsage)
 			newRunning := phase.Running(newPod.Status.Phase)
 			oldRunning := phase.Running(oldPod.Status.Phase)
 			if newRunning && oldRunning {
@@ -175,6 +182,11 @@ func (i *cmPodInformer) SelectPods(selector map[string]string) []object.Pod {
 		}
 	}
 	return matchedPods
+}
+
+func (i *cmPodInformer) RecordRemove(uid string) {
+	i.rmCache[uid] = true
+	delete(i.podCache, uid)
 }
 
 func (i *cmPodInformer) informAll(event types.PodEvent) {

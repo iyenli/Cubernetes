@@ -91,6 +91,10 @@ func ComputeAutoScalerSpecChange(new *AutoScalerSpec, old *AutoScalerSpec) bool 
 		return true
 	}
 
+	if new.MinScaleIntervalSec != old.MinScaleIntervalSec {
+		return true
+	}
+
 	if new.TargetUtilization.CPU != nil {
 		if old.TargetUtilization.CPU == nil ||
 			old.TargetUtilization.CPU.MaxPercentage != new.TargetUtilization.CPU.MaxPercentage ||

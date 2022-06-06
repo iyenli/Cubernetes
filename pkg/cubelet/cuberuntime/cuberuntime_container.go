@@ -15,11 +15,11 @@ import (
 )
 
 func (m *cubeRuntimeManager) startContainer(container *object.Container, pod *object.Pod, podSandboxName string) (string, error) {
-	err := m.dockerRuntime.PullImage(container.Image)
-	if err != nil {
-		log.Printf("ensure image for container #{container.Name} failed\n")
-		return "", err
-	}
+	// err := m.dockerRuntime.PullImage(container.Image)
+	// if err != nil {
+	// 	log.Printf("ensure image for container #{container.Name} failed\n")
+	// 	return "", err
+	// }
 
 	config := m.generateContainerConfig(container, pod, podSandboxName)
 	log.Println("creating normal container...")
