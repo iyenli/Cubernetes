@@ -19,13 +19,15 @@
 
 <img src="https://s2.loli.net/2022/06/07/UVjySh7TCYsdG9P.png" alt="image-20220607193721317" style="zoom: 67%;" />
 
+<center>图1 Cubernetes依赖搜索</center>
+
 ### 整体架构
 
 <img src="Cubernetes验收报告.assets/overview.png" alt="overview" style="zoom: 25%;" />
 
-<center>图1 Cubernetes整体架构图</center>
+<center>图2 Cubernetes整体架构图</center>
 
-图1展示了Cubernetes的整体架构设计。与K8s类似，Cubernetes的组件也分为控制面和数据面。
+图2展示了Cubernetes的整体架构设计。与K8s类似，Cubernetes的组件也分为控制面和数据面。
 
 控制面围绕中心的API Server进行设计，包含ETCD, Scheduler, Controller Manager和Action Brain等组件。
 
@@ -47,15 +49,15 @@
 
 ![serverless1](Cubernetes验收报告.assets/serverless1.png)
 
-<center>图2 Actor架构</center>
+<center>图3 Actor架构</center>
 
-如图2所示，用户的函数称为Action，执行Action的Pod称为Actor。Actor里运行了Python解释器的容器，通过Volume Mount的方式加载用户函数脚本，在函数更新时也可以进行热重载，不必重启解释器。各个Actor之间通过Kafka消息队列连接，形成一条函数调用链。Actor消费一条调用请求（Invoke消息），执行用户函数，产生新的调用请求或返回值（Invoke或Response消息），放入对应接收者的消息队列中，同时还要发送调用记录给Action Brain，供其监控各个函数的调用次数，以便实现动态扩缩容以及函数冷启动时的快速响应。
+如图3所示，用户的函数称为Action，执行Action的Pod称为Actor。Actor里运行了Python解释器的容器，通过Volume Mount的方式加载用户函数脚本，在函数更新时也可以进行热重载，不必重启解释器。各个Actor之间通过Kafka消息队列连接，形成一条函数调用链。Actor消费一条调用请求（Invoke消息），执行用户函数，产生新的调用请求或返回值（Invoke或Response消息），放入对应接收者的消息队列中，同时还要发送调用记录给Action Brain，供其监控各个函数的调用次数，以便实现动态扩缩容以及函数冷启动时的快速响应。
 
 <img src="Cubernetes验收报告.assets/serverless2.png" alt="serverless2" style="zoom:28%;" />
 
-<center>图3 Serverless Workflow调用逻辑</center>
+<center>图4 Serverless Workflow调用逻辑</center>
 
-图3展示了一个完整的Serverless Workflow的执行流程。用户调用函数时，Gateway收到用户请求后就封装一个Invoke消息，然后等待接收到Response消息后将内容返回给用户。
+图4展示了一个完整的Serverless Workflow的执行流程。用户调用函数时，Gateway收到用户请求后就封装一个Invoke消息，然后等待接收到Response消息后将内容返回给用户。
 
 Gateway和Actor都运行在Cubernetes集群之上，沿用了ReplicaSet/AutoScaler的抽象，Kafka也以多机模式运行在各节点上。整个架构呈现出一种流水线处理的形式，可以取得更高吞吐性能和更小的通信开销，有良好的健壮性和可扩展性。
 
@@ -69,7 +71,7 @@ Cubernetes有**易用**的编程模型。Cubernetes中并没有组件来处理�
 from serverless import Request, Response, Invoke
 from http import HTTPStatus
 
-# req: 封装的调用请求 e.g. http://172.16.0.0:6810/calculate?a=1&b=2&sign=+
+# req: 封装的调用请求 e.g. http://172.16.0.0:6810/calculate?a=1&b=2&sign=%2B
 def action(req: Request) -> Invoke or Response:
     a = int(req.param('a'))
     b = int(req.param('b'))
@@ -148,7 +150,11 @@ Github Action在镜像同步后会自动触发：
 
 <img src="https://s2.loli.net/2022/06/07/u81hBGRo9WanevA.png" alt="image-20220607190844772" style="zoom:80%;" />
 
+<center>图5 Github Action</center>
+
 <img src="https://s2.loli.net/2022/06/07/gka9Oqi6fwLlBK1.png" alt="image-20220607225348283" style="zoom: 50%;" />
+
+<center>图6 Github Workflow执行结果</center>
 
 由于本身云操作系统并非持续服务的Web server或其他服务，因此没有进行持续部署。
 
@@ -325,9 +331,13 @@ Action-Brain运行在控制面上，可以看作为Serverless特化的Controller
 
 <img src="https://img-blog.csdn.net/20170321133912150" alt="img" style="zoom: 80%;" />
 
+<center>图7 优化前GPU矩阵乘法</center>
+
 优化后：
 
 <img src="https://img-blog.csdn.net/20170321134007901" alt="img" style="zoom: 80%;" />
+
+<center>图8 优化后GPU矩阵乘法</center>
 
 很明显的可以看出，一个元素被取入后会被使用多次，这大大减小了访存的开销。
 
