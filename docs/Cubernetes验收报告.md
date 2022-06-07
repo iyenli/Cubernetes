@@ -209,6 +209,16 @@ Github Action在镜像同步后会自动触发：
 docker stop [any docker ID]
 curl 172.16.0.0:8080 # 最多有7-10s可能被负载均衡到失效节点上
 # 如果允许Cubernetes占用更多资源，可以减少这一时间
+# pod重启，service也能在超时时间内恢复负载均衡
+```
+
+### 跨子网集群的部署
+
+由于我们没有假定过需要各个机器处于同一子网内，也不要求机器间联通的IP和某个特定网卡绑定，可以轻松扩展到各个子网集群。
+
+```
+./build/cuberoot init -f ./example/yaml/presentation/cross-master.yaml
+./build/cuberoot join 10.119.10.255 -f ./example/yaml/presentation/cross-worker.yaml
 ```
 
 ## 组件介绍
