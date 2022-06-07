@@ -1,8 +1,68 @@
-# 验收报告
+# Cubernetes验收报告
+
+第8组
+
+沈玮杭 519021910766
+
+杨镇宇 519021910390
+
+李逸岩 519021911103
+
+
 
 
 
 ## 架构介绍
+
+
+
+### 软件栈
+
+编程语言：Golang
+
+HTTP服务：GIN
+
+容器运行时：Docker
+
+CNI插件：Weave
+
+Serverless消息队列：Kafka
+
+
+
+### 整体架构
+
+![overview](Cubernetes验收报告.assets/overview.png)
+
+<center>图1 Cubernetes整体架构图</center>
+
+图1展示了Cubernetes的整体架构设计。与K8s类似，Cubernetes的组件也分为控制面和数据面。
+
+控制面围绕中心的API Server进行设计，包含ETCD、Scheduler、Controller Manager和Action Brain等组件。ETCD中存放了各类api对象，暴露grpc供API Server读写。API Server则对外提供RESTFul的HTTP服务，以实现对api对象的访问和watch。Scheduler通过watch的方式监听API Server中Pod、Node等对象的变化，对Pod进行动态调度。Controller Manager也通过watch来管理ReplicaSet等对象。Action Brain则负责管理Serverless的相关功能。
+
+数据面的组件在每一台服务器上均有运行，整体形成一个Node抽象。其中，Cubelet通过dockershim与docker后端交互，负责Pod生命周期的管理。CubeProxy则通过nginx容器实现DNS，通过设置iptable实现Service流量的转发，并通过Weave插件来打通Pod之间的网络通信。Cubelet和CubeProxy都通过watch和RESTFul接口访问API Server中的api对象。Serverless的组件以Pod的形式运行在各个机器上，并通过各机器上部属的Kafka消息队列进行通信，形成Serverless DAG。
+
+用户可以使用Cuberoot来管理集群（包括加入、启动、关闭、重置、开启Serverless等），可以用Cubectl对api对象进行操作（包括apply、create、get、describe、delete等）。
+
+
+
+### Serverless 架构
+
+![serverless1](Cubernetes验收报告.assets/serverless1.png)
+
+<center>图2 Actor架构</center>
+
+如图2所示，用户的函数称为Action，执行Action的Pod称为Actor。Actor里运行了Python解释器的容器，通过Volume Mount的方式加载用户函数脚本，在函数更新时也可以进行热重载，不必重启解释器。各个Actor之间通过Kafka消息队列连接，形成一条函数调用链。Actor消费一条调用请求（Invoke消息），执行用户函数，产生新的调用请求或返回值（Invoke或Response消息），放入对应接收者的消息队列中，同时还要发送调用记录给Action Brain，供其监控各个函数的调用次数，以便实现动态扩缩容以及函数冷启动时的快速响应。
+
+
+
+<img src="Cubernetes验收报告.assets/serverless2.png" alt="serverless2" style="zoom:28%;" />
+
+<center>图3 Serverless Workflow调用逻辑</center>
+
+图3展示了一个完整的Serverless Workflow的执行流程。用户调用函数时，Gateway收到用户请求后就封装一个Invoke消息，然后等待接收到Response消息后将内容返回给用户。Gateway和Actor都运行在Cubernetes集群之上，沿用了ReplicaSet的抽象，Kafka也以多机模式运行在各节点上，有良好的健壮性和可扩展性。整个架构呈现出一种流水线处理的形式，可以取得更高吞吐性能和更小的通信开销。值得注意的是，Cubernetes中并没有组件来处理函数调用分支，这是因为分支的逻辑包含在用户代码中，用户可以自由地选择下一个调用的函数是什么，Cubernetes只在Python运行时中做了合法性的检查，这样可以获得更高的编程灵活性，函数调用的写法也更符合程序员的逻辑。
+
+
 
 ### 使用的依赖
 
@@ -14,6 +74,8 @@
 
 - 自行实现了简易的时序数据库作为Serverless动态扩缩容的依据
 
+
+
 ### 多机部署
 
 - cuberoot通过是否存在元信息持久化文件判断应该新创建并且加入一个Cubernetes节点还是恢复之前的数据
@@ -21,7 +83,15 @@
 - Worker通过监测Watch channel的状态判断Master的存货状态，周期性的重连实现容错
 - Master通过心跳检测探测worker状态，更新ETCD中存储的Node状态
 
-### Cubernetes网络
+
+
+### API Server
+
+API Server使用了GIN框架提供HTTP服务
+
+
+
+### CubeProxy与Cubernetes网络
 
 - 以Weave Plugin为基础，用户**无感知**的下载与配置插件，不需要用户额外配置任何网络
   - Pod中容器共享Pause提供的网络，Pause加入Weave net, Pod中容器共享Localhost
@@ -33,9 +103,13 @@
   - 观察到不同Path对应不同的IP超出了DNS职责，通过Nginx实现不同path到不同IP的转换
   - 复用Service进行Pod负载均衡
 
-### GPU服务
+
+
+### GPU任务
 
 通过负载均衡的部署GPU Server到各个节点上，复用原有的Pod管理机制。具体来说，由Cubernetes提供镜像，用户提交Slurm文件后，将运行相应的GPU Server Pod与远程HPC服务器进行交互，然后直接和API Server反馈任务状态和结果。用户通过cubectl进行查询。
+
+
 
 ### Serverless
 
@@ -101,6 +175,14 @@ Controller-Manager运行在控制面上，负责保证高级对象（ReplicaSet�
 Action-Brain运行在控制面上，可以看作为Serverless特化的Controller。其处理逻辑和Controller-Manager类似，不同的是，Action-Brain主要控制Action对象（如其名），还通过一个Monitor子组件从kafka消息队列中监听对函数的每一次调用，记录在轻量级时序数据库tstorage中，提供Action扩容的RPM数据。
 
 ## 成员分工
+
+<center>表1 成员分工与贡献度</center>
+
+| 成员   | 工作                                                         | 贡献度 |
+| ------ | ------------------------------------------------------------ | ------ |
+| 沈玮杭 | API Server & Client、GPU Job Server、Serverless Python Runtime | 1/3    |
+| 杨镇宇 | Cuberlet、Scheduler、Action Brain                            | 1/3    |
+| 李逸岩 | CubeProxy、Controller Manager、Serverless Gateway、sufficient test | 1/3    |
 
 
 
