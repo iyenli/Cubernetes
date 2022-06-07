@@ -13,7 +13,7 @@ func KillDaemonProcess(name string) error {
 	byteOutput, err := Cmd.CombinedOutput()
 	if err != nil {
 		log.Printf("[Warn]: No such process named %v\n", name)
-		return err
+		return nil
 	}
 
 	output := strings.Replace(string(byteOutput), "\n", " ", -1)
@@ -25,13 +25,18 @@ func KillDaemonProcess(name string) error {
 		i, err := strconv.Atoi(pid)
 		if err != nil {
 			log.Println("[Warn]: Invalid PID to parse as int")
-			return err
+			return nil
 		}
 		proc, err := os.FindProcess(i)
+		if err != nil {
+			log.Println("[Warn]: Process not found")
+			return nil
+		}
+
 		err = proc.Kill()
 		if err != nil {
 			log.Println("[Warn]: Kill process failed")
-			return err
+			return nil
 		}
 	}
 

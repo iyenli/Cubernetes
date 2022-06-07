@@ -56,7 +56,7 @@ func (pr *ProxyRuntime) AddService(service *object.Service) error {
 
 	log.Println("[INFO]: Ready to map pod ports, pod number", len(pods), "port number", len(service.Spec.Ports))
 	prob := make([][]string, len(service.Spec.Ports))
-	for idx, _ := range prob {
+	for idx := range prob {
 		prob[idx] = make([]string, len(pods))
 	}
 
@@ -99,7 +99,7 @@ func (pr *ProxyRuntime) AddService(service *object.Service) error {
 			}
 
 			// check and refill port again
-			for portIdx, _ := range service.Spec.Ports {
+			for portIdx := range service.Spec.Ports {
 				if service.Spec.Ports[portIdx].Port == 0 {
 					service.Spec.Ports[portIdx].Port = service.Spec.Ports[portIdx].TargetPort
 				}
