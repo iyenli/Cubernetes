@@ -121,10 +121,14 @@ func PrepareTest() error {
 
 		cmd = osexec.Command("docker", "stop", output)
 		err = cmd.Run()
-
+		if err != nil {
+			return err
+		}
 		cmd = osexec.Command("docker", "rm", output)
 		err = cmd.Run()
-
+		if err != nil {
+			return err
+		}
 		if err != nil {
 			return err
 		}

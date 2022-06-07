@@ -52,7 +52,7 @@ func updateNodeReadyState() {
 			log.Fatal("[FATAL] fail to parse Node")
 		}
 
-		if node.Status == nil || node.Status.Condition.Ready == false {
+		if node.Status == nil || !node.Status.Condition.Ready {
 			continue
 		}
 
