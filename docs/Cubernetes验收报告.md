@@ -148,7 +148,7 @@ Github Action在镜像同步后会自动触发：
 
 <img src="https://s2.loli.net/2022/06/07/u81hBGRo9WanevA.png" alt="image-20220607190844772" style="zoom:80%;" />
 
-<img src="https://s2.loli.net/2022/06/07/aYtXODCPKb3y5Bp.png" alt="image-20220607191603092" style="zoom: 50%;" />
+<img src="https://s2.loli.net/2022/06/07/gka9Oqi6fwLlBK1.png" alt="image-20220607225348283" style="zoom: 50%;" />
 
 由于本身云操作系统并非持续服务的Web server或其他服务，因此没有进行持续部署。
 
