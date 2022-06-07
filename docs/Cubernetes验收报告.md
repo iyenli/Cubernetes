@@ -197,7 +197,7 @@ Github Action在镜像同步后会自动触发：
 
 ## 功能介绍
 
-我们在Slides中精心设计了11个Case。高效地覆盖了验收指南的几乎每一句话，您可以参考ppt中的yaml文件设计和对应视频文件。如果想下载视频或者查看未经任何剪辑的源文件，也可以通过[Jbox](https://jbox.sjtu.edu.cn/v/link/view/f0f76f7aad094521a8258a8d05ee5153)访问。
+我们在[Slides](https://jbox.sjtu.edu.cn/l/61Ss9l)中精心设计了11个Case。高效地覆盖了验收指南的几乎每一句话，您可以参考ppt中的yaml文件设计和对应视频文件。如果想下载视频或者查看未经任何剪辑的源文件，也可以通过[Jbox](https://jbox.sjtu.edu.cn/v/link/view/f0f76f7aad094521a8258a8d05ee5153)访问。
 
 下面补充一些case，覆盖边界条件以及没有来得及演示的内容。GPU代码讲解，可以在附件一查看。
 
