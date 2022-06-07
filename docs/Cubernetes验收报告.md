@@ -14,49 +14,23 @@
 
 ## 架构介绍
 
-### 使用的依赖
 
-- 没有使用k8s.io组织下的任何依赖和库，没有使用Knative, openwhisk有关的任何依赖和库
-- 没有使用CNI库，但容器间网络连接是利用Weave实现的
-- 主要使用了etcd, kafka, iptables client封装对这些外部组件的操作
 
-<img src="https://s2.loli.net/2022/06/07/UVjySh7TCYsdG9P.png" alt="image-20220607193721317" style="zoom: 67%;" />
+### 软件栈
 
-- 自行实现了简易的时序数据库作为Serverless动态扩缩容的依据
+编程语言：Golang
 
-### 多机部署
+HTTP服务：GIN
 
-- cuberoot通过是否存在元信息持久化文件判断应该新创建并且加入一个Cubernetes节点还是恢复之前的数据
-- Scheduler调度优先满足Pod selector, 在匹配的Node集合中，Scheduler会进行Round Robin调度
-- Worker通过监测Watch channel的状态判断Master的存货状态，周期性的重连实现容错
-- Master通过心跳检测探测worker状态，更新ETCD中存储的Node状态
+容器运行时：Docker
 
-### Cubernetes网络
+CNI插件：Weave
 
-- 以Weave Plugin为基础，用户**无感知**的下载与配置插件，不需要用户额外配置任何网络
-  - Pod中容器共享Pause提供的网络，Pause加入Weave net, Pod中容器共享Localhost
-  - Container内可以通过任意节点的IP，任意Pod IP和Service IP 以及注册的域名访问对应服务
-  - 动态节点加入与删除
-- Service: 基于IPtables, 自动化的配置
-  - 自定义多层规则链，相互引用，便于更新，删除，新增Service
-- 容器化Nginx实现DNS服务
-  - 观察到不同Path对应不同的IP超出了DNS职责，通过Nginx实现不同path到不同IP的转换
-  - 复用Service进行Pod负载均衡
+Serverless消息队列：Kafka
 
-### GPU服务
 
-通过负载均衡的部署GPU Server到各个节点上，复用原有的Pod管理机制。具体来说，由Cubernetes提供镜像，用户提交Slurm文件后，将运行相应的GPU Server Pod与远程HPC服务器进行交互，然后直接和API Server反馈任务状态和结果。用户通过cubectl进行查询。
 
-### Serverless
-
-#### Gateway
-
-- 提供HTTP服务，接受HTTP Trigger并且返回Serverless计算结果
-- Gateway构建为镜像，可以实现无感知更新；复用AutoScaler + Service做负载均衡，对外暴露固定的Service IP
-- 通过Kafka Topic Partition机制实现消息队列的可扩展性
-- 每个请求通过Go Channel和long-running的请求返回队列监听者通信，减少切换开销
-
-#### 整体架构
+### 整体架构
 
 ![overview](Cubernetes验收报告.assets/overview.png)
 
@@ -68,9 +42,11 @@
 
 数据面的组件在每一台服务器上均有运行，整体形成一个Node抽象。其中，Cubelet通过dockershim与docker后端交互，负责Pod生命周期的管理。CubeProxy则通过nginx容器实现DNS，通过设置iptable实现Service流量的转发，并通过Weave插件来打通Pod之间的网络通信。Cubelet和CubeProxy都通过watch和RESTFul接口访问API Server中的api对象。Serverless的组件以Pod的形式运行在各个机器上，并通过各机器上部属的Kafka消息队列进行通信，形成Serverless DAG。
 
+用户可以使用Cuberoot来管理集群（包括加入、启动、关闭、重置、开启Serverless等），可以用Cubectl对api对象进行操作（包括apply、create、get、describe、delete等）。
 
 
-#### Serverless 架构
+
+### Serverless 架构
 
 ![serverless1](Cubernetes验收报告.assets/serverless1.png)
 
@@ -86,9 +62,63 @@
 
 图3展示了一个完整的Serverless Workflow的执行流程。用户调用函数时，Gateway收到用户请求后就封装一个Invoke消息，然后等待接收到Response消息后将内容返回给用户。Gateway和Actor都运行在Cubernetes集群之上，沿用了ReplicaSet的抽象，Kafka也以多机模式运行在各节点上，有良好的健壮性和可扩展性。整个架构呈现出一种流水线处理的形式，可以取得更高吞吐性能和更小的通信开销。值得注意的是，Cubernetes中并没有组件来处理函数调用分支，这是因为分支的逻辑包含在用户代码中，用户可以自由地选择下一个调用的函数是什么，Cubernetes只在Python运行时中做了合法性的检查，这样可以获得更高的编程灵活性，函数调用的写法也更符合程序员的逻辑。
 
-#### ApiServer
 
-软件栈：golang + gin
+
+### 使用的依赖
+
+- 没有使用k8s.io组织下的任何依赖和库，没有使用Knative, openwhisk有关的任何依赖和库
+- 没有使用CNI库，但容器间网络连接是利用Weave实现的
+- 主要使用了etcd, kafka, iptables client封装对这些外部组件的操作
+
+<img src="https://s2.loli.net/2022/06/07/UVjySh7TCYsdG9P.png" alt="image-20220607193721317" style="zoom: 67%;" />
+
+- 自行实现了简易的时序数据库作为Serverless动态扩缩容的依据
+
+
+
+### 多机部署
+
+- cuberoot通过是否存在元信息持久化文件判断应该新创建并且加入一个Cubernetes节点还是恢复之前的数据
+- Scheduler调度优先满足Pod selector, 在匹配的Node集合中，Scheduler会进行Round Robin调度
+- Worker通过监测Watch channel的状态判断Master的存货状态，周期性的重连实现容错
+- Master通过心跳检测探测worker状态，更新ETCD中存储的Node状态
+
+
+
+### API Server
+
+API Server使用了GIN框架提供HTTP服务
+
+
+
+### CubeProxy与Cubernetes网络
+
+- 以Weave Plugin为基础，用户**无感知**的下载与配置插件，不需要用户额外配置任何网络
+  - Pod中容器共享Pause提供的网络，Pause加入Weave net, Pod中容器共享Localhost
+  - Container内可以通过任意节点的IP，任意Pod IP和Service IP 以及注册的域名访问对应服务
+  - 动态节点加入与删除
+- Service: 基于IPtables, 自动化的配置
+  - 自定义多层规则链，相互引用，便于更新，删除，新增Service
+- 容器化Nginx实现DNS服务
+  - 观察到不同Path对应不同的IP超出了DNS职责，通过Nginx实现不同path到不同IP的转换
+  - 复用Service进行Pod负载均衡
+
+
+
+### GPU任务
+
+通过负载均衡的部署GPU Server到各个节点上，复用原有的Pod管理机制。具体来说，由Cubernetes提供镜像，用户提交Slurm文件后，将运行相应的GPU Server Pod与远程HPC服务器进行交互，然后直接和API Server反馈任务状态和结果。用户通过cubectl进行查询。
+
+
+
+### Serverless
+
+#### Gateway
+
+- 提供HTTP服务，接受HTTP Trigger并且返回Serverless计算结果
+- Gateway构建为镜像，可以实现无感知更新；复用AutoScaler + Service做负载均衡，对外暴露固定的Service IP
+- 通过Kafka Topic Partition机制实现消息队列的可扩展性
+- 每个请求通过Go Channel和long-running的请求返回队列监听者通信，减少切换开销
 
 
 
