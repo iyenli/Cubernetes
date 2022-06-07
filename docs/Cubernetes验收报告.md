@@ -94,6 +94,12 @@ def action(req: Request) -> Invoke or Response:
         return Response("unknown sign: {}\n".format(s), http_status=HTTPStatus.BAD_REQUEST)
 ```
 
+同时，为了方便用户构建自己的Workflow，Cubernetes在Master节点的8080端口为用户提供了可视化的网页视图，清晰地展示函数DAG。
+
+![workflow](Cubernetes验收报告.assets/workflow.png)
+
+<center>图5 Serverless Workflow可视化</center>
+
 ### 多机部署
 
 - cuberoot通过是否存在元信息持久化文件判断应该新创建并且加入一个Cubernetes节点还是恢复之前的数据
@@ -150,11 +156,11 @@ Github Action在镜像同步后会自动触发：
 
 <img src="https://s2.loli.net/2022/06/07/u81hBGRo9WanevA.png" alt="image-20220607190844772" style="zoom:80%;" />
 
-<center>图5 Github Action</center>
+<center>图6 Github Action</center>
 
 <img src="https://s2.loli.net/2022/06/07/gka9Oqi6fwLlBK1.png" alt="image-20220607225348283" style="zoom: 50%;" />
 
-<center>图6 Github Workflow执行结果</center>
+<center>图7 Github Workflow执行结果</center>
 
 由于本身云操作系统并非持续服务的Web server或其他服务，因此没有进行持续部署。
 
@@ -348,13 +354,13 @@ Action-Brain运行在控制面上，可以看作为Serverless特化的Controller
 
 <img src="https://img-blog.csdn.net/20170321133912150" alt="img" style="zoom: 80%;" />
 
-<center>图7 优化前GPU矩阵乘法</center>
+<center>图8 优化前GPU矩阵乘法</center>
 
 优化后：
 
 <img src="https://img-blog.csdn.net/20170321134007901" alt="img" style="zoom: 80%;" />
 
-<center>图8 优化后GPU矩阵乘法</center>
+<center>图9 优化后GPU矩阵乘法</center>
 
 很明显的可以看出，一个元素被取入后会被使用多次，这大大减小了访存的开销。
 
