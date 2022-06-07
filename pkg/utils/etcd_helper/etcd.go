@@ -54,7 +54,6 @@ func ETCDHealthCheck(ctx *ETCDContext) bool {
 			return
 		}
 		health <- true
-		return
 	}()
 
 	for {

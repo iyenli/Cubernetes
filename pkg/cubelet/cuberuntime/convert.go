@@ -4,7 +4,6 @@ import (
 	cubecontainer "Cubernetes/pkg/cubelet/container"
 	"Cubernetes/pkg/cubelet/dockershim"
 	"strings"
-	"time"
 
 	dockertypes "github.com/docker/docker/api/types"
 )
@@ -20,21 +19,21 @@ func toSandboxStatus(dc *dockertypes.Container) *cubecontainer.SandboxStatus {
 	return status
 }
 
-func toContainerStatus(dc *dockertypes.Container) *cubecontainer.ContainerStatus {
-	status := &cubecontainer.ContainerStatus{
-		ID: cubecontainer.ContainerID{
-			Type: "docker",
-			ID:   dc.ID,
-		},
-		Name:      dc.Labels[ContainerNameLabel],
-		State:     toContainerState(dc.Status),
-		CreatedAt: time.Unix(0, dc.Created),
-		Image:     dc.Image,
-		ImageID:   dc.ImageID,
-	}
+// func toContainerStatus(dc *dockertypes.Container) *cubecontainer.ContainerStatus {
+// 	status := &cubecontainer.ContainerStatus{
+// 		ID: cubecontainer.ContainerID{
+// 			Type: "docker",
+// 			ID:   dc.ID,
+// 		},
+// 		Name:      dc.Labels[ContainerNameLabel],
+// 		State:     toContainerState(dc.Status),
+// 		CreatedAt: time.Unix(0, dc.Created),
+// 		Image:     dc.Image,
+// 		ImageID:   dc.ImageID,
+// 	}
 
-	return status
-}
+// 	return status
+// }
 
 func toSandboxState(state string) cubecontainer.SandboxState {
 	switch {
@@ -45,18 +44,18 @@ func toSandboxState(state string) cubecontainer.SandboxState {
 	}
 }
 
-func toContainerState(state string) cubecontainer.ContainerState {
-	switch {
-	case strings.HasPrefix(state, "Up"):
-		return cubecontainer.ContainerStateRunning
-	case strings.HasPrefix(state, "Exited"):
-		return cubecontainer.ContainerStateExited
-	case strings.HasPrefix(state, "Created"):
-		return cubecontainer.ContainerStateCreated
-	default:
-		return cubecontainer.ContainerStateUnknown
-	}
-}
+// func toContainerState(state string) cubecontainer.ContainerState {
+// 	switch {
+// 	case strings.HasPrefix(state, "Up"):
+// 		return cubecontainer.ContainerStateRunning
+// 	case strings.HasPrefix(state, "Exited"):
+// 		return cubecontainer.ContainerStateExited
+// 	case strings.HasPrefix(state, "Created"):
+// 		return cubecontainer.ContainerStateCreated
+// 	default:
+// 		return cubecontainer.ContainerStateUnknown
+// 	}
+// }
 
 // State, ExitCode
 func toContainerStateAndExitCode(jsonState *dockertypes.ContainerState) (cubecontainer.ContainerState, int) {

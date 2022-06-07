@@ -2,6 +2,7 @@ package testing
 
 import (
 	"Cubernetes/pkg/object"
+	"fmt"
 	"net"
 	"testing"
 )
@@ -130,5 +131,5 @@ var pods = []object.Pod{
 }
 
 func TestCubeproxy(t *testing.T) {
-
+	fmt.Printf("%v", pods[0].UID)
 }

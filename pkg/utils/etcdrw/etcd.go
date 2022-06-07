@@ -47,7 +47,6 @@ func CheckHealth() bool {
 			return
 		}
 		health <- true
-		return
 	}()
 
 	for {

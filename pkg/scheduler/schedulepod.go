@@ -67,7 +67,7 @@ func (sr *ScheduleRuntime) SendPodScheduleInfoBack(podToSchedule *object.Pod, in
 }
 
 func (sr *ScheduleRuntime) WatchPod() {
-	for true {
+	for {
 		sr.tryWatchPod()
 		time.Sleep(WatchRetryIntervalSec * time.Second)
 	}
@@ -91,7 +91,7 @@ func (sr *ScheduleRuntime) tryWatchPod() {
 	}
 	defer cancel()
 
-	for true {
+	for {
 		select {
 		case podEvent, ok := <-ch:
 			if !ok {

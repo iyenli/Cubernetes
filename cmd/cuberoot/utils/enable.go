@@ -76,5 +76,9 @@ func EnableServerlessGateway(meta *localstorage.Metadata) error {
 		Status: nil,
 	})
 
+	if err != nil {
+		log.Println("[Fatal]: start gateway service failed")
+	}
+
 	return nil
 }

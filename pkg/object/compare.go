@@ -250,13 +250,7 @@ func ComputeServiceCriticalChange(new *Service, old *Service) bool {
 	}
 
 	// cluster ip affect iptables directly
-	if new.Spec.ClusterIP != old.Spec.ClusterIP {
-		return true
-	}
-
-	// We don't care endpoints, because every proxy judges pods independently
-	// TODO: is ingress critical?
-	return false
+	return new.Spec.ClusterIP != old.Spec.ClusterIP
 }
 
 func ComputeDNSCriticalChange(new *Dns, old *Dns) bool {

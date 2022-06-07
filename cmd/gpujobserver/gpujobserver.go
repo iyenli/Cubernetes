@@ -119,6 +119,9 @@ func main() {
 
 		var s, phase string
 		_, err = fmt.Sscanf(results[len(results)-2], "%s %s %s %s %s %s %s %s", &s, &s, &s, &s, &phase, &s, &s, &s)
+		if err != nil {
+			log.Println("[INFO]: Get params failed")
+		}
 		if job.Status.Phase != object.JobRunning && phase == "R" {
 			job.Status.Phase = object.JobRunning
 			_, err = crudobj.UpdateGpuJob(job)

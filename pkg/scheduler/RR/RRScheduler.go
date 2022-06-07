@@ -29,7 +29,7 @@ func (rr *SchedulerRR) Init() error {
 	}
 
 	for _, node := range nodes {
-		if node.Status.Condition.Ready == true {
+		if node.Status.Condition.Ready {
 			log.Println("[INFO] Init scheduler, add node", node.UID)
 			rr.NameOfNodes = append(rr.NameOfNodes, node.UID)
 			rr.NumOfNodes++

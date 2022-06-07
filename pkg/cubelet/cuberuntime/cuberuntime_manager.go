@@ -63,15 +63,16 @@ func (m *cubeRuntimeManager) SyncPod(pod *object.Pod, podStatus *cubecontainer.P
 	}
 
 	// Create sandbox if necessary
-	podSandboxID := podContainerChanges.SandboxID
 	podSandboxName := dockershim.MakeSandboxName(pod)
 	if podContainerChanges.CreateSandbox {
 		var err error
 
-		if podSandboxName, podSandboxID, err = m.createPodSandbox(pod); err != nil {
+		existName, podSandboxID, err := m.createPodSandbox(pod); 
+		if err != nil {
 			return err
 		}
 		log.Printf("create sandbox %s for pod %s\n", podSandboxID, pod.Name)
+		podSandboxName = existName
 
 		// Update sandbox to initnetwork
 		newSandboxStatuses, _ := m.getSandboxStatusesByPodUID(pod.UID)

@@ -20,7 +20,9 @@ func AddPodToNetwork(sandboxID string) (net.IP, error) {
 	log.Printf("New pod added to network, sandbox id is %v", sandboxID)
 	cmd := osexec.Command(path, option.Attach, sandboxID)
 	byteOutput, err := cmd.CombinedOutput()
-
+	if err != nil {
+		return nil, err
+	}
 	output := strings.Trim(string(byteOutput), "\n")
 	output = strings.Trim(output, " ")
 
@@ -45,6 +47,9 @@ func DeletePodFromNetwork(sandboxID string) error {
 	log.Printf("New pod deleteded from network, sandbox id is %v", sandboxID)
 	cmd := osexec.Command(path, option.Detach, sandboxID)
 	err = cmd.Run()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -59,6 +64,10 @@ func GetPodIPByID(sandboxID string) (net.IP, error) {
 	log.Printf("[INFO]: Searching weave ip, sandbox id is %v", sandboxID)
 	cmd := osexec.Command(path, "ps", sandboxID)
 	byteOutput, err := cmd.CombinedOutput()
+
+	if err != nil {
+		return nil, err
+	}
 	output := strings.Trim(string(byteOutput), "\n")
 
 	lines := strings.SplitAfter(output, "\n")
