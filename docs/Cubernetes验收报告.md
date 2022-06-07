@@ -46,6 +46,60 @@
 - 通过Kafka Topic Partition机制实现消息队列的可扩展性
 - 每个请求通过Go Channel和long-running的请求返回队列监听者通信，减少切换开销
 
+
+
+### Cubelet
+
+Cubelet组件运行在每个Node上，负责对本地运行的Pod对象进行管理：包括从API-Server监测对Pod对象的状态操作（如创建、更新和删除），以及定时监控、计算本地所有Pod对象的状态，并将其同步到API-Server中。
+
+出于通用性和效率的权衡考虑，Cubelet将管理的“类Pod对象”分为三种：
+
++   最为泛用的Pod对象，一般用于持续运行的workload，具有刷新Spec，监控资源利用状态等所有功能，运行开销也最大，是项目使用与演示中主要用到的对象；
++   GPU应用专属的GpuJob对象，是专门为运行一段GPU计算任务（Job）实现的抽象；
++   Serverless部分中运行Action实例的Actor，使用一个内部定义的Python-Runtime镜像，并且会自动生成其专属的cmd，也不监控其资源利用率，有较小的运行开销和较快的启动速度。
+
+Cubelet组件主要由以下几个层次组成（调用栈从上到下）：
+
+1.   Informer：
+
+     各个对象的informer组件使用API-Server提供的List-And-Watch接口，监控其中对象的状态变化，并暴露为统一的Event管道，以便调用各种事件（Create、Update、Remove）的Handler。在这层，基于NodeID过滤掉尚未Schedule/非本地的Pod对象。
+
+     由于informer监控了所有属于当前Node的类Pod资源的状态变化，因此也在其中维护了每个资源的本地Cache，可以避免Cubelet大量向API-Server发送查询请求，减少其负载。
+
+     List-And-Watch接口也可用来监控本地节点与API-Server的连接情况，如果控制节点下线，Cubelet将在这层反复尝试与控制面重新建立连接，达成容错的效果。
+
+2.   Handler：
+
+     这一层是Cubelet的主要逻辑处理部分：通过Select机制监听Informer层提供的事件channel，调用各种Pod对象的Create、Update、Remove事件的响应处理逻辑函数；同时对于每种类Pod对象都有一个定期Routine，监控、计算出本地运行对象的状态，将其更新到API-Server中。
+
+3.   Runtime：
+
+     对于三种不同的类Pod对象，基于Dockershim暴露的docker相关接口，封装了对象独有的启动、同步、停止、监控等操作，供上层Handler进行调用，使得编写Handler时只用关心业务逻辑而无需直接与docker接口交互。
+
+4.   Dockershim：
+
+     对于docker sdk的简单封装，提供给Runtime使用，用于对容器、镜像的各种操作。
+
+
+
+### Controller-Manager
+
+Controller-Manager运行在控制面上，负责保证高级对象（ReplicaSet、AutoScaler）的运行状态符合其定义。该组件只与API-Server组件交互，从其中监测各类对象的状态变化，计算出为了达到目标状态所需进行的操作，并将操作通知到API-Server中。由于交互链较为简单，因此该组件的分层逻辑也很简洁：
+
+1.   Informer：
+
+     与Cubelet组件中的Informer相似，也通过List-And-Watch机制监控了API-Server，提供了组件内的对象Cache（Pod、ReplicaSet、AutoScaler），向下暴露了事件通知channel，提供容错机制；由于多个Controller可能需要监控同一个资源，Informer可以同时建立多个事件通知channel，多个Controller也能共用同样的Cache，保证了资源信息一致性。
+
+2.   Controller：
+
+     每个高级对象（本项目中是ReplicaSet和AutoScaler）都对应了一个Controller，可以按需传入Informer作为参数创建，以此监控对应的事件通知channel。Controller中通过handler处理每种资源对象的Create、Update、Remove事件，也会通过定时Routine检查高级对象是否符合目标状态，并通过合理的更新API对象使其达到目标状态。
+
+以上结构可以方便地扩展：对于新的高级对象（如ReplicaSet），只需要实现其Controller中的控制逻辑，再传入所需的Informer即可开始监视-控制该类对象；对于新的被监控对象（Pod），也只需要添加Informer即可。
+
+### Action-Brain
+
+Action-Brain运行在控制面上，可以看作为Serverless特化的Controller。其处理逻辑和Controller-Manager类似，不同的是，Action-Brain主要控制Action对象（如其名），还通过一个Monitor子组件从kafka消息队列中监听对函数的每一次调用，记录在轻量级时序数据库tstorage中，提供Action扩容的RPM数据。
+
 ## 成员分工
 
 
@@ -202,15 +256,30 @@ docker exec it ...
 
 ```shell
 # Keep scaling
-./build/cubectl apply -f ./example/yaml/presentation/autoscaler-cpu.yaml
+./build/cubectl apply -f ./example/yaml/test-autoscaler.yaml
 
 ./build/cubectl get autoscaler 
-./build/cubectl describe autoscaler 732f4c11-165c-445e-9779-ea8bfb369d62
-# Scale to more, then drop to 1
-./build/cubectl apply -f ./example/yaml/presentation/autoscaler-memory.yaml
+./build/cubectl describe autoscaler <autoscaler_id>
+
+# access all replica
+./build/cubectl apply -f ./example/yaml/test-autoscaler-svc.yaml
+./build/cubectl describe svc <svc_id>
+
+curl <svc_cluster_ip>:8086/hostname # repeat to see different hostname
+
+# repeat kill stress process to scale down
+curl <svc_cluster_ip>:8086/kill-stress
 
 # waiting...
 ./build/cubectl describe autoscaler
+```
+
+演示时使用的配置文件使用了默认的伸缩速度（最小间隔20秒），下面一组例子演示了更慢的伸缩速度（最小间隔80秒），可以对比体现“通过配置文件改变扩缩容速度”的功能点。
+
+```shell
+# Keep scaling (but slower)
+./build/cubectl apply -f ./example/yaml/slow-autoscaler.yaml
+
 ```
 
 ### 容错
