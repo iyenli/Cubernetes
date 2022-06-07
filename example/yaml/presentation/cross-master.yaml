@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Node
+metadata:
+  name: my-name-is-master
+spec:
+  type: Master
+  capacity:
+    cpuCount: 4
+    memory: 8192
+    maxPods: 100
+  info:
+    cubeVersion: v1
+    kernelVersion: 5.4
+    deviceName: worker-1
+status:
+  addresses:
+    hostName: worker-1
+    internalIP: 10.119.10.255
