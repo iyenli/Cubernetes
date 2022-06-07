@@ -14,11 +14,17 @@
 
 - 自行实现了简易的时序数据库作为Serverless动态扩缩容的依据
 
+### 多机部署
+
+- cuberoot通过是否存在元信息持久化文件判断应该新创建并且加入一个Cubernetes节点还是恢复之前的数据
+- Scheduler调度优先满足Pod selector, 在匹配的Node集合中，Scheduler会进行Round Robin调度
+- Worker通过监测Watch channel的状态判断Master的存货状态，周期性的重连实现容错
+- Master通过心跳检测探测worker状态，更新ETCD中存储的Node状态
+
 ### Cubernetes网络
 
 - 以Weave Plugin为基础，用户**无感知**的下载与配置插件，不需要用户额外配置任何网络
-  - Pod中容器共享Pause提供的网络，Pause加入Weave net
-  - Pod中容器共享Localhost
+  - Pod中容器共享Pause提供的网络，Pause加入Weave net, Pod中容器共享Localhost
   - Container内可以通过任意节点的IP，任意Pod IP和Service IP 以及注册的域名访问对应服务
   - 动态节点加入与删除
 - Service: 基于IPtables, 自动化的配置
@@ -26,6 +32,19 @@
 - 容器化Nginx实现DNS服务
   - 观察到不同Path对应不同的IP超出了DNS职责，通过Nginx实现不同path到不同IP的转换
   - 复用Service进行Pod负载均衡
+
+### GPU服务
+
+通过负载均衡的部署GPU Server到各个节点上，复用原有的Pod管理机制。具体来说，由Cubernetes提供镜像，用户提交Slurm文件后，将运行相应的GPU Server Pod与远程HPC服务器进行交互，然后直接和API Server反馈任务状态和结果。用户通过cubectl进行查询。
+
+### Serverless
+
+#### Gateway
+
+- 提供HTTP服务，接受HTTP Trigger并且返回Serverless计算结果
+- Gateway构建为镜像，可以实现无感知更新；复用AutoScaler + Service做负载均衡，对外暴露固定的Service IP
+- 通过Kafka Topic Partition机制实现消息队列的可扩展性
+- 每个请求通过Go Channel和long-running的请求返回队列监听者通信，减少切换开销
 
 ## 成员分工
 
