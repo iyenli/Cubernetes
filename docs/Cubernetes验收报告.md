@@ -103,13 +103,13 @@ def action(req: Request) -> Invoke or Response:
 
 > 为了优化阅读体验，我们将我们组件的详细实现放在了最后一个Section. 阅读上述内容已经可以了解我们的基本实现，如果您想了解更多，可以通过书签快速找到对应组件进行阅读。(以下是内容梗概)
 >
-> - Cubelet 自上而下的调用链与底层实现逻辑
-> - 如何用Informer提高性能
-> - Cubenetwork如何连接，如何实现DNS
-> - 如何抽象“类Pod对象”复用代码
-> - 如何复用原有组件实现Serverless的全局高可扩？
-> - Serverless脚本热重载如何实现？
-> - 我们的架构怎么快速的能够引入新功能？
+> - <a href="#cubelet">Cubelet 自上而下的调用链与底层实现逻辑</a>
+> - <a href="#informer">如何用Informer提高性能</a>
+> - <a href="#network">Cubenetwork如何连接，如何实现DNS</a>
+> - <a href="#pod-like">如何抽象“类Pod对象”复用代码</a>
+> - <a href="#serverless">如何复用原有组件实现Serverless的全局高可扩？</a>
+> - <a href="#hot-reload">Serverless脚本热重载如何实现？</a>
+> - <a href="#update">我们的架构怎么快速的能够引入新功能？</a>
 
 ## 成员分工
 
@@ -118,7 +118,7 @@ def action(req: Request) -> Invoke or Response:
 | 成员                | 工作                                                         | 贡献度 |
 | ------------------- | ------------------------------------------------------------ | ------ |
 | 沈玮杭 519021910766 | API Server & Client, GPU Job Server, Serverless Python Runtime | 1/3    |
-| 杨镇宇 519021910390 | Cuberlet, Controller Manager, Action Brain                   | 1/3    |
+| 杨镇宇 519021910390 | Cubelet, Controller Manager, Action Brain                   | 1/3    |
 | 李逸岩 519021911103 | CubeProxy, Scheduler, Serverless Gateway, Sufficient test    | 1/3    |
 
 ## 工程实践
@@ -236,9 +236,11 @@ API Server使用了GIN框架提供HTTP服务，通过grpc请求访问ETCD。其�
 为了让控制面和数据面彼此能够检测到对方的在线状态，他们通过TCP Socket建立连接并发送心跳包。如果一段时间内没有收到心跳包，API Server便认为某个Node掉线，并更新其状态。
 
 ### Cubelet
+<a name="cubelet"></a>
 
 Cubelet组件运行在每个Node上，负责对本地运行的Pod对象进行管理：包括从API-Server监测对Pod对象的状态操作（如创建、更新和删除），以及定时监控、计算本地所有Pod对象的状态，并将其同步到API-Server中。
 
+<a name="pod-like"></a>
 出于通用性和效率的权衡考虑，Cubelet将管理的“类Pod对象”分为三种：
 
 +   最为泛用的Pod对象，一般用于持续运行的workload，具有刷新Spec，监控资源利用状态等所有功能，运行开销也最大，是项目使用与演示中主要用到的对象；
@@ -251,6 +253,7 @@ Cubelet组件主要由以下几个层次组成（调用栈从上到下）：
 
    各个对象的informer组件使用API-Server提供的List-And-Watch接口，监控其中对象的状态变化，并暴露为统一的Event管道，以便调用各种事件（Create, Update, Remove）的Handler。在这层，基于NodeID过滤掉尚未Schedule/非本地的Pod对象。
 
+   <a name="informer"></a>
    由于informer监控了所有属于当前Node的类Pod资源的状态变化，因此也在其中维护了每个资源的本地Cache，可以避免Cubelet大量向API-Server发送查询请求，减少其负载。
 
    List-And-Watch接口也可用来监控本地节点与API-Server的连接情况，如果控制节点下线，Cubelet将在这层反复尝试与控制面重新建立连接，达成容错的效果。
@@ -268,6 +271,7 @@ Cubelet组件主要由以下几个层次组成（调用栈从上到下）：
    对于docker sdk的简单封装，提供给Runtime使用，用于对容器、镜像的各种操作。
 
 ### CubeProxy与Cubernetes网络
+<a name="network"></a>
 
 - 以Weave Plugin为基础，用户**无感知**的下载与配置插件，不需要用户额外配置任何网络
   - Pod中容器共享Pause提供的网络，Pause加入Weave net, Pod中容器共享Localhost
@@ -291,6 +295,7 @@ Controller-Manager运行在控制面上，负责保证高级对象（ReplicaSet,
 
    每个高级对象（本项目中是ReplicaSet和AutoScaler）都对应了一个Controller，可以按需传入Informer作为参数创建，以此监控对应的事件通知channel。Controller中通过handler处理每种资源对象的Create, Update, Remove事件，也会通过定时Routine检查高级对象是否符合目标状态，并通过合理的更新API对象使其达到目标状态。
 
+<a name="update"></a>
 以上结构可以方便地扩展：对于新的高级对象（如ReplicaSet），只需要实现其Controller中的控制逻辑，再传入所需的Informer即可开始监视-控制该类对象；对于新的被监控对象（Pod），也只需要添加Informer即可。
 
 ### GPU任务
@@ -300,6 +305,7 @@ Controller-Manager运行在控制面上，负责保证高级对象（ReplicaSet,
 ### Serverless
 
 #### Gateway
+<a name="serverless"></a>
 
 - 提供HTTP服务，接受HTTP Trigger并且返回Serverless计算结果
 - Gateway构建为镜像，可以实现无感知更新；复用AutoScaler + Service做负载均衡，对外暴露固定的Service IP
@@ -307,6 +313,7 @@ Controller-Manager运行在控制面上，负责保证高级对象（ReplicaSet,
 - 每个请求通过Go Channel和long-running的请求返回队列监听者通信，减少切换开销
 
 #### Python-Runtime
+<a name="hot-reload"></a>
 
 Python-Runtime运行在Pod中，从mount的volume里import用户的代码。启动后不断消费调用消息并调用用户函数产生新的调用请求或是结果，放入对应的Kafka Topic内。
 
