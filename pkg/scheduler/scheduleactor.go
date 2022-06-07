@@ -49,7 +49,7 @@ func (sr *ScheduleRuntime) SendActorScheduleInfoBack(ActorToSchedule *object.Act
 }
 
 func (sr *ScheduleRuntime) WatchActor() {
-	for true {
+	for {
 		sr.tryWatchActor()
 		time.Sleep(WatchRetryIntervalSec * time.Second)
 	}
@@ -73,7 +73,7 @@ func (sr *ScheduleRuntime) tryWatchActor() {
 	}
 	defer cancel()
 
-	for true {
+	for {
 		select {
 		case ActorEvent, ok := <-ch:
 			if !ok {

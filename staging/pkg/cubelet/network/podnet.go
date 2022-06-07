@@ -85,22 +85,22 @@ func getOnePodIP(nsenterPath, netnsPath, interfaceName, addrType string) (net.IP
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, fmt.Errorf("Unexpected command output %s with error: %v", output, err)
+		return nil, fmt.Errorf("unexpected command output %s with error: %v", output, err)
 	}
 
 	lines := strings.Split(string(output), "\n")
 	if len(lines) < 1 {
-		return nil, fmt.Errorf("Unexpected command output %s", output)
+		return nil, fmt.Errorf("unexpected command output %s", output)
 	}
 
 	fields := strings.Fields(lines[0])
 	if len(fields) < 4 {
-		return nil, fmt.Errorf("Unexpected address output %s ", lines[0])
+		return nil, fmt.Errorf("unexpected address output %s ", lines[0])
 	}
 
 	ip, _, err := net.ParseCIDR(fields[3])
 	if err != nil {
-		return nil, fmt.Errorf("CNI failed to parse ip from output %s due to %v", output, err)
+		return nil, fmt.Errorf("cni failed to parse ip from output %s due to %v", output, err)
 	}
 
 	return ip, nil

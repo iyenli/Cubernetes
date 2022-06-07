@@ -54,7 +54,7 @@ func (sr *ScheduleRuntime) tryWatchJob() {
 	}
 	defer cancel()
 
-	for true {
+	for {
 		select {
 		case jobEvent, ok := <-ch:
 			if !ok {
@@ -77,7 +77,7 @@ func (sr *ScheduleRuntime) tryWatchJob() {
 }
 
 func (sr *ScheduleRuntime) WatchJob() {
-	for true {
+	for {
 		sr.tryWatchJob()
 		time.Sleep(WatchRetryIntervalSec * time.Second)
 	}

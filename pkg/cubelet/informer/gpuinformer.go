@@ -38,7 +38,7 @@ func (c *cubeJobInformer) SetNodeUID(uid string) {
 
 func (c *cubeJobInformer) ListAndWatchJobsWithRetry() {
 	defer close(c.jobEvent)
-	for true {
+	for {
 		c.tryListAndWatchJobs()
 		time.Sleep(WatchRetryIntervalSec * time.Second)
 	}
@@ -69,7 +69,7 @@ func (c *cubeJobInformer) tryListAndWatchJobs() {
 	}
 	defer cancel()
 
-	for true {
+	for {
 		select {
 		case jobEvent, ok := <-ch:
 			if !ok {

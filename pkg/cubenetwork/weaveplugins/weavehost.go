@@ -76,6 +76,9 @@ func InitWeave() error {
 	// stop weave if weave is running
 	cmd := osexec.Command(path, option.Stop)
 	err = cmd.Run() // Could fail here
+	if err != nil {
+		return err
+	}
 
 	cmd = osexec.Command(path, option.Launch)
 	output, err := cmd.CombinedOutput()
@@ -112,6 +115,9 @@ func AddNode(newHost Host, apiServerHost Host) error {
 	// stop weave if weave is running
 	cmd := osexec.Command(path, option.Stop)
 	err = cmd.Run() // Could failed here
+	if err != nil {
+		return err
+	}
 
 	log.Println("Connecting to peers...")
 	cmd = osexec.Command(path, option.Launch, newHost.IP.String(), apiServerHost.IP.String())
@@ -122,6 +128,9 @@ func AddNode(newHost Host, apiServerHost Host) error {
 	}
 
 	output, err = CheckPeers()
+	if err != nil {
+		return err
+	}
 	log.Println("[INFO]: Peers: ", string(output))
 	return nil
 }

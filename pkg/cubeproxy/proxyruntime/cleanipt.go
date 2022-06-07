@@ -8,6 +8,10 @@ import (
 // CleanIptables Just an util used in cuberoot
 func CleanIptables() error {
 	ipt, err := iptables.New(iptables.Timeout(3))
+	if err != nil {
+		log.Println("[Error]: create iptables client failed")
+		return err
+	}
 
 	chains, err := ipt.ListChains("nat")
 	if err != nil {

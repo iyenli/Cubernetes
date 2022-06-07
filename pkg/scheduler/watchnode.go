@@ -9,7 +9,7 @@ import (
 )
 
 func (sr *ScheduleRuntime) WatchNode() {
-	for true {
+	for {
 		sr.tryWatchNode()
 		log.Println("[INFO]: Trying to get nodes info from apiserver after 10 secs...")
 		time.Sleep(WatchRetryIntervalSec * time.Second)
@@ -34,7 +34,7 @@ func (sr *ScheduleRuntime) tryWatchNode() {
 	}
 	defer handler()
 
-	for true {
+	for {
 		select {
 		case nodeEvent, ok := <-ch:
 			if !ok {
@@ -45,14 +45,14 @@ func (sr *ScheduleRuntime) tryWatchNode() {
 					if nodeEvent.Node.Status == nil {
 						continue
 					}
-					if nodeEvent.Node.Status.Condition.Ready == false {
+					if !nodeEvent.Node.Status.Condition.Ready {
 						log.Println("[INFO]: Scheduler may removed a node: ", nodeEvent.Node.UID)
 						err := sr.Implement.RemoveNode(&types.NodeInfo{NodeUUID: nodeEvent.Node.UID})
 						if err != nil {
 							log.Println("[Error]: remove node failed")
 						}
 					}
-					if nodeEvent.Node.Status.Condition.Ready == true {
+					if nodeEvent.Node.Status.Condition.Ready {
 						log.Println("[INFO]: Scheduler may added a node: ", nodeEvent.Node.UID)
 						err := sr.Implement.AddNode(&types.NodeInfo{NodeUUID: nodeEvent.Node.UID})
 						if err != nil {

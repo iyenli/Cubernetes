@@ -14,8 +14,5 @@ func CheckApiServerHealth() bool {
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode == http.StatusOK {
-		return true
-	}
-	return false
+	return resp.StatusCode == http.StatusOK
 }

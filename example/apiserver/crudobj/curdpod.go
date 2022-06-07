@@ -5,6 +5,7 @@ import (
 	"Cubernetes/pkg/object"
 	"encoding/json"
 	"fmt"
+	"log"
 )
 
 func main() {
@@ -50,7 +51,13 @@ func main() {
 		ActualResourceUsage: nil,
 	}
 	pod, err = crudobj.UpdatePodStatus(pod.UID, status)
+	if err != nil {
+		log.Panic("[Fatal]: error when updating")
+	}
 	buf, err := json.Marshal(pod)
+	if err != nil {
+		log.Panic("[Fatal]: error when updating")
+	}
 	fmt.Println("Pod:", string(buf))
 
 	err = crudobj.DeletePod(pod.UID)

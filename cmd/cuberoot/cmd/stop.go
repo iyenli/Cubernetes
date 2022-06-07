@@ -24,42 +24,37 @@ usage:
 
 		err := utils.KillDaemonProcess(options.APISERVER)
 		if err != nil {
-			//log.Printf("Error when killing process: %v", err.Error())
+			log.Printf("Error when killing process: %v", err.Error())
 		}
 
 		err = utils.KillDaemonProcess(options.CUBELET)
 		if err != nil {
-			//log.Printf("Error when killing process: %v", err.Error())
+			log.Printf("Error when killing process: %v", err.Error())
 		}
 
 		err = utils.KillDaemonProcess(options.CUBEPROXY)
 		if err != nil {
-			//log.Printf("Error when killing process: %v", err.Error())
+			log.Printf("Error when killing process: %v", err.Error())
 		}
 
 		err = utils.KillDaemonProcess(options.MANAGER)
 		if err != nil {
-			//log.Printf("Error when killing process: %v", err.Error())
+			log.Printf("Error when killing process: %v", err.Error())
 		}
 
 		err = utils.KillDaemonProcess(options.ETCD)
 		if err != nil {
-			//log.Printf("Error when killing process: %v", err.Error())
+			log.Printf("Error when killing process: %v", err.Error())
 		}
 
 		err = utils.KillDaemonProcess(options.SCHEDULER)
 		if err != nil {
-			//log.Printf("Error when killing process: %v", err.Error())
+			log.Printf("Error when killing process: %v", err.Error())
 		}
-
-		//err = utils.KillDaemonProcess(options.GATEWAY)
-		//if err != nil {
-		//	//log.Printf("Error when killing process: %v", err.Error())
-		//}
 
 		err = utils.KillDaemonProcess(options.BRAIN)
 		if err != nil {
-			//log.Printf("Error when killing process: %v", err.Error())
+			log.Printf("Error when killing process: %v", err.Error())
 		}
 
 	},

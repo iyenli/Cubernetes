@@ -10,8 +10,6 @@ import (
 
 const podPrefix = "/Cubernetes/apis/pods/"
 
-func dummy(...any) string { return "" }
-
 func StorePod(ctx *ETCDContext, podName string, pod object.Pod) (bool, error) {
 	key := podPrefix + podName
 

@@ -36,11 +36,21 @@ func InitProxyRuntime() (*ProxyRuntime, error) {
 
 	/* check env */
 	flag, err := pr.Ipt.ChainExists(FilterTable, DockerChain)
+	if err != nil {
+		log.Printf("[Warn]: Get chain info failed")
+		return nil, err
+	}
+
 	if !flag {
 		log.Printf("[Warn]: Start docker first")
 		//return nil, err
 	}
 	flag, err = pr.Ipt.ChainExists(NatTable, DockerChain)
+	if err != nil {
+		log.Printf("[Warn]: Get chain info failed")
+		return nil, err
+	}
+
 	if !flag {
 		log.Printf("[Warn]: Start docker first")
 		//return nil, err
@@ -156,7 +166,7 @@ func (pr *ProxyRuntime) AddExistService(service *object.Service) error {
 	}
 
 	prob := make([][]string, len(service.Spec.Ports))
-	for idx, _ := range prob {
+	for idx := range prob {
 		prob[idx] = make([]string, len(service.Status.Endpoints))
 	}
 
