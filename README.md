@@ -5,7 +5,7 @@ Course project for SE3356.
 
 <img src="docs/Cubernetes验收报告.assets/overview.png" alt="overview" style="zoom: 25%;" />
 
-![serverless1](docs\Cubernetes验收报告.assets\serverless1.png)
+![serverless1](docs/Cubernetes验收报告.assets/serverless1.png)
 
 <img src="docs/Cubernetes验收报告.assets/serverless2.png" alt="serverless2" style="zoom:28%;" />
 
