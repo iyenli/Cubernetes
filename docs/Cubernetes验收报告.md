@@ -117,16 +117,6 @@ def action(req: Request) -> Invoke or Response:
 > - <a href="#hot-reload">Serverless脚本热重载如何实现？</a>
 > - <a href="#update">我们的架构怎么快速的能够引入新功能？</a>
 
-## 成员分工
-
-<center>表1 成员分工与贡献度</center>
-
-| 成员                | 工作                                                         | 贡献度 |
-| ------------------- | ------------------------------------------------------------ | ------ |
-| 沈玮杭 519021910766 | API Server & Client, GPU Job Server, Serverless Python Runtime | 1/3    |
-| 杨镇宇 519021910390 | Cubelet, Controller Manager, Action Brain                   | 1/3    |
-| 李逸岩 519021911103 | CubeProxy, Scheduler, Serverless Gateway, Sufficient test    | 1/3    |
-
 ## 工程实践
 
 ### Gitee 地址: 
